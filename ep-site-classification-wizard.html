@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BVLOS Site Classification Wizard | Enhanced Patrol</title>
+<style>
+    @font-face {
+        font-family: 'Gotham Bold';
+        font-weight: 700;
+        src: url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Bold.ttf') format('truetype');
+    }
+    @font-face {
+        font-family: 'Gotham Book';
+        font-weight: 400;
+        src: url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Book.ttf') format('truetype');
+    }
+    @font-face {
+        font-family: 'Bebas Neue';
+        src: url('https://enhancedpatrol.com/wp-content/uploads/elementor/google-fonts/fonts/bebasneue-97dafd13.woff2') format('woff2');
+    }
+
+    :root {
+        --ep-navy:      #0B1923;
+        --ep-navy-card: #0f2233;
+        --ep-navy-deep: #091520;
+        --ep-gold:      #FCC00E;
+        --ep-blue:      #00A2E9;
+        --ep-dark-blue: #164998;
+        --ep-white:     #FFFFFF;
+        --ep-gray:      #9A9A9A;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+        font-family: 'Gotham Book', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--ep-navy);
+        color: var(--ep-white);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    /* HEADER */
+    #site-header {
+        background: var(--ep-navy);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 3px solid var(--ep-gold);
+        box-shadow: 0 2px 20px rgba(0,0,0,0.4);
+    }
+    .header-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 82px;
+    }
+    .header-logo img { width: 185px; height: auto; display: block; }
+    .header-nav { display: flex; align-items: center; list-style: none; }
+    .header-nav > li { position: relative; }
+    .header-nav > li > a {
+        display: block; padding: 28px 18px;
+        color: var(--ep-white); font-family: 'Gotham Book', sans-serif;
+        font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; transition: color 0.25s;
+    }
+    .header-nav > li > a:hover { color: var(--ep-gold); }
+    .dropdown {
+        display: none; position: absolute; top: 100%; left: 0;
+        background: var(--ep-navy-deep); min-width: 260px;
+        border-top: 2px solid var(--ep-gold); z-index: 999;
+    }
+    .header-nav > li:hover .dropdown { display: block; }
+    .dropdown a {
+        display: block; padding: 11px 22px; color: var(--ep-white);
+        font-family: 'Gotham Book', sans-serif; font-size: 0.83rem;
+        border-bottom: 1px solid rgba(255,255,255,0.04); transition: color 0.2s, background 0.2s;
+    }
+    .dropdown a:hover { color: var(--ep-gold); background: rgba(252,192,14,0.05); }
+    .btn-header {
+        display: flex; align-items: center; gap: 8px; padding: 13px 24px;
+        border: 1px solid var(--ep-gold); color: var(--ep-white);
+        font-family: 'Gotham Book', sans-serif; font-size: 0.8rem; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 1px; transition: background 0.25s, color 0.25s; white-space: nowrap;
+    }
+    .btn-header:hover { background: var(--ep-gold); color: var(--ep-navy); }
+    .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; padding: 10px 12px; background: var(--ep-gold); }
+    .hamburger span { width: 20px; height: 2px; background: var(--ep-navy); display: block; }
+    .mobile-nav { display: none; background: var(--ep-navy-deep); border-top: 2px solid var(--ep-gold); }
+    .mobile-nav.open { display: block; }
+    .mobile-nav a {
+        display: block; padding: 13px 30px; color: var(--ep-white);
+        font-family: 'Gotham Book', sans-serif; font-size: 0.88rem;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .mobile-nav a:hover { color: var(--ep-gold); }
+
+    /* PAGE HERO */
+    .page-hero {
+        background: var(--ep-navy-deep);
+        padding: 48px 40px 36px;
+        border-bottom: 1px solid rgba(252,192,14,0.15);
+        text-align: center;
+    }
+    .breadcrumb { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; color: var(--ep-gray); margin-bottom: 14px; }
+    .breadcrumb a { color: var(--ep-gray); transition: color 0.2s; }
+    .breadcrumb a:hover { color: var(--ep-gold); }
+    .breadcrumb span { color: var(--ep-gold); margin: 0 6px; }
+    .page-hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.8rem; letter-spacing: 3px; color: var(--ep-white); margin-bottom: 10px; }
+    .page-hero h1 em { color: var(--ep-gold); font-style: normal; }
+    .page-hero p { color: var(--ep-gray); font-size: 0.88rem; max-width: 560px; margin: 0 auto 16px; line-height: 1.75; }
+    .cow-pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(0,162,233,0.08); border: 1px solid rgba(0,162,233,0.25);
+        padding: 6px 16px; font-size: 0.72rem; letter-spacing: 1px; color: var(--ep-blue); text-transform: uppercase;
+    }
+
+    /* MAIN */
+    main { flex: 1; padding: 48px 40px 64px; }
+    .wizard-wrap { max-width: 700px; margin: 0 auto; }
+
+    /* Progress */
+    .progress-track { display: flex; gap: 4px; margin-bottom: 6px; }
+    .progress-seg { height: 3px; flex: 1; background: rgba(255,255,255,0.08); transition: background 0.3s; }
+    .progress-seg.done { background: var(--ep-blue); }
+    .progress-seg.active { background: var(--ep-gold); }
+    .progress-meta { font-size: 0.72rem; color: var(--ep-gray); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 32px; }
+
+    /* Step content */
+    .step-q { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 2px; color: var(--ep-white); margin-bottom: 6px; line-height: 1.1; }
+    .step-sub { font-size: 0.84rem; color: var(--ep-gray); line-height: 1.7; margin-bottom: 28px; max-width: 560px; }
+
+    /* Option cards */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 22px; }
+    .grid-1 { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 22px; }
+    .opt {
+        background: var(--ep-navy-card); border: 2px solid rgba(255,255,255,0.07);
+        padding: 14px 16px; cursor: pointer; display: flex; align-items: flex-start; gap: 12px;
+        transition: border-color 0.15s, background 0.15s; text-align: left;
+    }
+    .opt:hover { border-color: rgba(0,162,233,0.4); }
+    .opt.sel { border-color: var(--ep-blue); background: rgba(0,162,233,0.08); }
+    .opt-icon { width: 34px; height: 34px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: background 0.15s; }
+    .opt.sel .opt-icon { background: var(--ep-blue); }
+    .opt-label { font-family: 'Gotham Bold', sans-serif; font-size: 0.84rem; font-weight: 700; margin-bottom: 2px; }
+    .opt-desc { font-size: 0.75rem; color: var(--ep-gray); line-height: 1.4; }
+
+    /* Input */
+    .field-group { margin-bottom: 22px; }
+    .field-label { display: block; font-size: 0.72rem; font-family: 'Gotham Bold', sans-serif; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ep-gray); margin-bottom: 10px; }
+    .field-input { background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.1); padding: 12px 16px; color: var(--ep-white); font-size: 1rem; font-family: 'Gotham Book', sans-serif; width: 100%; outline: none; transition: border-color 0.2s; }
+    .field-input:focus { border-color: var(--ep-gold); }
+    .field-note { font-size: 0.75rem; color: var(--ep-gray); margin-top: 6px; }
+
+    /* Info box */
+    .info-box { background: rgba(0,162,233,0.05); border-left: 3px solid var(--ep-blue); padding: 10px 14px; font-size: 0.78rem; color: var(--ep-gray); line-height: 1.6; margin-bottom: 14px; }
+
+    /* Nav */
+    .nav-row { display: flex; gap: 10px; margin-top: 12px; }
+    .btn-back { background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 12px 22px; color: var(--ep-gray); font-size: 0.8rem; font-family: 'Gotham Book', sans-serif; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: border-color 0.2s; }
+    .btn-back:hover { border-color: var(--ep-gray); }
+    .btn-next { flex: 1; background: var(--ep-blue); border: none; padding: 13px 28px; color: var(--ep-white); font-size: 0.82rem; font-family: 'Gotham Bold', sans-serif; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; transition: opacity 0.2s; }
+    .btn-next:disabled { opacity: 0.3; cursor: not-allowed; }
+    .btn-classify { flex: 1; background: var(--ep-gold); border: none; padding: 13px 28px; color: var(--ep-navy); font-size: 0.82rem; font-family: 'Gotham Bold', sans-serif; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; transition: opacity 0.2s; }
+    .btn-classify:disabled { opacity: 0.3; cursor: not-allowed; }
+
+    /* RESULT */
+    .result-wrap { animation: fadeUp 0.3s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .sec-label { font-family: 'Gotham Bold', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--ep-gold); display: block; margin-bottom: 12px; }
+    .result-card { background: var(--ep-navy-card); border: 1px solid rgba(0,162,233,0.35); border-top: 3px solid var(--ep-blue); padding: 26px 28px; margin-bottom: 16px; }
+    .sp-badge { display: inline-block; background: rgba(0,162,233,0.12); border: 1px solid rgba(0,162,233,0.35); padding: 3px 10px; font-size: 0.68rem; font-family: 'Gotham Bold', sans-serif; letter-spacing: 2px; color: var(--ep-blue); text-transform: uppercase; margin-bottom: 10px; }
+    .class-name { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; letter-spacing: 2px; color: var(--ep-white); line-height: 1.1; margin-bottom: 18px; }
+    .ceil-label { font-size: 0.75rem; color: var(--ep-gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .ceil-value { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; color: var(--ep-gold); letter-spacing: 2px; line-height: 1; }
+    .ceil-unit { font-size: 1.1rem; color: var(--ep-gray); margin-left: 6px; }
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 20px 0; }
+    .formula-box { background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.06); padding: 13px 16px; font-family: 'Courier New', monospace; font-size: 0.82rem; color: var(--ep-white); line-height: 1.9; }
+    .formula-calc { color: var(--ep-gold); }
+    .req-card { background: var(--ep-navy-card); border: 1px solid rgba(255,255,255,0.07); padding: 20px 24px; margin-bottom: 16px; }
+    .req-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+    .req-row:last-child { margin-bottom: 0; }
+    .req-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 1px; font-family: 'Gotham Bold', sans-serif; }
+    .req-icon.pass { background: rgba(22,163,74,0.12); border: 1px solid #16a34a; color: #4ade80; }
+    .req-icon.fail { background: rgba(220,38,38,0.12); border: 1px solid #dc2626; color: #f87171; }
+    .req-icon.info { background: rgba(0,162,233,0.1); border: 1px solid rgba(0,162,233,0.3); color: var(--ep-blue); font-size: 11px; }
+    .req-text { font-size: 0.82rem; line-height: 1.6; }
+    .req-text strong { font-family: 'Gotham Bold', sans-serif; font-weight: 700; margin-right: 4px; }
+    .req-text span { color: var(--ep-gray); }
+    .warning-box { background: rgba(120,53,15,0.18); border-left: 3px solid #d97706; padding: 11px 14px; font-size: 0.8rem; color: #fbbf24; line-height: 1.6; margin-bottom: 10px; }
+    .cow-ref-box { background: rgba(0,162,233,0.05); border: 1px solid rgba(0,162,233,0.15); padding: 12px 16px; font-size: 0.78rem; color: var(--ep-gray); line-height: 1.6; margin-top: 8px; }
+    .cow-ref-box strong { color: var(--ep-white); }
+    .btn-reset { width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 13px 24px; color: var(--ep-gray); font-size: 0.78rem; font-family: 'Gotham Bold', sans-serif; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 10px; transition: border-color 0.2s, color 0.2s; }
+    .btn-reset:hover { border-color: var(--ep-gray); color: var(--ep-white); }
+
+    /* FOOTER */
+    #site-footer { background: var(--ep-navy); border-top: 1px solid rgba(252,192,14,0.15); padding: 64px 40px 0; }
+    .footer-inner { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1.6fr 1.6fr; gap: 48px; padding-bottom: 48px; }
+    .footer-brand-logo { width: 165px; height: auto; margin-bottom: 20px; display: block; }
+    .footer-brand-desc { color: var(--ep-gray); font-size: 0.86rem; line-height: 1.75; margin-bottom: 22px; }
+    .footer-social { display: flex; gap: 8px; margin-bottom: 28px; }
+    .footer-social a { width: 36px; height: 36px; background: var(--ep-dark-blue); border: 1px solid var(--ep-dark-blue); display: flex; align-items: center; justify-content: center; color: var(--ep-white); font-size: 0.8rem; transition: background 0.25s, border-color 0.25s, color 0.25s; }
+    .footer-social a:hover { background: var(--ep-gold); border-color: var(--ep-gold); color: var(--ep-navy); }
+    .footer-badge { display: flex; align-items: center; gap: 12px; color: var(--ep-gray); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+    .footer-badge img { width: 52px; height: auto; }
+    .footer-col h4 { font-family: 'Gotham Bold', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--ep-white); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; }
+    .footer-col ul { list-style: none; }
+    .footer-col ul li { border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .footer-col ul li a { display: flex; align-items: center; gap: 8px; padding: 9px 0; color: var(--ep-gray); font-size: 0.84rem; transition: color 0.2s; }
+    .footer-col ul li a::before { content: '\203A'; color: var(--ep-gold); font-size: 1rem; line-height: 1; }
+    .footer-col ul li a:hover { color: var(--ep-gold); }
+    .footer-newsletter input[type="text"], .footer-newsletter input[type="email"] { width: 100%; padding: 10px 13px; background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.1); color: var(--ep-white); font-family: 'Gotham Book', sans-serif; font-size: 0.84rem; margin-bottom: 10px; }
+    .footer-newsletter input[type="text"]:focus, .footer-newsletter input[type="email"]:focus { outline: none; border-color: var(--ep-gold); }
+    .footer-newsletter input[type="submit"] { width: 100%; padding: 12px; background: var(--ep-gold); color: var(--ep-navy); border: none; font-family: 'Gotham Bold', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: opacity 0.25s; }
+    .footer-newsletter input[type="submit"]:hover { opacity: 0.85; }
+    .footer-bottom { max-width: 1280px; margin: 0 auto; padding: 18px 0 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
+    .footer-bottom-links { display: flex; gap: 28px; }
+    .footer-bottom-links a { color: var(--ep-gray); font-size: 0.8rem; transition: color 0.2s; }
+    .footer-bottom-links a:hover { color: var(--ep-gold); }
+    .footer-bottom-copy { color: var(--ep-gray); font-size: 0.75rem; text-align: right; }
+    .footer-bottom-copy a { color: var(--ep-gold); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+        .header-inner { padding: 0 20px; }
+        nav, .header-cta-wrap { display: none; }
+        .hamburger { display: flex; }
+        .page-hero { padding: 36px 20px 28px; }
+        .page-hero h1 { font-size: 2rem; }
+        main { padding: 32px 20px 48px; }
+        .grid-2 { grid-template-columns: 1fr; }
+        .ceil-value { font-size: 4rem; }
+        #site-footer { padding: 40px 20px 0; }
+        .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+        .footer-bottom { flex-direction: column; gap: 12px; }
+        .footer-bottom-links { justify-content: center; }
+        .footer-bottom-copy { text-align: center; }
+    }
+</style>
+</head>
+<body>
+
+<header id="site-header">
+    <div class="header-inner">
+        <a href="https://enhancedpatrol.com" class="header-logo">
+            <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
+        </a>
+        <nav>
+            <ul class="header-nav">
+                <li>
+                    <a href="https://enhancedpatrol.com/services/">Services &#9662;</a>
+                    <div class="dropdown">
+                        <a href="https://enhancedpatrol.com/services/property-management-security-support/">Property Management</a>
+                        <a href="https://enhancedpatrol.com/services/ctpat-assessments/">CTPAT Assessments</a>
+                        <a href="https://enhancedpatrol.com/services/violence-prevention-consulting/">Violence Prevention</a>
+                        <a href="https://enhancedpatrol.com/services/physical-security-services/">Physical Security Services</a>
+                        <a href="https://enhancedpatrol.com/services/risk-assessments-mitigation/">Risk Assessments &amp; Mitigation</a>
+                        <a href="https://enhancedpatrol.com/services/intelligence-investigative-services/">Intelligence &amp; Investigative Services</a>
+                        <a href="https://enhancedpatrol.com/services/drone-security-program/">Drone Security Program</a>
+                        <a href="https://enhancedpatrol.com/services/additional-services/">Additional Services</a>
+                    </div>
+                </li>
+                <li><a href="https://enhancedpatrol.com/about-us/">About Us</a></li>
+                <li>
+                    <a href="#">Resources &#9662;</a>
+                    <div class="dropdown">
+                        <a href="https://enhancedpatrol.com/blog/">Blog</a>
+                        <a href="https://enhancedpatrol.com/join-our-team/">Join Our Team</a>
+                        <a href="https://enhancedpatrol.com/case-studies/">Case Studies</a>
+                    </div>
+                </li>
+                <li><a href="https://enhancedpatrol.com/contact-us/">Contact Us</a></li>
+            </ul>
+        </nav>
+        <div class="header-cta-wrap">
+            <a href="https://enhancedpatrol.com/contact-us/" class="btn-header">
+                <svg width="13" height="13" viewBox="0 0 512 512" fill="currentColor"><path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/></svg>
+                Get Started
+            </a>
+        </div>
+        <div class="hamburger" onclick="document.getElementById('mobileNav').classList.toggle('open')">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+    <nav id="mobileNav" class="mobile-nav">
+        <a href="https://enhancedpatrol.com/services/">Services</a>
+        <a href="https://enhancedpatrol.com/services/drone-security-program/" style="padding-left:46px;font-size:0.8rem;color:#FCC00E;">&#8250; Drone Security Program</a>
+        <a href="https://enhancedpatrol.com/services/physical-security-services/" style="padding-left:46px;font-size:0.8rem;color:#9A9A9A;">&#8250; Physical Security</a>
+        <a href="https://enhancedpatrol.com/services/risk-assessments-mitigation/" style="padding-left:46px;font-size:0.8rem;color:#9A9A9A;">&#8250; Risk Assessments</a>
+        <a href="https://enhancedpatrol.com/about-us/">About Us</a>
+        <a href="https://enhancedpatrol.com/blog/">Blog</a>
+        <a href="https://enhancedpatrol.com/case-studies/">Case Studies</a>
+        <a href="https://enhancedpatrol.com/contact-us/">Contact Us</a>
+    </nav>
+</header>
+
+<div class="page-hero">
+    <div class="breadcrumb">
+        <a href="https://enhancedpatrol.com">Home</a><span>›</span>
+        <a href="https://enhancedpatrol.com/services/drone-security-program/">Drone Security Program</a><span>›</span>
+        BVLOS Site Classification Wizard
+    </div>
+    <h1>BVLOS Site <em>Classification</em> Wizard</h1>
+    <p>Determine your operational classification, altitude ceiling, and Visual Observer requirement under Enhanced Patrol's nationwide BVLOS waiver.</p>
+    <div class="cow-pill">CoW 107W-2025-04534 &nbsp;·&nbsp; 14 CFR §107.31 / §107.35 / §107.39 / §107.145</div>
+</div>
+
+<main>
+    <div class="wizard-wrap" id="wizard"></div>
+</main>
+
+<footer id="site-footer">
+    <div class="footer-inner">
+        <div>
+            <a href="https://enhancedpatrol.com">
+                <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol" class="footer-brand-logo">
+            </a>
+            <p class="footer-brand-desc">Enhanced Patrol LLC is a Nashville-based security and technology firm with a global reach. We are dedicated to protecting assets, personnel, and critical infrastructure both domestically and internationally.</p>
+            <div class="footer-social">
+                <a href="https://www.facebook.com/profile.php?id=61557108737285" target="_blank" aria-label="Facebook">
+                    <svg width="14" height="14" viewBox="0 0 512 512" fill="currentColor"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg>
+                </a>
+                <a href="https://www.instagram.com/enhancedpatrol/" target="_blank" aria-label="Instagram">
+                    <svg width="14" height="14" viewBox="0 0 448 512" fill="currentColor"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+                </a>
+            </div>
+            <div class="footer-badge">
+                <img src="https://enhancedpatrol.com/wp-content/uploads/2025/01/WhatsApp-Image-2025-01-24-at-21.35.07_0ef767f1.jpg" alt="SBA Veteran Owned">
+                <span>SBA Veteran Owned Certified</span>
+            </div>
+        </div>
+        <div class="footer-col">
+            <h4>Resources</h4>
+            <ul>
+                <li><a href="https://enhancedpatrol.com/blog/">Blog</a></li>
+                <li><a href="https://enhancedpatrol.com/join-our-team/">Join Our Team</a></li>
+                <li><a href="https://enhancedpatrol.com/case-studies/">Case Studies</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Our Services</h4>
+            <ul>
+                <li><a href="https://enhancedpatrol.com/services/property-management-security-support/">Property Management</a></li>
+                <li><a href="https://enhancedpatrol.com/services/violence-prevention-consulting/">Violence Prevention</a></li>
+                <li><a href="https://enhancedpatrol.com/services/physical-security-services/">Physical Security</a></li>
+                <li><a href="https://enhancedpatrol.com/services/risk-assessments-mitigation/">Risk Assessment &amp; Mitigation</a></li>
+                <li><a href="https://enhancedpatrol.com/services/intelligence-investigative-services/">Intelligence &amp; Investigation</a></li>
+                <li><a href="https://enhancedpatrol.com/services/drone-security-program/">Drone Security Program</a></li>
+                <li><a href="https://enhancedpatrol.com/services/additional-services/">Additional Services</a></li>
+            </ul>
+        </div>
+        <div class="footer-col">
+            <h4>Subscribe to Our Newsletter</h4>
+            <div class="footer-newsletter">
+                <input type="text" placeholder="First name">
+                <input type="text" placeholder="Last name">
+                <input type="email" placeholder="Email address">
+                <input type="submit" value="Subscribe Now">
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div class="footer-bottom-links">
+            <a href="https://enhancedpatrol.com/privacy-policy/">Privacy Policy</a>
+            <a href="#">Terms &amp; Service</a>
+        </div>
+        <p class="footer-bottom-copy">
+            &copy; Copyright 2024 &mdash; All rights reserved.
+            <br><small>Developed by <a href="https://multisitedev.com/">MultisiteDev</a></small>
+        </p>
+    </div>
+</footer>
+
+<script>
+const STEPS=["Site Type","Access & Obstructions","DAA & Range","OOP / OOMV"];
+let step=0,answers={};
+const SITES=[
+    {v:"critical_infra",i:"⚡",l:"Critical Infrastructure",d:"Power, water, comms, fuel — 42 U.S.C. 5195c(e)"},
+    {v:"construction",i:"🏗️",l:"Closed Access Construction",d:"Active construction site, restricted public access"},
+    {v:"linear_above",i:"🔌",l:"Linear Infrastructure (Above Ground)",d:"Powerlines, pipelines, roadways, rail — above surface"},
+    {v:"linear_buried",i:"🛢️",l:"Buried ROW / Pipeline",d:"Subsurface pipeline or buried right-of-way"},
+    {v:"facility",i:"🏭",l:"Industrial / Commercial Facility",d:"Factory, warehouse, distribution center"},
+    {v:"standard",i:"🏢",l:"Commercial / HOA / Campus",d:"Office park, retail, residential community"},
+    {v:"open",i:"🌾",l:"Open / Uncontrolled Area",d:"No qualifying shielding obstructions"},
+];
+
+function classify(){
+    const{siteType,accessControl,obstructions,obstHeight,daa,beyondOneSM,oop_oomv,publicArea,mitigations}=answers;
+    const obs=parseFloat(obstHeight)||0;
+    let classification,sp,ceilAGL,ceilFormula,ceilCalc=null,voRequired=false,voReason="",daaRequired=false,warnings=[],notes=[];
+    if(siteType==="critical_infra"){
+        classification="Critical Infrastructure Shielding";sp="SP 14";
+        const b=obs>0?obs+200:null;ceilAGL=b?Math.min(Math.max(200,b),400):200;
+        ceilFormula="200 ft AGL  OR  (obs height + 200 ft), max 400 ft AGL";
+        ceilCalc=b?`Max(200, ${obs}+200) = ${ceilAGL} ft AGL`:null;
+        notes.push("Transition corridors between assets: 100 ft AGL, sparsely populated, no non-company personnel/vehicles.");
+        notes.push("Must remain within controlled access area per CONOPS Site Selection Performance procedures.");
+    }else if(siteType==="construction"){
+        classification="Closed Access Construction Site Shielding";sp="SP 15";
+        const b=obs>0?obs+200:null;ceilAGL=b?Math.min(Math.max(200,b),400):200;
+        ceilFormula="200 ft AGL  OR  (obs height + 200 ft within 200 ft radius), max 400 ft AGL";
+        ceilCalc=b?`Max(200, ${obs}+200) = ${ceilAGL} ft AGL`:null;
+        notes.push("All persons in operational area must be related to the site (workers, engineers, maintainers).");
+        if(accessControl==="no")warnings.push("Access control required — site must be restricted from general public for this classification.");
+    }else if(siteType==="linear_above"){
+        classification="Long Range Linear Infrastructure Shielding";sp="SP 16";
+        const b=obs>0?obs+100:null;ceilAGL=b?Math.min(Math.max(100,b),400):100;
+        ceilFormula="100 ft AGL  OR  (obs height + 100 ft), max 400 ft AGL";
+        ceilCalc=b?`Max(100, ${obs}+100) = ${ceilAGL} ft AGL`:null;
+        notes.push("Lateral obstruction radius: 200 ft perpendicular to direction of flight.");
+        notes.push("Longitudinal obstruction radius: 500 ft along direction of flight.");
+    }else if(siteType==="linear_buried"){
+        classification="Buried Right of Way Non-Shielded";sp="SP 17";
+        ceilAGL=250;ceilFormula="250 ft AGL max · Must remain within 100 ft radius of ROW";
+        daaRequired=true;
+        warnings.push("DAA system (DO-381a / ASTM F3442) required and must be active and monitored during all operations.");
+    }else if(siteType==="facility"&&accessControl==="yes"){
+        classification="Closed Access Facility Shielding";sp="SP 15b";
+        const b=obs>0?obs+50:null;ceilAGL=b?Math.min(Math.max(100,b),400):100;
+        ceilFormula="100 ft AGL  OR  (obs height + 50 ft within 50 ft radius), max 400 ft AGL";
+        ceilCalc=b?`Max(100, ${obs}+50) = ${ceilAGL} ft AGL`:null;
+        notes.push("All persons must be related to the facility. Site must be restricted from general public.");
+    }else if(obstructions==="yes"){
+        classification="Standard Shielding";sp="SP 13";
+        const wD=daa==="yes",inc=wD?200:100;
+        const b=obs>0?obs+inc:null;ceilAGL=b?Math.min(Math.max(inc,b),400):inc;
+        ceilFormula=wD?`200 ft AGL  OR  (obs height + 200 ft within 200 ft radius), max 400 ft AGL  [DAA active]`:`100 ft AGL  OR  (obs height + 100 ft within 100 ft radius), max 400 ft AGL`;
+        ceilCalc=b?`Max(${inc}, ${obs}+${inc}) = ${ceilAGL} ft AGL`:null;
+        if(beyondOneSM==="yes"){voRequired=true;voReason="Flight beyond 1 SM from takeoff under Standard Shielding requires VOs continuously observing 2 SM radius airspace (SP 13d).";}
+        notes.push(`Obstruction radius: ${wD?200:100} ft from sUA.`);
+        if(beyondOneSM==="no")notes.push("Within 1 SM of takeoff — VO not required for airspace observation under SP 13d.");
+    }else if(daa==="yes"){
+        classification="Non-Shielded Operations (VO + DAA)";sp="SP 11";
+        ceilAGL=400;ceilFormula="400 ft AGL max";
+        voRequired=true;voReason="Non-shielded operations require VOs continuously observing 2 SM radius airspace.";
+        daaRequired=true;notes.push("DAA system must be active and observed by RPIC or Electronic Observer throughout flight.");
+    }else{
+        classification="Non-Shielded Baseline";sp="SP 12";
+        ceilAGL=200;ceilFormula="200 ft AGL max · Operations limited to 1 SM from takeoff";
+        warnings.push("Baseline non-shielded envelope — lowest altitude ceiling. If qualifying obstructions exist, re-classify as Standard Shielding for a higher ceiling.");
+    }
+    if(oop_oomv==="yes"){
+        if(publicArea==="yes"){
+            voRequired=true;
+            voReason=(voReason?voReason+" Additionally — ":"")+"§107.39/§107.145 OOP/OOMV in uncontrolled public area requires VO (SP 33).";
+        }else if(mitigations==="yes"){
+            notes.push("✓ Private property + documented mitigations (signage, controlled access, notification) — VO not required for transient OOP/OOMV per FAA ASI Arvay guidance (Jan 20, 2026).");
+        }else if(mitigations==="no"){
+            warnings.push("OOP/OOMV on private property without complete mitigations. Document signage + controlled access + advance notification, or deploy VO.");
+        }
+    }
+    return{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes};
+}
+
+function canAdvance(){
+    if(step===0)return!!answers.siteType;
+    if(step===1)return!!answers.accessControl&&!!answers.obstructions;
+    if(step===2)return answers.daa!==undefined&&answers.beyondOneSM!==undefined;
+    if(step===3)return answers.oop_oomv!==undefined;
+    return true;
+}
+
+function sel(k,v){answers[k]=v;render();}
+
+function opt(k,v,icon,label,desc=''){
+    const s=answers[k]===v;
+    return`<div class="opt${s?' sel':''}" onclick="sel('${k}','${v}')"><div class="opt-icon">${icon}</div><div><div class="opt-label">${label}</div>${desc?`<div class="opt-desc">${desc}</div>`:''}</div></div>`;
+}
+
+function infoBox(t){return`<div class="info-box">${t}</div>`;}
+
+function progress(){
+    return`<div class="progress-track">${STEPS.map((_,i)=>`<div class="progress-seg ${i<step?'done':i===step?'active':''}"></div>`).join('')}</div><div class="progress-meta">Step ${step+1} of ${STEPS.length} &nbsp;—&nbsp; ${STEPS[step]}</div>`;
+}
+
+function stepHTML(){
+    if(step===0)return`
+        <div class="step-q">What type of site is this?</div>
+        <div class="step-sub">Select the operational environment. This determines which Special Provision applies under CoW 107W-2025-04534.</div>
+        <div class="grid-1">${SITES.map(s=>opt('siteType',s.v,s.i,s.l,s.d)).join('')}</div>`;
+
+    if(step===1)return`
+        <div class="step-q">Access Control &amp; Obstructions</div>
+        <div class="step-sub">Shielding classifications require qualifying obstructions within the defined radius. Buildings, structures, trees, and terrain all qualify.</div>
+        <div class="field-group">
+            <span class="field-label">Is site access restricted from the general public?</span>
+            <div class="grid-2">${opt('accessControl','yes','🔒','Yes — Controlled Access','Secured entry, badges, fencing, etc.')}${opt('accessControl','no','🔓','No — Open to Public','Public roads, parks, open areas')}</div>
+        </div>
+        <div class="field-group">
+            <span class="field-label">Are qualifying shielding obstructions present?</span>
+            ${infoBox('Buildings, structures, trees, and terrain all qualify. Trees and natural terrain count as shielding per FAA ASI Arvay guidance.')}
+            <div class="grid-2">${opt('obstructions','yes','🏢','Yes — Obstructions Present','')}${opt('obstructions','no','🌅','No — Open / Unobstructed','')}</div>
+        </div>
+        ${answers.obstructions==='yes'?`<div class="field-group"><span class="field-label">Height of tallest obstruction (ft AGL) — optional</span><input class="field-input" type="number" placeholder="e.g. 45" value="${answers.obstHeight||''}" oninput="answers.obstHeight=this.value"/><div class="field-note">Used to calculate altitude ceiling. Leave blank to see formula only.</div></div>`:''}`;
+
+    if(step===2)return`
+        <div class="step-q">DAA System &amp; Flight Range</div>
+        <div class="step-sub">These two factors directly affect your altitude ceiling and Visual Observer requirement under the waiver.</div>
+        <div class="field-group">
+            <span class="field-label">Will an active DAA system be in use?</span>
+            ${infoBox('Active DAA (DO-381a / ASTM F3442) increases Standard Shielding ceiling from 100 ft to 200 ft AGL and enables Non-Shielded + DAA operations up to 400 ft AGL.')}
+            <div class="grid-2">${opt('daa','yes','📡','Yes — DAA Active','')}${opt('daa','no','—','No DAA System','')}</div>
+        </div>
+        <div class="field-group">
+            <span class="field-label">Will any flight segment exceed 1 SM from takeoff?</span>
+            <div class="grid-2">${opt('beyondOneSM','yes','↔️','Yes — Beyond 1 SM','')}${opt('beyondOneSM','no','📍','No — Within 1 SM','')}</div>
+        </div>`;
+
+    if(step===3)return`
+        <div class="step-q">OOP / OOMV Exposure</div>
+        <div class="step-sub">Operations Over People (§107.39) and Operations Over Moving Vehicles (§107.145) trigger SP 33 VO requirements in uncontrolled public areas.</div>
+        <div class="field-group">
+            <span class="field-label">Is any OOP or OOMV exposure anticipated?</span>
+            <div class="grid-2">${opt('oop_oomv','yes','👥','Yes','')}${opt('oop_oomv','no','✓','No','')}</div>
+        </div>
+        ${answers.oop_oomv==='yes'?`
+        <div class="field-group">
+            <span class="field-label">Is this exposure in an uncontrolled public area?</span>
+            ${infoBox('Public roads, sidewalks, parks = public area. Private property you or your client controls = private.')}
+            <div class="grid-2">${opt('publicArea','yes','🌐','Yes — Public Area','Streets, parks, public access')}${opt('publicArea','no','🏢','No — Private Property','Site you or client controls')}</div>
+        </div>
+        ${answers.publicArea==='no'?`
+        <div class="field-group">
+            <span class="field-label">Are all three mitigations documented and active?</span>
+            ${infoBox('Per FAA ASI Arvay (Jan 20, 2026): signage at entry points + controlled access + advance notification to site personnel removes VO requirement for transient OOP/OOMV on private property.')}
+            <div class="grid-2">${opt('mitigations','yes','✓','Yes — All Three Active','Signage + controlled access + notification')}${opt('mitigations','no','✗','No / Incomplete','Missing one or more mitigations')}</div>
+        </div>`:''}`:''}`
+    ;
+}
+
+function resultHTML(){
+    const r=classify();
+    const{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes}=r;
+    return`<div class="result-wrap">
+        <span class="sec-label">Classification Result</span>
+        <div class="result-card">
+            <div class="sp-badge">${sp}</div>
+            <div class="class-name">${classification}</div>
+            <div class="ceil-label">Maximum Altitude Ceiling</div>
+            <div><span class="ceil-value">${ceilAGL}</span><span class="ceil-unit">ft AGL max</span></div>
+            <hr class="divider">
+            <span class="sec-label">Altitude Formula</span>
+            <div class="formula-box">${ceilFormula}${ceilCalc?`<br><span class="formula-calc">→ ${ceilCalc}</span>`:''}</div>
+        </div>
+        ${warnings.length?`<span class="sec-label">⚠ Warnings</span>${warnings.map(w=>`<div class="warning-box">${w}</div>`).join('')}`:''}
+        <span class="sec-label">Operational Requirements</span>
+        <div class="req-card">
+            <div class="req-row"><div class="req-icon ${voRequired?'fail':'pass'}">${voRequired?'✗':'✓'}</div><div class="req-text"><strong>Visual Observer (VO):</strong><span>${voRequired?voReason:'Not required for this configuration.'}</span></div></div>
+            <div class="req-row"><div class="req-icon ${daaRequired?'fail':'pass'}">${daaRequired?'✗':'✓'}</div><div class="req-text"><strong>DAA System:</strong><span>${daaRequired?'Required — must be active and monitored throughout all operations.':'Not required (active DAA would increase Standard Shielding ceiling to 200 ft AGL).'}</span></div></div>
+        </div>
+        ${notes.length?`<span class="sec-label">Compliance Notes</span><div class="req-card">${notes.map(n=>`<div class="req-row"><div class="req-icon info">ℹ</div><div class="req-text"><span>${n}</span></div></div>`).join('')}</div>`:''}
+        <div class="cow-ref-box"><strong>Regulatory Authority:</strong> Certificate of Waiver 107W-2025-04534 — 14 CFR §107.31, §107.35, §107.39, §107.145 at 1:6 pilot-to-aircraft ratio. Nationwide authorization issued to Enhanced Patrol LLC.</div>
+        <button class="btn-reset" onclick="reset()">← Run Another Classification</button>
+    </div>`;
+}
+
+function render(){
+    document.getElementById('wizard').innerHTML=`${progress()}${stepHTML()}<div class="nav-row">${step>0?`<button class="btn-back" onclick="goBack()">← Back</button>`:''} ${step<STEPS.length-1?`<button class="btn-next" onclick="goNext()" ${canAdvance()?'':'disabled'}>Continue →</button>`:`<button class="btn-classify" onclick="showResult()" ${canAdvance()?'':'disabled'}>Classify Site</button>`}</div>`;
+}
+
+function goNext(){if(canAdvance()){step++;render();}}
+function goBack(){step--;render();}
+function showResult(){if(canAdvance()){document.getElementById('wizard').innerHTML=resultHTML();}}
+function reset(){step=0;answers={};render();}
+
+render();
+</script>
+</body>
+</html>

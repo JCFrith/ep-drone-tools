@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>BVLOS Site Assessment | Enhanced Patrol</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+@font-face{font-family:'Gotham Bold';font-weight:700;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Bold.ttf') format('truetype');}
+@font-face{font-family:'Gotham Book';font-weight:400;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Book.ttf') format('truetype');}
+@font-face{font-family:'Bebas Neue';src:url('https://enhancedpatrol.com/wp-content/uploads/elementor/google-fonts/fonts/bebasneue-97dafd13.woff2') format('woff2');}
+:root{--ep-navy:#0B1923;--ep-navy-card:#0f2233;--ep-navy-deep:#091520;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-white:#FFFFFF;--ep-gray:#9A9A9A;}
+*{margin:0;padding:0;box-sizing:border-box;}
+a{text-decoration:none;color:inherit;}
+body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ep-navy);color:var(--ep-white);line-height:1.6;-webkit-font-smoothing:antialiased;}
+
+/* ── HEADER ── */
+#site-header{background:var(--ep-navy);position:sticky;top:0;z-index:1000;border-bottom:3px solid var(--ep-gold);box-shadow:0 2px 20px rgba(0,0,0,0.4);}
+.header-inner{max-width:1280px;margin:0 auto;padding:0 40px;display:flex;align-items:center;justify-content:space-between;min-height:82px;}
+.header-logo img{width:185px;height:auto;display:block;}
+.header-nav{display:flex;align-items:center;list-style:none;}
+.header-nav>li{position:relative;}
+.header-nav>li>a{display:block;padding:28px 18px;color:var(--ep-white);font-family:'Gotham Book',sans-serif;font-size:0.9rem;font-weight:600;letter-spacing:1px;transition:color 0.25s;}
+.header-nav>li>a:hover{color:var(--ep-gold);}
+.dropdown{display:none;position:absolute;top:100%;left:0;background:var(--ep-navy-deep);min-width:260px;border-top:2px solid var(--ep-gold);z-index:999;}
+.header-nav>li:hover .dropdown{display:block;}
+.dropdown a{display:block;padding:11px 22px;color:var(--ep-white);font-family:'Gotham Book',sans-serif;font-size:0.83rem;border-bottom:1px solid rgba(255,255,255,0.04);transition:color 0.2s,background 0.2s;}
+.dropdown a:hover{color:var(--ep-gold);background:rgba(252,192,14,0.05);}
+.btn-header{display:flex;align-items:center;gap:8px;padding:13px 24px;border:1px solid var(--ep-gold);color:var(--ep-white);font-family:'Gotham Book',sans-serif;font-size:0.8rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;transition:background 0.25s,color 0.25s;white-space:nowrap;}
+.btn-header:hover{background:var(--ep-gold);color:var(--ep-navy);}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:10px 12px;background:var(--ep-gold);}
+.hamburger span{width:20px;height:2px;background:var(--ep-navy);display:block;}
+.mobile-nav{display:none;background:var(--ep-navy-deep);border-top:2px solid var(--ep-gold);}
+.mobile-nav.open{display:block;}
+.mobile-nav a{display:block;padding:13px 30px;color:var(--ep-white);font-family:'Gotham Book',sans-serif;font-size:0.88rem;border-bottom:1px solid rgba(255,255,255,0.05);}
+.mobile-nav a:hover{color:var(--ep-gold);}
+
+/* ── HERO ── */
+.page-hero{background:var(--ep-navy);padding:56px 40px 40px;text-align:center;border-bottom:1px solid rgba(252,192,14,0.15);}
+.breadcrumb{font-family:'Gotham Book',sans-serif;font-size:0.82rem;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);margin-bottom:14px;}
+.breadcrumb a{color:var(--ep-gray);transition:color 0.2s;} .breadcrumb a:hover{color:var(--ep-gold);}
+.breadcrumb span{color:var(--ep-gold);margin:0 6px;}
+.page-hero h1{font-family:'Bebas Neue',sans-serif;font-size:4.5rem;font-weight:700;letter-spacing:3.5px;color:var(--ep-white);line-height:1;margin-bottom:10px;}
+.page-hero-sub{font-family:'Gotham Book',sans-serif;color:var(--ep-gray);font-size:0.88rem;letter-spacing:1px;text-transform:uppercase;}
+
+/* ── MAIN ── */
+.main-container{max-width:900px;margin:0 auto;padding:36px 40px 64px;}
+
+/* ── PROGRESS ── */
+.progress-wrap{margin-bottom:28px;}
+.progress-info{display:flex;justify-content:space-between;font-size:0.75rem;color:var(--ep-gray);margin-bottom:6px;font-family:'Gotham Book',sans-serif;}
+.progress-track{height:6px;background:var(--ep-navy-deep);overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--ep-blue),var(--ep-gold));transition:width 0.3s;width:0%;}
+
+/* ── ACTION BAR ── */
+.action-bar{display:flex;gap:12px;justify-content:flex-end;margin-bottom:24px;}
+.action-btn{font-family:'Gotham Bold',sans-serif;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:13px 24px;border:none;cursor:pointer;transition:all 0.25s;display:inline-flex;align-items:center;gap:8px;}
+.action-btn.export{background:var(--ep-gold);color:var(--ep-navy);}
+.action-btn.export:hover{opacity:0.85;}
+.action-btn.clear{background:transparent;border:1px solid rgba(255,255,255,0.12);color:var(--ep-gray);}
+.action-btn.clear:hover{border-color:var(--ep-gold);color:var(--ep-gold);}
+
+/* ── SECTIONS ── */
+.section{background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.12);margin-bottom:16px;overflow:hidden;}
+.section-header{padding:18px 24px;cursor:pointer;display:flex;align-items:center;gap:14px;user-select:none;transition:background 0.15s;-webkit-tap-highlight-color:transparent;}
+.section-header:hover{background:rgba(252,192,14,0.03);}
+.section-num{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--ep-gold);min-width:36px;text-align:center;}
+.section-title{font-family:'Gotham Bold',sans-serif;font-weight:700;font-size:0.72rem;flex:1;text-transform:uppercase;letter-spacing:3px;color:var(--ep-white);}
+.section-progress{font-size:0.75rem;color:var(--ep-gray);white-space:nowrap;font-family:'Gotham Book',sans-serif;}
+.section-toggle{color:var(--ep-gray);font-size:1.2rem;transition:transform 0.2s;}
+.section.open .section-toggle{transform:rotate(180deg);}
+.section-body{display:none;padding:0 24px 24px;} .section.open .section-body{display:block;}
+
+/* ── FORMS ── */
+.field-group{margin-bottom:16px;}
+.field-group label,.fg-label{display:block;font-family:'Gotham Book',sans-serif;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);margin-bottom:7px;}
+input[type="text"],input[type="date"],input[type="number"],input[type="email"],input[type="tel"],textarea,select{
+  width:100%;padding:11px 14px;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,0.12);color:var(--ep-white);
+  font-family:'Gotham Book',sans-serif;font-size:0.92rem;border-radius:0;-webkit-appearance:none;transition:border-color 0.25s;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--ep-gold);}
+textarea{resize:vertical;min-height:60px;}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23FCC00E'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+@media(max-width:600px){.field-row,.field-row-3{grid-template-columns:1fr;}}
+
+/* ── CHECKS ── */
+.check-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.check-item:last-child{border-bottom:none;}
+.check-box{flex-shrink:0;width:28px;height:28px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;background:var(--ep-navy-deep);-webkit-tap-highlight-color:transparent;}
+.check-box:hover{border-color:var(--ep-gold);}
+.check-box.checked{background:var(--ep-gold);border-color:var(--ep-gold);}
+.check-box.checked::after{content:'✓';color:var(--ep-navy);font-size:16px;font-weight:700;}
+.check-box.na{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.08);}
+.check-box.na::after{content:'N/A';color:var(--ep-gray);font-size:7px;font-weight:700;letter-spacing:0.5px;}
+.check-text{font-size:0.88rem;color:var(--ep-white);flex:1;line-height:1.5;}
+.check-text.done{color:var(--ep-gray);text-decoration:line-through;}
+
+/* ── EVIDENCE ── */
+.evidence-panel{margin:4px 0 8px 40px;padding:12px 16px;background:var(--ep-navy-deep);border:1px solid rgba(252,192,14,0.12);display:none;}
+.evidence-panel.visible{display:block;}
+.evidence-panel .fg-label{margin-bottom:5px;font-size:0.68rem;}
+.evidence-panel input,.evidence-panel select,.evidence-panel textarea{font-size:0.85rem;padding:9px 12px;}
+
+/* ── PHOTOS ── */
+.photo-upload-area{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;}
+.photo-thumb{width:80px;height:80px;overflow:hidden;position:relative;border:1px solid rgba(252,192,14,0.12);}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;}
+.photo-thumb .remove-photo{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.8);color:#fff;border:none;width:22px;height:22px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.photo-add-btn{width:80px;height:80px;border:2px dashed rgba(252,192,14,0.25);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ep-gold);font-size:1.5rem;transition:border-color 0.15s;-webkit-tap-highlight-color:transparent;}
+.photo-add-btn:hover{border-color:var(--ep-gold);}
+
+/* ── CHECKBOX/RADIO GROUPS ── */
+.checkbox-group{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px;}
+.checkbox-opt{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.85rem;-webkit-tap-highlight-color:transparent;padding:4px 0;}
+.checkbox-mark{width:22px;height:22px;border:1px solid rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;transition:all 0.15s;background:var(--ep-navy-deep);}
+.checkbox-opt.selected .checkbox-mark{background:var(--ep-gold);border-color:var(--ep-gold);}
+.checkbox-opt.selected .checkbox-mark::after{content:'✓';color:var(--ep-navy);font-size:12px;font-weight:700;}
+
+/* ── SECTION NOTES ── */
+.section-notes{margin-top:14px;padding-top:14px;border-top:1px solid rgba(252,192,14,0.12);}
+.section-notes label{font-family:'Gotham Book',sans-serif;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);display:block;margin-bottom:7px;}
+
+/* ── C2 TABLE ── */
+.c2-table{width:100%;border-collapse:collapse;margin-top:8px;}
+.c2-table th{font-family:'Gotham Bold',sans-serif;font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);text-align:left;padding:8px;border-bottom:2px solid var(--ep-gold);background:var(--ep-navy-deep);}
+.c2-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.04);}
+.c2-table input,.c2-table select{width:100%;padding:8px 10px;font-size:0.82rem;}
+.c2-add-row{margin-top:10px;font-size:0.78rem;color:var(--ep-gold);cursor:pointer;display:inline-block;padding:4px 0;font-family:'Gotham Bold',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+
+/* ── MAP ── */
+.map-container{margin-bottom:16px;}
+.map-container>label{display:block;font-family:'Gotham Book',sans-serif;font-size:0.72rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);margin-bottom:7px;}
+.map-wrap{overflow:hidden;border:1px solid rgba(252,192,14,0.12);position:relative;}
+#locationMap{height:280px;width:100%;background:var(--ep-navy-deep);}
+.map-locate-btn{position:absolute;bottom:12px;right:12px;z-index:1000;background:var(--ep-gold);color:var(--ep-navy);border:none;padding:11px 18px;font-family:'Gotham Bold',sans-serif;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
+.map-locate-btn:hover{opacity:0.85;}
+.map-coords-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;margin-top:12px;align-items:end;}
+.btn-lookup{font-family:'Gotham Bold',sans-serif;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:11px 16px;background:var(--ep-dark-blue);color:var(--ep-white);border:none;cursor:pointer;white-space:nowrap;transition:background 0.25s;}
+.btn-lookup:hover{background:var(--ep-blue);}
+.map-hint{font-size:0.72rem;color:var(--ep-gray);margin-top:8px;}
+
+/* ── DIVIDER ── */
+.section-divider{height:1px;background:rgba(252,192,14,0.12);margin:18px 0;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--ep-gold);color:var(--ep-navy);padding:12px 24px;font-family:'Gotham Bold',sans-serif;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;z-index:9999;transition:transform 0.3s;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* ── FOOTER ── */
+#site-footer{background:var(--ep-navy);border-top:1px solid rgba(252,192,14,0.15);padding:64px 40px 0;}
+.footer-inner{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1.6fr 1.6fr;gap:48px;padding-bottom:48px;}
+.footer-brand-logo{width:165px;height:auto;margin-bottom:20px;display:block;}
+.footer-brand-desc{color:var(--ep-gray);font-size:0.86rem;line-height:1.75;margin-bottom:22px;}
+.footer-social{display:flex;gap:8px;margin-bottom:28px;}
+.footer-social a{width:36px;height:36px;background:var(--ep-dark-blue);border:1px solid var(--ep-dark-blue);display:flex;align-items:center;justify-content:center;color:var(--ep-white);font-size:0.8rem;transition:background 0.25s,border-color 0.25s,color 0.25s;}
+.footer-social a:hover{background:var(--ep-gold);border-color:var(--ep-gold);color:var(--ep-navy);}
+.footer-badge{display:flex;align-items:center;gap:12px;color:var(--ep-gray);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.5px;}
+.footer-badge img{width:52px;height:auto;}
+.footer-col h4{font-family:'Gotham Bold',sans-serif;font-size:0.82rem;font-weight:700;color:var(--ep-white);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:20px;}
+.footer-col ul{list-style:none;}
+.footer-col ul li{border-bottom:1px solid rgba(255,255,255,0.05);}
+.footer-col ul li a{display:flex;align-items:center;gap:8px;padding:9px 0;color:var(--ep-gray);font-size:0.84rem;transition:color 0.2s;}
+.footer-col ul li a::before{content:'\203A';color:var(--ep-gold);font-size:1rem;line-height:1;}
+.footer-col ul li a:hover{color:var(--ep-gold);}
+.footer-newsletter input[type="text"],.footer-newsletter input[type="email"]{width:100%;padding:10px 13px;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,0.1);color:var(--ep-white);font-family:'Gotham Book',sans-serif;font-size:0.84rem;margin-bottom:10px;border-radius:0;}
+.footer-newsletter input[type="text"]:focus,.footer-newsletter input[type="email"]:focus{outline:none;border-color:var(--ep-gold);}
+.footer-newsletter input[type="submit"]{width:100%;padding:12px;background:var(--ep-gold);color:var(--ep-navy);border:none;font-family:'Gotham Bold',sans-serif;font-size:0.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;cursor:pointer;transition:opacity 0.25s;}
+.footer-newsletter input[type="submit"]:hover{opacity:0.85;}
+.footer-bottom{max-width:1280px;margin:0 auto;padding:18px 0 20px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;}
+.footer-bottom-links{display:flex;gap:28px;}
+.footer-bottom-links a{color:var(--ep-gray);font-size:0.8rem;transition:color 0.2s;} .footer-bottom-links a:hover{color:var(--ep-gold);}
+.footer-bottom-copy{color:var(--ep-gray);font-size:0.75rem;text-align:right;} .footer-bottom-copy a{color:var(--ep-gold);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1024px){.header-nav,.header-cta-wrap{display:none;}.hamburger{display:flex;}.footer-inner{grid-template-columns:1fr 1fr;}}
+@media(max-width:768px){.header-inner{padding:0 20px;}.main-container{padding:28px 20px 48px;}#site-footer{padding:40px 20px 0;}.footer-inner{grid-template-columns:1fr;gap:32px;}.page-hero{padding:40px 20px 28px;}.page-hero h1{font-size:2.8rem;}.footer-bottom{flex-direction:column;gap:10px;}.footer-bottom-links{flex-wrap:wrap;gap:14px;}.footer-bottom-copy{text-align:center;}.map-coords-row{grid-template-columns:1fr 1fr;}.map-coords-row .btn-lookup{grid-column:1/-1;}}
+@media(max-width:480px){.page-hero h1{font-size:2.2rem;}}
+
+/* ── PRINT ── */
+.print-header{display:none;}
+.print-value{display:none;}
+.bottom-action-bar{max-width:900px;margin:0 auto;padding:0 40px 48px;display:flex;justify-content:flex-end;gap:12px;}
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important;}
+  body{background:#0B1923!important;color:#ffffff!important;}
+  #site-header,#site-footer,.no-print,.action-bar,.bottom-action-bar,.map-locate-btn,.btn-lookup,.map-hint,.photo-add-btn,.c2-add-row,.hamburger,.page-hero{display:none!important;}
+  .print-header{display:flex!important;align-items:center;justify-content:space-between;padding:20px 32px 16px;background:#0B1923!important;border-bottom:3px solid #FCC00E!important;margin-bottom:0;}
+  .print-header img{width:160px;height:auto;}
+  .print-header-title{text-align:right;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;color:#FCC00E!important;}
+  .print-header-sub{font-family:'Gotham Book',sans-serif;font-size:0.68rem;text-transform:uppercase;letter-spacing:1.5px;color:#9A9A9A!important;margin-top:3px;}
+  .main-container{padding:24px 32px 20px!important;}
+  .progress-wrap{display:none!important;}
+  .section{background:#0f2233!important;border:1px solid rgba(252,192,14,0.2)!important;break-inside:avoid;page-break-inside:avoid;margin-bottom:10px!important;}
+  .section-body{display:block!important;}
+  .section-toggle{display:none!important;}
+  .section-header{cursor:default!important;padding:12px 20px!important;}
+  .section-num{color:#FCC00E!important;}
+  .section-title{color:#ffffff!important;}
+  .section-progress{color:#9A9A9A!important;}
+  .check-item{border-bottom:1px solid rgba(255,255,255,0.04)!important;padding:6px 0!important;}
+  .check-box{border:1px solid rgba(255,255,255,0.15)!important;}
+  .check-box.checked{background:#FCC00E!important;border-color:#FCC00E!important;}
+  .check-box.checked::after{color:#0B1923!important;}
+  .check-box.na{background:rgba(255,255,255,0.1)!important;}
+  .check-text{color:#ffffff!important;font-size:0.82rem!important;}
+  .check-text.done{color:#9A9A9A!important;}
+  .evidence-panel{background:#091520!important;border:1px solid rgba(252,192,14,0.15)!important;margin-left:40px!important;}
+  .evidence-panel.visible{display:block!important;}
+  .evidence-panel:not(.visible){display:none!important;}
+  .fg-label{color:#9A9A9A!important;}
+  label{color:#9A9A9A!important;}
+  input,textarea,select{background:#091520!important;border:1px solid rgba(255,255,255,0.1)!important;color:#ffffff!important;}
+  .section-notes textarea{background:#091520!important;border:1px solid rgba(255,255,255,0.1)!important;color:#ffffff!important;}
+  .section-notes label{color:#9A9A9A!important;}
+  .section-divider{background:rgba(252,192,14,0.2)!important;}
+  .c2-table th{background:#091520!important;color:#9A9A9A!important;border-bottom:2px solid #FCC00E!important;}
+  .c2-table td{color:#ffffff!important;background:#0f2233!important;}
+  .photo-thumb{break-inside:avoid;page-break-inside:avoid;}
+  .photo-thumb .remove-photo{display:none!important;}
+  .checkbox-group{pointer-events:none;}
+  .checkbox-mark{border:1px solid rgba(255,255,255,0.15)!important;}
+  .checkbox-opt.selected .checkbox-mark{background:#FCC00E!important;border-color:#FCC00E!important;}
+  .checkbox-opt.selected .checkbox-mark::after{color:#0B1923!important;}
+  #locationMap{display:none!important;}
+  .map-wrap{display:none!important;}
+  .toast{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header id="site-header">
+  <div class="header-inner">
+    <a href="https://enhancedpatrol.com" class="header-logo"><img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol"></a>
+    <nav><ul class="header-nav">
+      <li><a href="https://enhancedpatrol.com/services/">Services &#9662;</a><div class="dropdown"><a href="https://enhancedpatrol.com/services/property-management-security-support/">Property Management</a><a href="https://enhancedpatrol.com/services/ctpat-assessments/">CTPAT Assessments</a><a href="https://enhancedpatrol.com/services/violence-prevention-consulting/">Violence Prevention</a><a href="https://enhancedpatrol.com/services/physical-security-services/">Physical Security Services</a><a href="https://enhancedpatrol.com/services/risk-assessments-mitigation/">Risk Assessments &amp; Mitigation</a><a href="https://enhancedpatrol.com/services/intelligence-investigative-services/">Intelligence &amp; Investigative Services</a><a href="https://enhancedpatrol.com/services/drone-security-program/">Drone Security Program</a><a href="https://enhancedpatrol.com/services/additional-services/">Additional Services</a></div></li>
+      <li><a href="https://enhancedpatrol.com/about-us/">About Us</a></li>
+      <li><a href="#">Resources &#9662;</a><div class="dropdown"><a href="https://enhancedpatrol.com/blog/">Blog</a><a href="https://enhancedpatrol.com/join-our-team/">Join Our Team</a><a href="https://enhancedpatrol.com/case-studies/">Case Studies</a></div></li>
+      <li><a href="https://enhancedpatrol.com/contact-us/">Contact Us</a></li>
+    </ul></nav>
+    <div class="header-cta-wrap"><a href="https://enhancedpatrol.com/contact-us/" class="btn-header"><svg width="13" height="13" viewBox="0 0 512 512" fill="currentColor"><path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/></svg>Get Started</a></div>
+    <div class="hamburger" onclick="document.getElementById('mobileNav').classList.toggle('open')"><span></span><span></span><span></span></div>
+  </div>
+  <nav id="mobileNav" class="mobile-nav">
+    <a href="https://enhancedpatrol.com/services/">Services</a>
+    <a href="https://enhancedpatrol.com/services/drone-security-program/" style="padding-left:46px;font-size:0.8rem;color:#FCC00E;">&#8250; Drone Security Program</a>
+    <a href="https://enhancedpatrol.com/about-us/">About Us</a>
+    <a href="https://enhancedpatrol.com/blog/">Blog</a>
+    <a href="https://enhancedpatrol.com/contact-us/">Contact Us</a>
+  </nav>
+</header>
+
+<!-- PRINT-ONLY HEADER -->
+<div class="print-header">
+    <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
+    <div>
+        <div class="print-header-title">BVLOS Site Assessment</div>
+        <div class="print-header-sub">Enhanced Patrol LLC &nbsp;&bull;&nbsp; enhancedpatrol.com &nbsp;&bull;&nbsp; Confidential</div>
+    </div>
+</div>
+
+<!-- HERO -->
+<section class="page-hero">
+  <p class="breadcrumb"><a href="https://enhancedpatrol.com">Home</a><span>›</span><a href="https://enhancedpatrol.com/services/drone-security-program/">Drone Security Program</a><span>›</span>Site Assessment</p>
+  <h1>BVLOS SITE ASSESSMENT</h1>
+  <p class="page-hero-sub">Nationwide BVLOS Waiver — Enhanced Patrol LLC</p>
+</section>
+
+<!-- MAIN -->
+<div class="main-container">
+  <div class="progress-wrap">
+    <div class="progress-info"><span id="progressLabel">0 of 0 items checked</span><span id="progressPct">0%</span></div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+  <div class="action-bar no-print">
+    <button class="action-btn clear" onclick="clearAll()">Clear All</button>
+    <button class="action-btn export" onclick="window.print()">Export / Print</button>
+  </div>
+  <div id="mainContent"></div>
+</div>
+
+<!-- BOTTOM ACTIONS -->
+<div class="bottom-action-bar no-print">
+  <button class="action-btn clear" onclick="clearAll()">Clear All</button>
+  <button class="action-btn export" onclick="window.print()">Export / Print</button>
+</div>
+
+<!-- FOOTER -->
+<footer id="site-footer">
+  <div class="footer-inner">
+    <div>
+      <a href="https://enhancedpatrol.com"><img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol" class="footer-brand-logo"></a>
+      <p class="footer-brand-desc">Enhanced Patrol LLC is a Nashville-based security and technology firm with a global reach. We are dedicated to protecting assets, personnel, and critical infrastructure both domestically and internationally.</p>
+      <div class="footer-social">
+        <a href="https://www.facebook.com/profile.php?id=61557108737285" target="_blank" aria-label="Facebook"><svg width="14" height="14" viewBox="0 0 512 512" fill="currentColor"><path d="M504 256C504 119 393 8 256 8S8 119 8 256c0 123.78 90.69 226.38 209.25 245V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14 0 55.52 4.84 55.52 4.84v61h-31.28c-30.8 0-40.41 19.12-40.41 38.73V256h68.78l-11 71.69h-57.78V501C413.31 482.38 504 379.78 504 256z"/></svg></a>
+        <a href="https://www.instagram.com/enhancedpatrol/" target="_blank" aria-label="Instagram"><svg width="14" height="14" viewBox="0 0 448 512" fill="currentColor"><path d="M224.1 141c-63.6 0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1 0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9 0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9 0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9 0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9 0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8 0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg></a>
+      </div>
+      <div class="footer-badge"><img src="https://enhancedpatrol.com/wp-content/uploads/2025/01/WhatsApp-Image-2025-01-24-at-21.35.07_0ef767f1.jpg" alt="SBA Veteran Owned"><span>SBA Veteran Owned Certified</span></div>
+    </div>
+    <div class="footer-col"><h4>Resources</h4><ul><li><a href="https://enhancedpatrol.com/blog/">Blog</a></li><li><a href="https://enhancedpatrol.com/join-our-team/">Join Our Team</a></li><li><a href="https://enhancedpatrol.com/case-studies/">Case Studies</a></li></ul></div>
+    <div class="footer-col"><h4>Our Services</h4><ul><li><a href="https://enhancedpatrol.com/services/property-management-security-support/">Property Management</a></li><li><a href="https://enhancedpatrol.com/services/violence-prevention-consulting/">Violence Prevention</a></li><li><a href="https://enhancedpatrol.com/services/physical-security-services/">Physical Security</a></li><li><a href="https://enhancedpatrol.com/services/risk-assessments-mitigation/">Risk Assessment &amp; Mitigation</a></li><li><a href="https://enhancedpatrol.com/services/intelligence-investigative-services/">Intelligence &amp; Investigation</a></li><li><a href="https://enhancedpatrol.com/services/drone-security-program/">Drone Security Program</a></li><li><a href="https://enhancedpatrol.com/services/additional-services/">Additional Services</a></li></ul></div>
+    <div class="footer-col"><h4>Subscribe to Our Newsletter</h4><div class="footer-newsletter"><input type="text" placeholder="First name"><input type="text" placeholder="Last name"><input type="email" placeholder="Email address"><input type="submit" value="Subscribe Now"></div></div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-bottom-links"><a href="https://enhancedpatrol.com/privacy-policy/">Privacy Policy</a><a href="#">Terms &amp; Service</a></div>
+    <p class="footer-bottom-copy">&copy; Copyright 2024 &mdash; All rights reserved.<br><small>Developed by <a href="https://multisitedev.com/">MultisiteDev</a></small></p>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ──
+const S={checks:{},fields:{},checkboxes:{},notes:{},photos:{},c2rows:[]};
+function defC2(){return[{segment:'',rssi:'',latency:'',packetLoss:'',result:''},{segment:'',rssi:'',latency:'',packetLoss:'',result:''},{segment:'',rssi:'',latency:'',packetLoss:'',result:''}];}
+try{const p=JSON.parse(localStorage.getItem('ep-sa-v4'));if(p){Object.assign(S,p);for(const k in S.checkboxes)if(Array.isArray(S.checkboxes[k]))S.checkboxes[k]=new Set(S.checkboxes[k]);}}catch(e){}
+if(!S.c2rows||!S.c2rows.length)S.c2rows=defC2();
+function save(){try{const s={...S,checkboxes:{}};for(const k in S.checkboxes)s.checkboxes[k]=[...S.checkboxes[k]];localStorage.setItem('ep-sa-v4',JSON.stringify(s));}catch(e){}}
+function esc(v){return(v||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function showToast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+function sixMonths(f){const d=f?new Date(f+'T00:00:00'):new Date();d.setMonth(d.getMonth()+6);return d.toISOString().split('T')[0];}
+
+// ── PHOTOS ──
+function compressImg(file,maxW,q){return new Promise(r=>{const rd=new FileReader();rd.onload=e=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');let w=img.width,h=img.height;if(w>maxW){h=h*maxW/w;w=maxW;}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);r(c.toDataURL('image/jpeg',q));};img.src=e.target.result;};rd.readAsDataURL(file);});}
+function addPhoto(key){const i=document.createElement('input');i.type='file';i.accept='image/*';i.capture='environment';i.onchange=async e=>{const f=e.target.files[0];if(!f)return;const c=await compressImg(f,1200,0.7);if(!S.photos[key])S.photos[key]=[];S.photos[key].push(c);save();renderPhotos(key);};i.click();}
+function removePhoto(key,idx){S.photos[key].splice(idx,1);save();renderPhotos(key);}
+function renderPhotos(key){const c=document.getElementById('photos-'+key);if(!c)return;const p=S.photos[key]||[];c.innerHTML=p.map((d,i)=>`<div class="photo-thumb"><img src="${d}"/><button class="remove-photo" onclick="removePhoto('${key}',${i})">×</button></div>`).join('')+`<div class="photo-add-btn" onclick="addPhoto('${key}')">+</div>`;}
+
+// ── SECTIONS ──
+const SECTIONS=[
+{id:'header',num:'—',title:'Site Information',open:true,checks:[],
+renderBody(body){body.innerHTML=`
+<div class="field-group"><label>Site Name / ID</label><input type="text" data-field="siteName" value="${esc(S.fields.siteName)}"/></div>
+<div class="map-container"><label>Location</label><div class="map-wrap"><div id="locationMap"></div><button class="map-locate-btn" onclick="locateMe()">📍 MY LOCATION</button></div>
+<div class="map-coords-row"><div class="field-group"><label>Latitude</label><input type="text" id="mapLat" data-field="mapLat" value="${esc(S.fields.mapLat)}" placeholder="e.g. 35.8456"/></div><div class="field-group"><label>Longitude</label><input type="text" id="mapLng" data-field="mapLng" value="${esc(S.fields.mapLng)}" placeholder="e.g. -86.3903"/></div><button class="btn-lookup" onclick="lookupCoords()">📍 LOOKUP</button></div>
+<div class="field-group" style="margin-top:12px;"><label>Address</label><input type="text" id="mapAddress" data-field="mapAddress" value="${esc(S.fields.mapAddress)}" placeholder="Auto-populates from coordinates, or enter manually"/></div>
+<div class="map-hint">Drag pin to adjust location. Tap "Lookup" after entering coordinates manually. Geolocation requires HTTPS.</div></div>
+<div class="field-row"><div class="field-group"><label>Assessment Date</label><input type="date" data-field="assessDate" value="${esc(S.fields.assessDate)}"/></div><div class="field-group"><label>Assessed By</label><input type="text" data-field="assessedBy" value="${esc(S.fields.assessedBy)}"/></div></div>
+<div class="field-row"><div class="field-group"><label>RPIC Reviewing</label><input type="text" data-field="rpicReviewing" value="${esc(S.fields.rpicReviewing)}"/></div><div class="field-group"><label>Launch Method</label><select data-field="launchMethod"><option value="">— Select —</option><option value="Tactical Deployment" ${S.fields.launchMethod==='Tactical Deployment'?'selected':''}>Tactical Deployment</option><option value="Dock Deployment" ${S.fields.launchMethod==='Dock Deployment'?'selected':''}>Dock Deployment</option><option value="Both" ${S.fields.launchMethod==='Both'?'selected':''}>Both</option></select></div></div>
+<div class="field-group"><label>Type of Operation</label><div class="checkbox-group" data-cbgroup="opType">${['Automated BVLOS','Shielded BVLOS','Non-Shielded BVLOS','Tactical BVLOS','Linear Infrastructure','OOP Exposure Expected','OOMV Exposure Expected'].map(o=>`<div class="checkbox-opt ${(S.checkboxes.opType||new Set()).has(o)?'selected':''}" data-val="${o}"><div class="checkbox-mark"></div><span>${o}</span></div>`).join('')}</div></div>`;
+bindFields(body);bindCBGroups(body);setTimeout(()=>initMap(),100);}},
+
+{id:'airspace',num:'1',title:'Airspace & Regulatory',checks:[
+{text:'Airspace classification confirmed',ev:'dropdown',options:['Class G','Class E-SFC','Class D','Class C','Class B']},
+{text:'Distance to nearest airport/heliport documented',ev:'dropdown',options:['Greater than 3 NM','Less than 3 NM']},
+{text:'All airports, heliports, ag operations, and military installations within 3 NM identified'},
+{text:'Notification letters prepared/sent for all facilities within 3 NM'},
+{text:'TFRs reviewed — none impacting operations'},{text:'NOTAMs reviewed — none affecting operations'},
+{text:'LAANC restrictions reviewed (if applicable)'},{text:'No restricted, prohibited, or special-use airspace conflicts'},
+{text:'Known low-altitude helicopter activity evaluated (LE / EMS / news / utility)',ev:'text',placeholder:'Activity observed or documented...'},
+{text:'Frequency of TFR activity assessed — not operationally disruptive'},
+{text:'Site falls within waiver-authorized airspace and altitude limits'}],notes:true},
+
+{id:'property',num:'2',title:'Property & Access Controls',checks:[
+{text:'Property boundaries confirmed (survey, plat, or client-provided)',ev:'photo',photoKey:'property_boundaries'},
+{text:'Controlled access verified (gates, fencing, security)',ev:'photo',photoKey:'access_control'},
+{text:'Signage plan for non-participant notification identified'},
+{text:'Client POC for property access and notifications identified',ev:'contact'},
+{text:'Adjacent property exposure assessed (overflight risk at boundaries)',ev:'text',placeholder:'Describe exposure...'},
+{text:'Public roads / sidewalks at perimeter identified and evaluated',ev:'text',placeholder:'Describe perimeter exposure...'}],notes:true},
+
+{id:'shielding',num:'3',title:'Shielding / Containment Assessment',checks:[
+{text:'Potential shielding features identified (buildings, terrain, containers, berms, trees)',ev:'photo',photoKey:'shielding_features'},
+{text:'Shielding heights measured or validated',ev:'number',placeholder:'Max height (ft)',fieldKey:'shieldMaxHeight'},
+{text:'Vertical containment validated (aircraft below obstacle height)'},
+{text:'Lateral containment validated (continuous or acceptable segments, ≤50 ft lateral)'},
+{text:'All unshielded segments identified and documented'},
+{text:'Unshielded segments within allowable limits OR VO requirement triggered'},
+{text:'Emergency descent paths remain within containment'},
+{text:'Dynamic shielding features flagged (vehicles, equipment, railcars)',ev:'text',placeholder:'Describe dynamic features...'},
+{text:'RTH path stays within shielding (if shielded classification)'},
+{text:'Shielded vs. non-shielded classification determination documented',ev:'dropdown',options:['Shielded','Non-Shielded','Mixed — documented per segment']}],notes:true},
+
+{id:'ground',num:'4',title:'Ground Risk Assessment',checks:[
+{text:'Launch zone identified',ev:'photo',photoKey:'launch_zone'},
+{text:'Launch/recovery areas pre-designated'},
+{text:'Dock pad condition assessed (if dock-based)',ev:'photo',photoKey:'dock_pad'},
+{text:'Manual launch area surface and clearance assessed (if Authorized Ground Personnel)',ev:'photo',photoKey:'manual_launch'},
+{text:'Line of sight from launch point to initial route segment confirmed'},
+{text:'Landing zone safe and accessible'},
+{text:'Emergency landing zone(s) identified within containment',ev:'photo',photoKey:'emergency_lz'},
+{text:'Multiple recovery options identified if primary unavailable',ev:'photo',photoKey:'recovery_options'},
+{text:'No overhead hazards at launch/land (power lines, cranes, lifts)'},
+{text:'Pedestrian flow patterns documented (business hours vs. off-hours)'},
+{text:'Vehicle movement patterns documented'},
+{text:'Parking lots, loading docks, active vehicle areas assessed',ev:'photo',photoKey:'vehicle_areas'},
+{text:'Industrial equipment (forklifts, lifts, cranes) activity assessed'},
+{text:'Construction activity evaluated'},{text:'Ground slope, debris, drainage, FOD hazards evaluated'},
+{text:'OOP/OOMV exposure zones identified',ev:'dropdown',options:['None','Low Risk','Medium Risk','High Risk']},
+{text:'Ground risk mitigations identified (altitude, time-of-day, corridor avoidance, PRS)',ev:'text',placeholder:'Describe mitigations or N/A...'},
+{text:'Seasonal variations considered'}],notes:true},
+
+{id:'rf',num:'5',title:'RF / C2 Environment & Validation',checks:[
+{text:'Cat 5/6 hardwired ethernet assessable at site (primary for dock C2)'},
+{text:'LTE/5G coverage adequate at launch and along entire route'},
+{text:'Starlink available or assessable'},
+{text:'RF interference sources identified (industrial, high-energy transmitters)',ev:'photo',photoKey:'rf_interference'},
+{text:'Metallic structures causing RF shadowing or multipath evaluated',ev:'photo',photoKey:'rf_shadowing'},
+{text:'Urban canyon / multipath conditions assessed',ev:'photo',photoKey:'rf_urban'},
+{text:'ROC/TOC communications tested'},
+{text:'Authorized Ground Personnel communications tested (if applicable)'},
+{text:'Dock network and sensor connectivity verified (if dock-based)'}],notes:true,custom:'c2validation'},
+
+{id:'obstacle',num:'6',title:'Obstacle & Terrain Survey',checks:[
+{text:'Obstacles mapped along intended route',ev:'photo',photoKey:'obstacles_route'},
+{text:'Terrain variations documented',ev:'photo',photoKey:'terrain'},
+{text:'Rooftop structures identified (HVAC, vents, antennas)',ev:'photo',photoKey:'rooftop'},
+{text:'Temporary structures checked (cranes, lifts, scaffolding)',ev:'photo',photoKey:'temp_structures'},
+{text:'Trees/vegetation evaluated for height and proximity',ev:'tree'},
+{text:'Wires/cables evaluated (power, comms, trolley)',ev:'photo',photoKey:'wires'},
+{text:'Dynamic obstacles assessed (delivery vehicles, work crews, lifts)',ev:'photo',photoKey:'dynamic_obs'},
+{text:'Outdated geospatial/imagery data risk evaluated'}],notes:true},
+
+{id:'geofence',num:'7',title:'Geofence & Containment Verification',checks:[
+{text:'Geofence covers entire operational area'},{text:'Geofence matches property lines / controlled access perimeter + max altitude'},
+{text:'Buffer for drift/contingencies included'},{text:'RTH path avoids obstacles and stays within containment'},
+{text:'RTH does not allow deviation outside operational volume'},
+{text:'Restricted polygons placed over ground-risk hotspots'},
+{text:'Polygon placement cross-checked against ground risk assessment'},
+{text:'Conformance monitoring/alerts functional'},
+{text:'Detailed annotated site image attached',ev:'photo',photoKey:'site_detail_image'}],notes:true},
+
+{id:'flightpath',num:'8',title:'Flight Path Validation',checks:[
+{text:'Routes preplanned with waypoints'},{text:'Entire route within validated containment'},
+{text:'Planned altitude documented',ev:'text',placeholder:'Altitude (ft AGL)...'},
+{text:'No exposure to unvalidated open airspace'},{text:'Emergency descent and landing routes validated'},
+{text:'No predicted conflict with ground activity or operational patterns'}],notes:true},
+
+{id:'notification',num:'9',title:'Notification, Documentation & Supporting Documents',checks:[
+{text:'3-NM facility notifications documented'},{text:'Flight Risk Assessment completed and documented'},
+{text:'Annotated site map screenshot attached (geofences, NFZs, shielding features with heights, operational volume)'},
+{text:'Copies of 3-NM notification letters attached'}],notes:true},
+
+{id:'risk',num:'10',title:'Site Risk Determination',checks:[
+{text:'Overall site risk level assigned',ev:'dropdown',options:['Low','Medium','High']},
+{text:'Risk mitigations documented',ev:'text',placeholder:'Describe mitigations...'},
+{text:'Unresolved risks flagged with required follow-up actions',ev:'text',placeholder:'Describe or N/A...'},
+{text:'Biannual reassessment date scheduled',ev:'autodate'},
+{text:'Conditions requiring re-assessment identified (infrastructure, staging, C2, construction)'}],notes:true,notesLabel:'Risk Mitigations & Follow-Up Actions'},
+
+{id:'approval',num:'11',title:'Site Approval Decision',checks:[],custom:'approval'},
+];
+
+// ── RENDER ──
+function render(){
+const main=document.getElementById('mainContent');main.innerHTML='';
+SECTIONS.forEach(sec=>{
+const div=document.createElement('div');div.className='section'+(sec.open?' open':'');div.dataset.id=sec.id;
+const checks=sec.checks||[];let total=checks.length,done=0;
+for(let i=0;i<total;i++){const v=S.checks[sec.id+'-'+i];if(v==='checked'||v==='na')done++;}
+div.innerHTML=`<div class="section-header" onclick="toggleSection('${sec.id}')"><div class="section-num">${sec.num}</div><div class="section-title">${sec.title}</div>${total?`<div class="section-progress">${done}/${total}</div>`:''}<div class="section-toggle">▾</div></div><div class="section-body" id="body-${sec.id}"></div>`;
+main.appendChild(div);const body=div.querySelector('.section-body');
+if(sec.renderBody){sec.renderBody(body);return;}
+checks.forEach((c,idx)=>{const key=sec.id+'-'+idx;const val=S.checks[key]||'';const wrap=document.createElement('div');
+wrap.innerHTML=`<div class="check-item"><div class="check-box ${val}" data-key="${key}"></div><div class="check-text ${val==='checked'?'done':''}">${c.text}</div></div>${renderEv(c,key,val==='checked')}`;
+wrap.querySelector('.check-box').addEventListener('click',()=>cycleCheck(key,c));body.appendChild(wrap);
+if(val==='checked'){if(c.ev==='photo')setTimeout(()=>renderPhotos(c.photoKey),10);if(c.ev==='tree')setTimeout(()=>renderPhotos('trees'),10);}});
+if(sec.custom==='c2validation'){const c2=document.createElement('div');c2.innerHTML=`<div class="section-divider"></div><div class="fg-label" style="margin-bottom:8px;">C2 VALIDATION TEST RESULTS</div><p style="font-size:0.78rem;color:var(--ep-gray);margin-bottom:10px;">Thresholds: RSSI ≥ −90 dBm | Latency ≤ 400ms | Packet Loss ≤ 5%</p><div style="overflow-x:auto;"><table class="c2-table"><thead><tr><th>Route Segment</th><th>RSSI Min (dBm)</th><th>Latency Max (ms)</th><th>Pkt Loss (%)</th><th>Result</th></tr></thead><tbody id="c2Body"></tbody></table></div><div class="c2-add-row" onclick="addC2Row()">+ ADD SEGMENT</div><div class="field-row" style="margin-top:14px;"><div class="field-group"><label>Test Date</label><input type="date" data-field="c2TestDate" value="${esc(S.fields.c2TestDate)}"/></div><div class="field-group"><label>Tested By</label><input type="text" data-field="c2TestedBy" value="${esc(S.fields.c2TestedBy)}"/></div></div><div class="field-group"><label>Environmental Conditions During Test</label><textarea data-field="c2Environment" placeholder="Weather, time of day, interference sources...">${esc(S.fields.c2Environment)}</textarea></div><div class="field-group"><label>C2 Validation Overall Result</label><select data-field="c2OverallResult"><option value="">— Select —</option><option value="PASS" ${S.fields.c2OverallResult==='PASS'?'selected':''}>PASS</option><option value="FAIL" ${S.fields.c2OverallResult==='FAIL'?'selected':''}>FAIL</option><option value="CONDITIONAL" ${S.fields.c2OverallResult==='CONDITIONAL'?'selected':''}>CONDITIONAL — retest required</option></select></div>`;body.appendChild(c2);renderC2Table();bindFields(c2);}
+if(sec.custom==='approval'){if(!S.fields.approvalDate)S.fields.approvalDate=new Date().toISOString().split('T')[0];const ad=document.createElement('div');ad.innerHTML=`<div class="field-group"><label>Approval Decision</label><select data-field="approvalDecision" id="approvalSelect"><option value="">— Select —</option><option value="APPROVED" ${S.fields.approvalDecision==='APPROVED'?'selected':''}>Approved — No Restrictions</option><option value="CONDITIONAL" ${S.fields.approvalDecision==='CONDITIONAL'?'selected':''}>Approved with Conditions</option><option value="NOT APPROVED" ${S.fields.approvalDecision==='NOT APPROVED'?'selected':''}>Not Approved</option></select></div><div class="field-group" id="approvalCondWrap" style="display:${S.fields.approvalDecision==='CONDITIONAL'?'block':'none'}"><label>Conditions</label><textarea data-field="approvalConditions" placeholder="List conditions...">${esc(S.fields.approvalConditions)}</textarea></div><div class="field-group" id="approvalReasonWrap" style="display:${S.fields.approvalDecision==='NOT APPROVED'?'block':'none'}"><label>Reasons for Non-Approval</label><textarea data-field="approvalReasons" placeholder="List reasons...">${esc(S.fields.approvalReasons)}</textarea></div><div class="field-row"><div class="field-group"><label>Approving RPIC</label><input type="text" data-field="approverName" value="${esc(S.fields.approverName)}"/></div><div class="field-group"><label>Date</label><input type="date" data-field="approvalDate" value="${esc(S.fields.approvalDate)}"/></div></div>`;body.appendChild(ad);bindFields(ad);ad.querySelector('#approvalSelect').addEventListener('change',function(){document.getElementById('approvalCondWrap').style.display=this.value==='CONDITIONAL'?'block':'none';document.getElementById('approvalReasonWrap').style.display=this.value==='NOT APPROVED'?'block':'none';});}
+if(sec.notes){const nd=document.createElement('div');nd.className='section-notes';nd.innerHTML=`<label>${sec.notesLabel||'Notes'}</label><textarea data-note="${sec.id}" placeholder="Enter notes...">${esc(S.notes[sec.id])}</textarea>`;nd.querySelector('textarea').addEventListener('input',function(){S.notes[sec.id]=this.value;save();});body.appendChild(nd);}});
+updateProgress();}
+
+function renderEv(c,key,visible){
+if(!c.ev)return'';const eKey='ev-'+key;const vis=visible?'visible':'';
+if(c.ev==='text')return`<div class="evidence-panel ${vis}" data-evfor="${key}"><div class="fg-label">Findings</div><input type="text" data-field="${eKey}" value="${esc(S.fields[eKey])}" placeholder="${c.placeholder||''}"/></div>`;
+if(c.ev==='number')return`<div class="evidence-panel ${vis}" data-evfor="${key}"><div class="fg-label">${c.placeholder||'Value'}</div><input type="number" data-field="${c.fieldKey||eKey}" value="${esc(S.fields[c.fieldKey||eKey])}" placeholder="${c.placeholder||''}"/></div>`;
+if(c.ev==='dropdown')return`<div class="evidence-panel ${vis}" data-evfor="${key}"><div class="fg-label">Selection</div><select data-field="${eKey}"><option value="">— Select —</option>${c.options.map(o=>`<option value="${o}" ${S.fields[eKey]===o?'selected':''}>${o}</option>`).join('')}</select></div>`;
+if(c.ev==='photo')return`<div class="evidence-panel ${vis}" data-evfor="${key}"><div class="fg-label">Photos</div><div class="photo-upload-area" id="photos-${c.photoKey}"></div></div>`;
+if(c.ev==='contact')return`<div class="evidence-panel ${vis}" data-evfor="${key}"><div class="fg-label">Client POC</div><div class="field-row-3"><input type="text" data-field="pocName" value="${esc(S.fields.pocName)}" placeholder="Name"/><input type="tel" data-field="pocPhone" value="${esc(S.fields.pocPhone)}" placeholder="Phone"/><input type="email" data-field="pocEmail" value="${esc(S.fields.pocEmail)}" placeholder="Email"/></div></div>`;
+if(c.ev==='tree')return`<div class="evidence-panel ${vis}" data-evfor="${key}"><div class="fg-label">Photos</div><div class="photo-upload-area" id="photos-trees"></div><div class="field-row" style="margin-top:8px;"><div><div class="fg-label">Max Height (ft)</div><input type="number" data-field="treeMaxHeight" value="${esc(S.fields.treeMaxHeight)}" placeholder="Height"/></div><div><div class="fg-label">Proximity to Route (ft)</div><input type="number" data-field="treeProximity" value="${esc(S.fields.treeProximity)}" placeholder="Distance"/></div></div></div>`;
+if(c.ev==='autodate'){const auto=S.fields.reassessDate||(S.fields.assessDate?sixMonths(S.fields.assessDate):sixMonths());if(!S.fields.reassessDate){S.fields.reassessDate=auto;save();}return`<div class="evidence-panel ${vis}" data-evfor="${key}"><div class="fg-label">Reassessment Date (auto: 6 months)</div><input type="date" data-field="reassessDate" value="${esc(S.fields.reassessDate)}"/></div>`;}
+return'';}
+
+function cycleCheck(key,c){const cur=S.checks[key]||'';if(!cur)S.checks[key]='checked';else if(cur==='checked')S.checks[key]='na';else S.checks[key]='';save();
+const box=document.querySelector(`.check-box[data-key="${key}"]`);if(box){const v=S.checks[key]||'';box.className='check-box '+v;const t=box.nextElementSibling;if(t)t.className='check-text'+(v==='checked'?' done':'');}
+const ep=document.querySelector(`[data-evfor="${key}"]`);if(ep){const show=S.checks[key]==='checked';ep.classList.toggle('visible',show);if(show){bindFields(ep);if(c&&c.ev==='photo')setTimeout(()=>renderPhotos(c.photoKey),10);if(c&&c.ev==='tree')setTimeout(()=>renderPhotos('trees'),10);}}
+const sid=key.split('-')[0];const sec=SECTIONS.find(s=>s.id===sid);if(sec&&sec.checks){let d=0;sec.checks.forEach((_,i)=>{const v=S.checks[sid+'-'+i];if(v==='checked'||v==='na')d++;});const sp=document.querySelector(`.section[data-id="${sid}"] .section-progress`);if(sp)sp.textContent=`${d}/${sec.checks.length}`;}updateProgress();}
+
+function toggleSection(id){document.querySelector(`.section[data-id="${id}"]`).classList.toggle('open');}
+function updateProgress(){let t=0,d=0;SECTIONS.forEach(s=>(s.checks||[]).forEach((_,i)=>{t++;const v=S.checks[s.id+'-'+i];if(v==='checked'||v==='na')d++;}));const p=t?Math.round(d/t*100):0;document.getElementById('progressLabel').textContent=`${d} of ${t} items checked`;document.getElementById('progressPct').textContent=p+'%';document.getElementById('progressFill').style.width=p+'%';}
+function bindFields(c){c.querySelectorAll('[data-field]').forEach(el=>{const h=()=>{S.fields[el.dataset.field]=el.value;save();};el.addEventListener('input',h);el.addEventListener('change',h);});}
+function bindCBGroups(c){c.querySelectorAll('.checkbox-group[data-cbgroup]').forEach(g=>{const gid=g.dataset.cbgroup;if(!S.checkboxes[gid])S.checkboxes[gid]=new Set();g.querySelectorAll('.checkbox-opt').forEach(o=>{o.addEventListener('click',()=>{const v=o.dataset.val;if(S.checkboxes[gid].has(v)){S.checkboxes[gid].delete(v);o.classList.remove('selected');}else{S.checkboxes[gid].add(v);o.classList.add('selected');}save();});});});}
+function renderC2Table(){const tb=document.getElementById('c2Body');if(!tb)return;tb.innerHTML=S.c2rows.map((r,i)=>`<tr><td><input value="${esc(r.segment)}" data-c2="${i}" data-c2f="segment" placeholder="Segment ${i+1}"/></td><td><input value="${esc(r.rssi)}" data-c2="${i}" data-c2f="rssi" type="number" placeholder="-82"/></td><td><input value="${esc(r.latency)}" data-c2="${i}" data-c2f="latency" type="number" placeholder="210"/></td><td><input value="${esc(r.packetLoss)}" data-c2="${i}" data-c2f="packetLoss" type="number" step="0.1" placeholder="1.2"/></td><td><select data-c2="${i}" data-c2f="result"><option value="">—</option><option value="PASS" ${r.result==='PASS'?'selected':''}>PASS</option><option value="FAIL" ${r.result==='FAIL'?'selected':''}>FAIL</option></select></td></tr>`).join('');tb.querySelectorAll('[data-c2]').forEach(el=>{const h=()=>{S.c2rows[+el.dataset.c2][el.dataset.c2f]=el.value;save();};el.addEventListener('input',h);el.addEventListener('change',h);});}
+function addC2Row(){S.c2rows.push({segment:'',rssi:'',latency:'',packetLoss:'',result:''});save();renderC2Table();}
+function clearAll(){if(!confirm('Clear ALL data including photos? Cannot be undone.'))return;Object.keys(S).forEach(k=>{if(k==='c2rows')S[k]=defC2();else if(typeof S[k]==='object'&&S[k]!==null)S[k]={};else S[k]=null;});localStorage.removeItem('ep-sa-v4');render();showToast('Assessment cleared');}
+
+// ── MAP ──
+let lMap=null,lMarker=null;
+function initMap(){const el=document.getElementById('locationMap');if(!el)return;if(lMap){lMap.remove();lMap=null;lMarker=null;}const lat=parseFloat(S.fields.mapLat)||35.71,lng=parseFloat(S.fields.mapLng)||-86.40;const has=S.fields.mapLat&&S.fields.mapLng;lMap=L.map('locationMap',{center:[lat,lng],zoom:has?17:10,zoomControl:true,attributionControl:false});L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20}).addTo(lMap);const ic=mkIc();if(has){lMarker=L.marker([lat,lng],{draggable:true,icon:ic}).addTo(lMap);bDrag();}lMap.on('click',e=>{if(!lMarker){lMarker=L.marker([e.latlng.lat,e.latlng.lng],{draggable:true,icon:mkIc()}).addTo(lMap);bDrag();}else lMarker.setLatLng(e.latlng);updCoords(e.latlng.lat,e.latlng.lng);});}
+function mkIc(){return L.divIcon({className:'',html:'<div style="width:30px;height:30px;position:relative;"><div style="width:20px;height:20px;background:#FCC00E;border:3px solid #164998;border-radius:50%;position:absolute;top:0;left:5px;box-shadow:0 2px 6px rgba(0,0,0,0.5);"></div><div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:10px solid #164998;position:absolute;top:17px;left:9px;"></div></div>',iconSize:[30,30],iconAnchor:[15,30]});}
+function bDrag(){lMarker.on('dragend',()=>{const p=lMarker.getLatLng();updCoords(p.lat,p.lng);});}
+function updCoords(lat,lng){S.fields.mapLat=lat.toFixed(6);S.fields.mapLng=lng.toFixed(6);save();const le=document.getElementById('mapLat'),lo=document.getElementById('mapLng');if(le)le.value=S.fields.mapLat;if(lo)lo.value=S.fields.mapLng;revGeo(lat,lng);}
+function locateMe(){if(!navigator.geolocation){showToast('Geolocation not available');return;}if(location.protocol!=='https:'&&location.hostname!=='localhost'){showToast('Geolocation requires HTTPS — use Lookup or drag pin');return;}showToast('Getting location...');navigator.geolocation.getCurrentPosition(p=>{const lat=p.coords.latitude,lng=p.coords.longitude;S.fields.mapLat=lat.toFixed(6);S.fields.mapLng=lng.toFixed(6);save();const le=document.getElementById('mapLat'),lo=document.getElementById('mapLng');if(le)le.value=S.fields.mapLat;if(lo)lo.value=S.fields.mapLng;if(lMap){lMap.setView([lat,lng],17);if(!lMarker){lMarker=L.marker([lat,lng],{draggable:true,icon:mkIc()}).addTo(lMap);bDrag();}else lMarker.setLatLng([lat,lng]);}revGeo(lat,lng);showToast('Location found');},err=>showToast('Location error: '+err.message),{enableHighAccuracy:true,timeout:15000});}
+function lookupCoords(){const lat=parseFloat(S.fields.mapLat),lng=parseFloat(S.fields.mapLng);if(isNaN(lat)||isNaN(lng)){showToast('Enter valid coordinates first');return;}if(lMap){lMap.setView([lat,lng],17);if(!lMarker){lMarker=L.marker([lat,lng],{draggable:true,icon:mkIc()}).addTo(lMap);bDrag();}else lMarker.setLatLng([lat,lng]);}revGeo(lat,lng);showToast('Looking up address...');}
+let gTO=null;function revGeo(lat,lng){clearTimeout(gTO);gTO=setTimeout(()=>{fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,{headers:{'Accept-Language':'en'}}).then(r=>r.json()).then(d=>{if(d&&d.address){const a=d.address;const parts=[];if(a.house_number&&a.road)parts.push(a.house_number+' '+a.road);else if(a.road)parts.push(a.road);if(a.city||a.town||a.village)parts.push(a.city||a.town||a.village);if(a.state)parts.push(a.state);if(a.postcode)parts.push(a.postcode);const addr=parts.join(', ')||d.display_name||'';S.fields.mapAddress=addr;save();const el=document.getElementById('mapAddress');if(el)el.value=addr;}}).catch(()=>{});},500);}
+
+// Open all sections before print so content is visible
+window.addEventListener('beforeprint',()=>{document.querySelectorAll('.section').forEach(s=>s.classList.add('open'));});
+
+render();
+</script>
+</body>
+</html>
