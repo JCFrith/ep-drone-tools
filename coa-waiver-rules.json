@@ -1,24 +1,7 @@
 {
-  "version": "2.1",
+  "version": "2.3",
   "certificate": "107W-2025-04534",
-  "basis": "Reconciled line by line against Certificate of Waiver 107W-2025-04534 as issued, effective 14 JAN 2026. Pending amendments to SP 20, SP 23, SP 33 and SP 36 are NOT reflected and must not be relied on. Rules reference stable semantic check keys, never positional indices. Renumbering a form cannot break this matrix. Version 2.1: VO-001 applies only where the site is not closed or restricted access, per verbal FAA interpretation. COND-VO-CONTROLLED records the basis on every assessment that relies on it. Written confirmation is outstanding.",
-  "openItems": [
-    {
-      "provision": "SP 13(b)",
-      "issue": "States an altitude above obstructions but no lateral radius. Peer certificates state 100 ft.",
-      "handling": "No radius is assumed. SHLD-005 requires the assessor to record the constraint as unresolved."
-    },
-    {
-      "provision": "SP 12",
-      "issue": "Captioned 'using VO(s) and or DAA'. No configuration without either is described.",
-      "handling": "CLS-005 blocks approval for non-shielded operations with neither mitigation."
-    },
-    {
-      "provision": "SP 33",
-      "issue": "States no exception for closed or restricted access sites.",
-      "handling": "Applied per verbal FAA interpretation: VO required only on sites that are not closed or restricted access. Written confirmation outstanding. Reverts to the text as written if the answer differs."
-    }
-  ],
+  "basis": "Reconciled against Certificate of Waiver 107W-2025-04534 as issued, effective 14 JAN 2026. Version 2.2 applies Enhanced Patrol operating interpretations for SP 12, SP 13(b), SP 23 and SP 33, documented under interpretations in this file and emitted as operating conditions on any assessment that relies on them.",
   "decisions": {
     "approvedWithConditions": "APPROVED WITH CONDITIONS",
     "notApproved": "NOT APPROVED",
@@ -140,12 +123,40 @@
         "value": "Yes"
       },
       "when": {
-        "type": "numberGreaterThan",
-        "field": "mtow",
-        "value": 0.88
+        "type": "allOf",
+        "of": [
+          {
+            "type": "numberGreaterThan",
+            "field": "mtow",
+            "value": 0.88
+          },
+          {
+            "type": "anyOf",
+            "of": [
+              {
+                "type": "fieldEquals",
+                "field": "oopExpected",
+                "value": "Yes"
+              },
+              {
+                "type": "fieldIn",
+                "field": "oomvMode",
+                "values": [
+                  "transient",
+                  "sustained"
+                ]
+              },
+              {
+                "type": "fieldNotEquals",
+                "field": "closedAccess",
+                "value": "Yes"
+              }
+            ]
+          }
+        ]
       },
       "label": "PRS fitted",
-      "failReason": "Aircraft over 0.88 lb must be equipped and operated with a PRS conforming to ASTM F3322-18 or newer.",
+      "failReason": "Aircraft over 0.88 lb operating over people, over occupied moving vehicles, or at a site that is not closed or restricted access must be equipped with a PRS conforming to ASTM F3322-18 or newer.",
       "correctiveAction": "Fit a conforming PRS. SP 23 as issued is not scoped by mission type."
     },
     {
@@ -158,9 +169,37 @@
         "field": "prsMinAlt"
       },
       "when": {
-        "type": "numberGreaterThan",
-        "field": "mtow",
-        "value": 0.88
+        "type": "allOf",
+        "of": [
+          {
+            "type": "numberGreaterThan",
+            "field": "mtow",
+            "value": 0.88
+          },
+          {
+            "type": "anyOf",
+            "of": [
+              {
+                "type": "fieldEquals",
+                "field": "oopExpected",
+                "value": "Yes"
+              },
+              {
+                "type": "fieldIn",
+                "field": "oomvMode",
+                "values": [
+                  "transient",
+                  "sustained"
+                ]
+              },
+              {
+                "type": "fieldNotEquals",
+                "field": "closedAccess",
+                "value": "Yes"
+              }
+            ]
+          }
+        ]
       },
       "label": "PRS minimum deployment altitude",
       "failReason": "PRS minimum deployment altitude has not been recorded.",
@@ -372,8 +411,8 @@
         "value": "continuous"
       },
       "label": "Non-shielded mitigation present",
-      "failReason": "Non-shielded operation planned with neither DAA nor a Visual Observer. SP 12 is captioned 'using VO(s) and or DAA' and describes no configuration without either.",
-      "correctiveAction": "Assign a Visual Observer or use an active DAA system, or select a route with continuous shielding. Do not fly this profile."
+      "failReason": "Non-shielded with neither DAA nor a Visual Observer. This is not an operation under this waiver.",
+      "correctiveAction": "Conduct the flight under standard Part 107 within visual line of sight, or reclassify as SP 13 shielded at 100 ft AGL or 100 ft above the obstruction. Assign a VO or use DAA to fly it non-shielded."
     },
     {
       "id": "CLS-006",
@@ -510,9 +549,12 @@
       "severity": "needsProgramReview",
       "provision": "SP 12(c), SP 13(d)",
       "test": {
-        "type": "fieldEquals",
+        "type": "fieldIn",
         "field": "vo2sm",
-        "value": "Yes"
+        "values": [
+          "Yes",
+          "N/A"
+        ]
       },
       "when": {
         "type": "numberAtLeast",
@@ -520,7 +562,7 @@
         "value": 1
       },
       "label": "VO count sufficient for 2 SM",
-      "failReason": "VO count sufficient to continuously observe a 2 statute mile radius has not been confirmed.",
+      "failReason": "VO coverage of a 2 statute mile radius has not been confirmed or marked not applicable.",
       "correctiveAction": "Confirm the number of VOs is sufficient for continuous 2 SM coverage, or add VOs."
     },
     {
@@ -833,8 +875,8 @@
         "key": "shield.radius"
       },
       "label": "Lateral constraint addressed",
-      "failReason": "The applicable lateral constraint has not been addressed.",
-      "correctiveAction": "Confirm the radius for SP 14 or SP 15, or record SP 13(b) as unresolved. Do not assume a radius for SP 13."
+      "failReason": "The applicable lateral constraint has not been confirmed.",
+      "correctiveAction": "Confirm the lateral radius for the governing provision: 100 ft under SP 13 (200 ft with DAA), 200 ft under SP 14, 200 ft perpendicular and 500 ft along track under SP 15."
     },
     {
       "id": "SHLD-006",
@@ -1598,7 +1640,7 @@
           }
         ]
       },
-      "text": "SP 13(b) states no lateral radius in this certificate. No radius has been assumed. Operate within the defined operational area under SP 13(c) and escalate any route that would depend on an assumed radius."
+      "text": "Standard shielding lateral constraint is applied at the same distance as the vertical figure: 100 ft from the controlling obstruction, 200 ft where DAA is used. SP 13(b) states no radius on its face."
     },
     {
       "id": "COND-SP13-RANGE",
@@ -1644,7 +1686,7 @@
         "field": "shieldContinuity",
         "value": "continuous"
       },
-      "text": "Non-shielded operations require an active DAA system or sufficient Visual Observers. Where DAA coverage is compromised at this site the ceiling is 200 ft AGL."
+      "text": "Non-shielded operations require an active DAA system or sufficient Visual Observers. With neither, the flight is not conducted under this waiver. Where DAA coverage is compromised the ceiling is 200 ft AGL."
     },
     {
       "id": "COND-DAA",
@@ -1656,11 +1698,71 @@
       "text": "DAA coverage is compromised at this site. Operations are limited to 200 ft AGL."
     },
     {
+      "id": "COND-PRS-SCOPED",
+      "when": {
+        "type": "allOf",
+        "of": [
+          {
+            "type": "numberGreaterThan",
+            "field": "mtow",
+            "value": 0.88
+          },
+          {
+            "type": "fieldEquals",
+            "field": "closedAccess",
+            "value": "Yes"
+          },
+          {
+            "type": "fieldEquals",
+            "field": "oopExpected",
+            "value": "No"
+          },
+          {
+            "type": "fieldIn",
+            "field": "oomvMode",
+            "values": [
+              "none",
+              ""
+            ]
+          }
+        ]
+      },
+      "text": "PRS is not being carried on the basis that the operation is on a closed or restricted access site with no operations over people or occupied moving vehicles. SP 23 as issued requires PRS for all aircraft over 0.88 lb without that qualification; mission scoping is pending amendment language. The RPIC must record this basis in the approval decision and reassess if exposure changes in flight."
+    },
+    {
       "id": "COND-PRS",
       "when": {
-        "type": "numberGreaterThan",
-        "field": "mtow",
-        "value": 0.88
+        "type": "allOf",
+        "of": [
+          {
+            "type": "numberGreaterThan",
+            "field": "mtow",
+            "value": 0.88
+          },
+          {
+            "type": "anyOf",
+            "of": [
+              {
+                "type": "fieldEquals",
+                "field": "oopExpected",
+                "value": "Yes"
+              },
+              {
+                "type": "fieldIn",
+                "field": "oomvMode",
+                "values": [
+                  "transient",
+                  "sustained"
+                ]
+              },
+              {
+                "type": "fieldNotEquals",
+                "field": "closedAccess",
+                "value": "Yes"
+              }
+            ]
+          }
+        ]
       },
       "text": "A conforming PRS must be armed and safety checked before flight, and the PRS operator manual carried."
     },
@@ -1755,6 +1857,28 @@
         "contains": "Medium"
       },
       "text": "Medium risk site mitigations must be briefed, documented, and verified by the RPIC before each flight."
+    }
+  ],
+  "interpretations": [
+    {
+      "provision": "SP 13(b)",
+      "issue": "States an altitude above obstructions but no lateral radius on its face.",
+      "handling": "EP applies the lateral radius at the same distance as the vertical figure: 100 ft, or 200 ft where DAA is used."
+    },
+    {
+      "provision": "SP 12",
+      "issue": "Captioned 'using VO(s) and or DAA'. No configuration without either is described.",
+      "handling": "EP treats a non-shielded profile with neither as outside the waiver: fly it under standard Part 107 VLOS, or reclassify as SP 13 shielded at 100 ft / 100 ft."
+    },
+    {
+      "provision": "SP 33",
+      "issue": "States no exception for closed or restricted access sites.",
+      "handling": "EP requires a VO for operations over people or occupied moving vehicles at sites that are not closed or restricted access. No VO is required where there is no such exposure, regardless of site access."
+    },
+    {
+      "provision": "SP 23",
+      "issue": "Requires PRS for all aircraft over 0.88 lb, without mission scoping.",
+      "handling": "EP scopes PRS to operations over people, over occupied moving vehicles, or at sites that are not closed or restricted access. This follows pending amendment language rather than the text as issued. Written confirmation outstanding."
     }
   ]
 }
