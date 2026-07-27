@@ -6,6 +6,7 @@
 <title>BVLOS Site Assessment | Enhanced Patrol</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 <style>
 @font-face{font-family:'Gotham Bold';font-weight:700;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Bold.ttf') format('truetype');}
 @font-face{font-family:'Gotham Book';font-weight:400;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Book.ttf') format('truetype');}
@@ -244,6 +245,52 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .appr li{margin-bottom:4px;}
 .appr-ver{padding:10px 18px 14px;font-size:0.66rem;color:var(--ep-gray);line-height:1.5;border-top:1px solid rgba(255,255,255,0.07);}
 
+/* ── SYNC ── */
+.sync-chip{font-family:'Gotham Bold',sans-serif;font-size:0.6rem;letter-spacing:1.4px;text-transform:uppercase;padding:6px 10px;border:1px solid transparent;white-space:nowrap;}
+.sync-chip.ok{color:#7BE0AE;border-color:rgba(48,164,108,0.45);background:rgba(48,164,108,0.1);}
+.sync-chip.pending{color:#FFD08A;border-color:rgba(245,165,36,0.45);background:rgba(245,165,36,0.1);}
+.sync-chip.off{color:var(--ep-gray);border-color:rgba(255,255,255,0.14);}
+.sync-user{font-size:0.7rem;color:var(--ep-gray);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px;}
+#authBar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-left:auto;}
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:3000;align-items:center;justify-content:center;padding:20px;}
+.modal.open{display:flex;}
+.modal-box{background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.28);border-top:3px solid var(--ep-gold);max-width:380px;width:100%;padding:24px;}
+.modal-box h3{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1.5px;margin-bottom:4px;}
+.modal-box p{font-size:0.76rem;color:var(--ep-gray);margin-bottom:16px;line-height:1.5;}
+.modal-actions{display:flex;gap:10px;margin-top:16px;}
+.modal-actions button{flex:1;}
+.remote-opt{color:var(--ep-blue);}
+
+/* ── ADMIN PANEL ── */
+.admin-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:2500;padding:24px;overflow:auto;}
+.admin-wrap.open{display:block;}
+.admin-box{max-width:1400px;margin:0 auto;background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.28);border-top:3px solid var(--ep-gold);}
+.admin-head{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 22px 12px;flex-wrap:wrap;}
+.admin-head h2{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:2px;line-height:1;}
+.admin-head .sub{font-size:0.7rem;color:var(--ep-gray);letter-spacing:1px;text-transform:uppercase;margin-top:3px;}
+.admin-actions{display:flex;gap:8px;flex-wrap:wrap;}
+#adminStats{display:flex;gap:22px;flex-wrap:wrap;padding:0 22px 14px;font-size:0.72rem;color:var(--ep-gray);text-transform:uppercase;letter-spacing:1.2px;}
+#adminStats b{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:var(--ep-white);letter-spacing:1px;margin-right:5px;}
+#adminTabs{display:flex;gap:0;border-bottom:1px solid rgba(252,192,14,0.2);padding:0 22px;}
+.adm-tab{background:none;border:none;border-bottom:3px solid transparent;color:var(--ep-gray);font-family:'Gotham Bold',sans-serif;font-size:0.68rem;letter-spacing:1.8px;text-transform:uppercase;padding:12px 16px;cursor:pointer;}
+.adm-tab.on{color:var(--ep-gold);border-bottom-color:var(--ep-gold);}
+.adm-tab:hover{color:var(--ep-white);}
+.admin-search{padding:14px 22px 0;}
+.admin-search input{max-width:340px;}
+.adm-scroll{overflow-x:auto;padding:14px 22px 22px;}
+.adm-table{width:100%;border-collapse:collapse;font-size:0.78rem;}
+.adm-table th{font-family:'Gotham Bold',sans-serif;font-size:0.6rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--ep-gray);text-align:left;padding:9px 10px;border-bottom:2px solid var(--ep-gold);white-space:nowrap;}
+.adm-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle;}
+.adm-table tbody tr:hover{background:rgba(252,192,14,0.04);}
+.st-pill{display:inline-block;font-family:'Gotham Bold',sans-serif;font-size:0.56rem;letter-spacing:1.1px;text-transform:uppercase;padding:3px 7px;white-space:nowrap;}
+.st-ok{background:rgba(48,164,108,0.18);color:#7BE0AE;}
+.st-warn{background:rgba(245,165,36,0.18);color:#FFD08A;}
+.st-no{background:rgba(229,72,77,0.18);color:#FF9EA1;}
+.st-draft{background:rgba(255,255,255,0.1);color:var(--ep-gray);}
+.adm-bad{color:#FF9EA1;} .adm-warn{color:#FFD08A;}
+.adm-msg{padding:18px 22px;font-size:0.8rem;color:var(--ep-gray);}
+.adm-msg.err{color:#FF9EA1;}
+
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ep-navy-deep);border:1px solid var(--ep-gold);color:var(--ep-white);padding:12px 22px;font-size:0.84rem;opacity:0;pointer-events:none;transition:all 0.25s;z-index:2000;max-width:90vw;text-align:center;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
@@ -361,6 +408,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="mini-btn" onclick="exportJSON()">Export JSON</button>
     <button class="mini-btn" onclick="importJSON()">Import</button>
     <button class="mini-btn danger" onclick="deleteAssessment()">Delete</button>
+    <div id="authBar"></div>
   </div>
 
 
@@ -401,6 +449,34 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </footer>
 
+<div class="admin-wrap no-print" id="adminPanel">
+  <div class="admin-box">
+    <div class="admin-head">
+      <div><h2>Admin Panel</h2><div class="sub">Enhanced Patrol LLC &nbsp;/&nbsp; All records</div></div>
+      <div class="admin-actions">
+        <button class="mini-btn" onclick="loadAdmin()">Refresh</button>
+        <button class="mini-btn" onclick="adminExport()">Export CSV</button>
+        <button class="mini-btn" onclick="closeAdmin()">Close</button>
+      </div>
+    </div>
+    <div id="adminStats"></div>
+    <div id="adminTabs"></div>
+    <div class="admin-search"><input type="text" placeholder="Filter by site, client, pilot, provision, status" oninput="adminSearch(this.value)"></div>
+    <div id="adminBody"></div>
+  </div>
+</div>
+<div class="modal no-print" id="signInModal">
+  <div class="modal-box">
+    <h3>Sign in</h3>
+    <p>Enhanced Patrol account. Assessments stay on this device until you sign in and sync.</p>
+    <div class="field-group"><label for="siEmail">Email</label><input id="siEmail" type="email" autocomplete="username"></div>
+    <div class="field-group"><label for="siPass">Password</label><input id="siPass" type="password" autocomplete="current-password"></div>
+    <div class="modal-actions">
+      <button class="action-btn ghost" onclick="closeSignIn()">Cancel</button>
+      <button class="action-btn export" id="siBtn" onclick="doSignIn()">Sign in</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <input type="file" id="importFile" accept="application/json" style="display:none">
 
@@ -411,7 +487,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // Pending amendments (SP 20, SP 23, SP 33, SP 36) are NOT reflected.
 // ============================================================
 const COW_REF = 'CoW 107W-2025-04534, effective 14 JAN 2026 to 31 JAN 2030';
-const TOOL_VER = '5.5';
+const TOOL_VER = '6.1';
 const BUILD_DATE = '2026-07-27';
 
 // ── INDEXEDDB ──────────────────────────────────────────────
@@ -505,6 +581,7 @@ function showToast(m, isErr) {
 let _saveTO = null;
 function save() {
   S.updated = new Date().toISOString();
+  S.dirty = true;
   clearTimeout(_saveTO);
   _saveTO = setTimeout(() => {
     idbPut('assessments', JSON.parse(JSON.stringify(S)))
@@ -1646,16 +1723,451 @@ function toggleExternal(off) {
   render();
 }
 
+/* ============================================================
+   SUPABASE SYNC
+   IndexedDB stays the source of truth on the device. Sync pushes
+   local changes up and pulls remote assessments down on demand.
+   Nothing here is required for the tool to work offline.
+   ============================================================ */
+var SB_URL = 'https://oaztzgvxxloiesorfjlf.supabase.co';
+var SB_KEY = 'sb_publishable_iYK9cCY1xdqn2hZtPyzczA_oBa56LBN';
+var sb = null, SESSION = null, SYNCING = false, REMOTE = [];
+
+function sbClient() {
+  if (sb) return sb;
+  if (typeof window.supabase === 'undefined' || !window.supabase.createClient) return null;
+  sb = window.supabase.createClient(SB_URL, SB_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ep-sa-auth' }
+  });
+  return sb;
+}
+function deviceId() {
+  var d = localStorage.getItem('ep-sa-device');
+  if (!d) { d = 'dev_' + Math.random().toString(36).slice(2, 10); localStorage.setItem('ep-sa-device', d); }
+  return d;
+}
+function myRole() {
+  try { return (SESSION && SESSION.user && SESSION.user.app_metadata && SESSION.user.app_metadata.role) || 'viewer'; }
+  catch (e) { return 'viewer'; }
+}
+function canWrite() { return myRole() === 'admin' || myRole() === 'pilot'; }
+
+/* ---- status mapping ---- */
+function statusEnum() {
+  if (!(S.fields.siteName || '').trim()) return 'draft';
+  var r = evaluateRules();
+  if (r.failed.length) return 'not_approved';
+  if (r.review.length || r.unmappedRules.length) return 'needs_program_review';
+  return 'approved_with_conditions';
+}
+
+/* ---- auth ---- */
+function renderAuthBar() {
+  var el = document.getElementById('authBar');
+  if (!el) return;
+  var online = navigator.onLine;
+  if (!sbClient()) { el.innerHTML = '<span class="sync-chip off">Sync unavailable</span>'; return; }
+  if (!SESSION) {
+    el.innerHTML = '<span class="sync-chip off">Local only</span>' +
+      '<button class="mini-btn" onclick="openSignIn()">Sign in</button>';
+    return;
+  }
+  var dirty = INDEXLIST.filter(function (a) { return a.dirty; }).length;
+  var chip = !online ? '<span class="sync-chip off">Offline</span>'
+    : dirty ? '<span class="sync-chip pending">' + dirty + ' pending</span>'
+    : '<span class="sync-chip ok">Synced</span>';
+  el.innerHTML = chip +
+    '<button class="mini-btn" onclick="syncNow()"' + (SYNCING ? ' disabled' : '') + '>' + (SYNCING ? 'Syncing' : 'Sync') + '</button>' +
+    (myRole() === 'admin' ? '<button class="mini-btn" onclick="openAdmin()">Admin</button>' : '') +
+    '<span class="sync-user" title="' + esc(myRole()) + '">' + esc(SESSION.user.email) + ' (' + esc(myRole()) + ')</span>' +
+    '<button class="mini-btn" onclick="signOut()">Sign out</button>';
+}
+function openSignIn() { document.getElementById('signInModal').classList.add('open'); setTimeout(function(){var e=document.getElementById('siEmail'); if(e) e.focus();}, 60); }
+function closeSignIn() { document.getElementById('signInModal').classList.remove('open'); }
+function doSignIn() {
+  var c = sbClient(); if (!c) { showToast('Sync library did not load', true); return; }
+  var email = document.getElementById('siEmail').value.trim();
+  var pw = document.getElementById('siPass').value;
+  if (!email || !pw) { showToast('Enter email and password', true); return; }
+  var btn = document.getElementById('siBtn'); btn.disabled = true; btn.textContent = 'Signing in';
+  c.auth.signInWithPassword({ email: email, password: pw }).then(function (r) {
+    btn.disabled = false; btn.textContent = 'Sign in';
+    if (r.error) { showToast(r.error.message, true); return; }
+    SESSION = r.data.session; closeSignIn(); renderAuthBar();
+    showToast('Signed in as ' + myRole());
+    if (!canWrite()) showToast('Role is viewer. You can read but not upload.', true);
+    syncNow();
+  });
+}
+function signOut() {
+  var c = sbClient(); if (!c) return;
+  c.auth.signOut().then(function () { SESSION = null; REMOTE = []; renderAuthBar(); refreshPicker(); showToast('Signed out'); });
+}
+
+/* ---- push ---- */
+function localToRow(rec) {
+  var f = rec.fields || {};
+  return {
+    status: rec.remoteStatus || 'draft',
+    classification: 'commercial',
+    site_name: f.siteName || null,
+    client_name: f.clientName || null,
+    assess_date: f.assessDate || null,
+    assessed_by: f.assessedBy || null,
+    rpic_reviewing: f.rpicReviewing || null,
+    site_address: f.mapAddress || null,
+    latitude: f.mapLat ? parseFloat(f.mapLat) : null,
+    longitude: f.mapLng ? parseFloat(f.mapLng) : null,
+    governing_provision: rec.remoteProv || null,
+    max_agl: rec.remoteAgl || null,
+    blocking_count: rec.remoteBlocking || 0,
+    review_count: rec.remoteReview || 0,
+    reassess_date: f.reassessDate || null,
+    tool_version: TOOL_VER,
+    rules_version: (RULES && RULES.version) || null,
+    cow_ref: COW_REF,
+    device_id: deviceId(),
+    payload: { fields: rec.fields, checks: rec.checks, notes: rec.notes, c2rows: rec.c2rows, localId: rec.id }
+  };
+}
+async function pushOne(rec) {
+  var c = sbClient(); if (!c) throw new Error('no client');
+  var isCurrent = rec.id === S.id;
+  if (isCurrent) {
+    var d = classify(), r = evaluateRules();
+    rec.remoteStatus = statusEnum();
+    rec.remoteProv = d.ready ? (d.prov + ' ' + d.provName) : null;
+    rec.remoteAgl = d.agl || null;
+    rec.remoteBlocking = r.failed.length; rec.remoteReview = r.review.length;
+  }
+  var row = localToRow(rec);
+  var res;
+  if (rec.remote_id) {
+    res = await c.from('site_assessments').update(row).eq('id', rec.remote_id).select('id,updated_at').single();
+  } else {
+    res = await c.from('site_assessments').insert(row).select('id,updated_at').single();
+  }
+  if (res.error) throw res.error;
+  rec.remote_id = res.data.id;
+  rec.synced_at = res.data.updated_at;
+  rec.dirty = false;
+  await idbPut('assessments', JSON.parse(JSON.stringify(rec)));
+  // Mirror onto the live object, otherwise the next save drops remote_id and the
+  // following sync inserts a duplicate instead of updating.
+  if (rec.id === S.id) { S.remote_id = rec.remote_id; S.synced_at = rec.synced_at; S.dirty = false; }
+  await pushPhotos(rec);
+  return rec;
+}
+async function pushPhotos(rec) {
+  var c = sbClient(); if (!c || !rec.remote_id) return;
+  var store = (rec.id === S.id) ? PHOTOS : null;
+  if (!store) {
+    store = {};
+    var all = await idbAll('photos');
+    all.filter(function (x) { return x.id === rec.id; }).forEach(function (x) { store[x.key] = x.items || []; });
+  }
+  var existing = await c.from('assessment_media').select('id,photo_key,seq').eq('assessment_id', rec.remote_id);
+  var have = {};
+  (existing.data || []).forEach(function (m) { have[m.photo_key + '|' + m.seq] = true; });
+  for (var key in store) {
+    var items = store[key] || [];
+    for (var i = 0; i < items.length; i++) {
+      if (have[key + '|' + i]) continue;
+      var blob = dataUrlToBlob(items[i]);
+      if (!blob) continue;
+      var path = 'assessments/' + rec.remote_id + '/' + key + '-' + i + '.jpg';
+      var up = await c.storage.from('media').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+      if (up.error) { console.warn('photo upload failed', path, up.error.message); continue; }
+      await c.from('assessment_media').insert({
+        assessment_id: rec.remote_id, photo_key: key, seq: i, storage_key: path,
+        filename: key + '-' + i + '.jpg', content_type: 'image/jpeg', size_bytes: blob.size
+      });
+    }
+  }
+}
+function dataUrlToBlob(d) {
+  try {
+    var parts = String(d).split(','), mime = (parts[0].match(/:(.*?);/) || [])[1] || 'image/jpeg';
+    var bin = atob(parts[1]), n = bin.length, u = new Uint8Array(n);
+    while (n--) u[n] = bin.charCodeAt(n);
+    return new Blob([u], { type: mime });
+  } catch (e) { return null; }
+}
+
+/* ---- pull ---- */
+async function pullList() {
+  var c = sbClient(); if (!c) return [];
+  var res = await c.from('site_assessments')
+    .select('id,site_name,assess_date,status,updated_at,device_id,blocking_count')
+    .order('updated_at', { ascending: false }).limit(200);
+  if (res.error) throw res.error;
+  REMOTE = res.data || [];
+  return REMOTE;
+}
+async function pullOne(remoteId) {
+  var c = sbClient(); if (!c) throw new Error('no client');
+  var res = await c.from('site_assessments').select('*').eq('id', remoteId).single();
+  if (res.error) throw res.error;
+  var row = res.data, p = row.payload || {};
+  var local = (await idbAll('assessments')).filter(function (a) { return a.remote_id === remoteId; })[0];
+  var rec = local || blankAssessment();
+  rec.remote_id = remoteId;
+  rec.fields = p.fields || {}; rec.checks = p.checks || {}; rec.notes = p.notes || {};
+  rec.c2rows = (p.c2rows && p.c2rows.length) ? migrateC2(p.c2rows) : blankC2();
+  rec.updated = row.updated_at; rec.synced_at = row.updated_at; rec.dirty = false;
+  await idbPut('assessments', JSON.parse(JSON.stringify(rec)));
+  var med = await c.from('assessment_media').select('photo_key,seq,storage_key').eq('assessment_id', remoteId).order('seq');
+  var grouped = {};
+  for (var i = 0; i < (med.data || []).length; i++) {
+    var m = med.data[i];
+    var dl = await c.storage.from('media').download(m.storage_key);
+    if (dl.error) continue;
+    var b64 = await blobToDataUrl(dl.data);
+    if (!grouped[m.photo_key]) grouped[m.photo_key] = [];
+    grouped[m.photo_key][m.seq] = b64;
+  }
+  for (var k in grouped) {
+    var arr = grouped[k].filter(function (x) { return !!x; });
+    await idbPut('photos', { pk: rec.id + '|' + k, id: rec.id, key: k, items: arr });
+  }
+  return rec;
+}
+function blobToDataUrl(b) {
+  return new Promise(function (res) {
+    var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { res(null); };
+    r.readAsDataURL(b);
+  });
+}
+
+/* ---- orchestration ---- */
+async function syncNow() {
+  var c = sbClient();
+  if (!c) { showToast('Sync library did not load', true); return; }
+  if (!SESSION) { openSignIn(); return; }
+  if (!navigator.onLine) { showToast('Offline. Changes are queued.', true); return; }
+  if (SYNCING) return;
+  SYNCING = true; renderAuthBar();
+  var pushed = 0, pulled = 0, failed = 0, skipped = 0;
+  try {
+    // save() is debounced, so the open assessment may have edits not yet on disk.
+    // Flush it before reading, otherwise a Sync tap right after typing misses them.
+    clearTimeout(_saveTO);
+    S.updated = new Date().toISOString();
+    await idbPut('assessments', JSON.parse(JSON.stringify(S)));
+    var all = await idbAll('assessments');
+    if (canWrite()) {
+      for (var i = 0; i < all.length; i++) {
+        var rec = all[i];
+        if (!rec.dirty && rec.remote_id) continue;
+        if (!(rec.fields && rec.fields.siteName)) { skipped++; continue; }
+        try { await pushOne(rec); pushed++; } catch (e) { failed++; console.warn('push failed', rec.id, e.message); }
+      }
+    }
+    await pullList();
+    var known = {};
+    (await idbAll('assessments')).forEach(function (a) { if (a.remote_id) known[a.remote_id] = a; });
+    for (var j = 0; j < REMOTE.length; j++) {
+      var r = REMOTE[j], k = known[r.id];
+      if (!k) { pulled++; continue; }
+      if (!k.dirty && r.updated_at > (k.synced_at || '')) { try { await pullOne(r.id); pulled++; } catch (e) {} }
+      else if (k.dirty && r.updated_at > (k.synced_at || '')) {
+        showToast('Conflict on "' + (k.fields.siteName || 'untitled') + '". Local kept, server copy is newer.', true);
+      }
+    }
+    var msg = [];
+    if (pushed) msg.push(pushed + ' pushed');
+    if (pulled) msg.push(pulled + ' available');
+    if (failed) msg.push(failed + ' failed');
+    if (!canWrite()) msg.push('read only');
+    showToast(msg.length ? msg.join(', ') : 'Up to date', failed > 0);
+  } catch (e) {
+    showToast('Sync error: ' + e.message, true);
+  } finally {
+    SYNCING = false; renderAuthBar(); refreshPicker();
+  }
+}
+async function openRemote(remoteId) {
+  showToast('Downloading assessment');
+  try {
+    var rec = await pullOne(remoteId);
+    localStorage.setItem('ep-sa-current', rec.id);
+    await openAssessment(rec.id);
+    showToast('Opened from server');
+  } catch (e) { showToast('Could not open: ' + e.message, true); }
+}
+
+/* ---- boot ---- */
+function initSync() {
+  var c = sbClient();
+  renderAuthBar();
+  if (!c) return;
+  c.auth.getSession().then(function (r) {
+    SESSION = (r && r.data && r.data.session) || null;
+    renderAuthBar();
+    if (SESSION && navigator.onLine) syncNow();
+  });
+  c.auth.onAuthStateChange(function (_e, s) { SESSION = s; renderAuthBar(); });
+  window.addEventListener('online', function () { renderAuthBar(); if (SESSION) syncNow(); });
+  window.addEventListener('offline', renderAuthBar);
+}
+
+/* ============================================================
+   ADMIN PANEL
+   Reads across site_assessments and reports. Visible to admin role.
+   RLS already permits authenticated select on both tables.
+   ============================================================ */
+var ADMIN = { tab: 'assessments', assessments: [], reports: [], q: '', loading: false, err: '' };
+
+function adminAvailable() { return !!SESSION && myRole() === 'admin'; }
+
+function openAdmin() {
+  if (!SESSION) { openSignIn(); return; }
+  if (myRole() !== 'admin') { showToast('Admin role required. You are ' + myRole() + '.', true); return; }
+  document.getElementById('adminPanel').classList.add('open');
+  loadAdmin();
+}
+function closeAdmin() { document.getElementById('adminPanel').classList.remove('open'); }
+function adminTab(t) { ADMIN.tab = t; renderAdmin(); }
+function adminSearch(v) { ADMIN.q = (v || '').toLowerCase(); renderAdminBody(); }
+
+async function loadAdmin() {
+  var c = sbClient(); if (!c) { ADMIN.err = 'Sync library did not load'; renderAdmin(); return; }
+  ADMIN.loading = true; ADMIN.err = ''; renderAdmin();
+  try {
+    var a = await c.from('site_assessments')
+      .select('id,site_name,client_name,assess_date,assessed_by,rpic_reviewing,status,governing_provision,max_agl,blocking_count,review_count,updated_at,device_id,tool_version,rules_version')
+      .order('updated_at', { ascending: false }).limit(500);
+    if (a.error) throw a.error;
+    ADMIN.assessments = a.data || [];
+    var r = await c.from('reports')
+      .select('id,cad_number,call_number,pilot_name,flight_date,status,mission,aircraft_asset,site_address,created_at')
+      .order('created_at', { ascending: false }).limit(500);
+    ADMIN.reports = r.error ? [] : (r.data || []);
+    if (r.error) ADMIN.err = 'Assessments loaded. Reports unavailable: ' + r.error.message;
+  } catch (e) {
+    ADMIN.err = e.message || String(e);
+  }
+  ADMIN.loading = false; renderAdmin();
+}
+
+function statusPill(s) {
+  var map = {
+    draft: ['Draft', 'st-draft'],
+    approved_with_conditions: ['Approved w/ conditions', 'st-ok'],
+    needs_program_review: ['Program review', 'st-warn'],
+    not_approved: ['Not approved', 'st-no'],
+    finalized: ['Finalized', 'st-ok']
+  };
+  var m = map[s] || [s || 'unknown', 'st-draft'];
+  return '<span class="st-pill ' + m[1] + '">' + esc(m[0]) + '</span>';
+}
+function shortDate(d) { return d ? String(d).slice(0, 10) : ''; }
+
+function renderAdmin() {
+  var el = document.getElementById('adminBody');
+  if (!el) return;
+  var counts = ADMIN.assessments.reduce(function (o, x) { o[x.status] = (o[x.status] || 0) + 1; return o; }, {});
+  document.getElementById('adminStats').innerHTML =
+    '<div><b>' + ADMIN.assessments.length + '</b> assessments</div>' +
+    '<div><b>' + (counts.approved_with_conditions || 0) + '</b> approved</div>' +
+    '<div><b>' + (counts.needs_program_review || 0) + '</b> program review</div>' +
+    '<div><b>' + (counts.not_approved || 0) + '</b> not approved</div>' +
+    '<div><b>' + (counts.draft || 0) + '</b> draft</div>' +
+    '<div><b>' + ADMIN.reports.length + '</b> AAR reports</div>';
+  var tabs = document.getElementById('adminTabs');
+  tabs.innerHTML =
+    '<button class="adm-tab' + (ADMIN.tab === 'assessments' ? ' on' : '') + '" onclick="adminTab(\'assessments\')">Site Assessments</button>' +
+    '<button class="adm-tab' + (ADMIN.tab === 'reports' ? ' on' : '') + '" onclick="adminTab(\'reports\')">AAR Reports</button>';
+  renderAdminBody();
+}
+
+function renderAdminBody() {
+  var el = document.getElementById('adminBody');
+  if (!el) return;
+  if (ADMIN.loading) { el.innerHTML = '<p class="adm-msg">Loading</p>'; return; }
+  var head = ADMIN.err ? '<p class="adm-msg err">' + esc(ADMIN.err) + '</p>' : '';
+  var q = ADMIN.q;
+  var hit = function (vals) { return !q || vals.join(' ').toLowerCase().indexOf(q) >= 0; };
+
+  if (ADMIN.tab === 'assessments') {
+    var rows = ADMIN.assessments.filter(function (x) {
+      return hit([x.site_name, x.client_name, x.assessed_by, x.rpic_reviewing, x.governing_provision, x.status]);
+    });
+    if (!rows.length) { el.innerHTML = head + '<p class="adm-msg">No assessments match.</p>'; return; }
+    el.innerHTML = head + '<div class="adm-scroll"><table class="adm-table"><thead><tr>' +
+      '<th>Site</th><th>Client</th><th>Date</th><th>Assessed by</th><th>Status</th><th>Provision</th><th>Max AGL</th><th>Issues</th><th>Updated</th><th></th>' +
+      '</tr></thead><tbody>' + rows.map(function (x) {
+        return '<tr><td><b>' + esc(x.site_name || 'Untitled') + '</b></td>' +
+          '<td>' + esc(x.client_name || '') + '</td>' +
+          '<td>' + esc(shortDate(x.assess_date)) + '</td>' +
+          '<td>' + esc(x.assessed_by || '') + '</td>' +
+          '<td>' + statusPill(x.status) + '</td>' +
+          '<td>' + esc(x.governing_provision || '') + '</td>' +
+          '<td>' + (x.max_agl ? esc(x.max_agl) + ' ft' : '') + '</td>' +
+          '<td>' + (x.blocking_count ? '<span class="adm-bad">' + x.blocking_count + ' blocking</span>' : '') +
+            (x.review_count ? ' <span class="adm-warn">' + x.review_count + ' review</span>' : '') + '</td>' +
+          '<td>' + esc(shortDate(x.updated_at)) + '</td>' +
+          '<td><button class="mini-btn" onclick="adminOpen(\'' + esc(x.id) + '\')">Open</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  } else {
+    var reps = ADMIN.reports.filter(function (x) {
+      return hit([x.cad_number, x.call_number, x.pilot_name, x.mission, x.aircraft_asset, x.site_address]);
+    });
+    if (!reps.length) { el.innerHTML = head + '<p class="adm-msg">No reports match.</p>'; return; }
+    el.innerHTML = head + '<div class="adm-scroll"><table class="adm-table"><thead><tr>' +
+      '<th>CAD</th><th>Call</th><th>Pilot</th><th>Flight date</th><th>Aircraft</th><th>Mission</th><th>Location</th><th>Status</th>' +
+      '</tr></thead><tbody>' + reps.map(function (x) {
+        return '<tr><td><b>' + esc(x.cad_number || '') + '</b></td>' +
+          '<td>' + esc(x.call_number || '') + '</td>' +
+          '<td>' + esc(x.pilot_name || '') + '</td>' +
+          '<td>' + esc(shortDate(x.flight_date)) + '</td>' +
+          '<td>' + esc(x.aircraft_asset || '') + '</td>' +
+          '<td>' + esc((x.mission || '').slice(0, 60)) + '</td>' +
+          '<td>' + esc((x.site_address || '').slice(0, 40)) + '</td>' +
+          '<td>' + statusPill(x.status) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="adm-msg">AAR reports are read only here. Edit them in the AAR tool.</p>';
+  }
+}
+function adminOpen(remoteId) { closeAdmin(); openRemote(remoteId); }
+function adminExport() {
+  var rows = ADMIN.tab === 'assessments' ? ADMIN.assessments : ADMIN.reports;
+  if (!rows.length) { showToast('Nothing to export', true); return; }
+  var cols = Object.keys(rows[0]);
+  var csv = [cols.join(',')].concat(rows.map(function (r) {
+    return cols.map(function (c) { return '"' + String(r[c] === null || r[c] === undefined ? '' : r[c]).replace(/"/g, '""') + '"'; }).join(',');
+  })).join('\n');
+  var b = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(b);
+  a.download = 'EP-' + ADMIN.tab + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+  showToast('Exported ' + rows.length + ' rows');
+}
+
 // ── ASSESSMENT MANAGEMENT ──────────────────────────────────
 function refreshPicker() {
   idbAll('assessments').then(all => {
     INDEXLIST = all.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''));
     const sel = document.getElementById('assessPicker');
-    sel.innerHTML = INDEXLIST.map(a => '<option value="' + a.id + '"' + (a.id === S.id ? ' selected' : '') + '>' + esc(label(a)) + '</option>').join('');
+    const known = {};
+    INDEXLIST.forEach(a => { if (a.remote_id) known[a.remote_id] = true; });
+    let html = INDEXLIST.map(a =>
+      '<option value="' + a.id + '"' + (a.id === S.id ? ' selected' : '') + '>' +
+      esc(label(a)) + (a.dirty ? '  *' : '') + '</option>').join('');
+    const only = (REMOTE || []).filter(r => !known[r.id]);
+    if (only.length) {
+      html += '<optgroup label="On server, not on this device">' + only.map(r =>
+        '<option class="remote-opt" value="remote:' + r.id + '">' +
+        esc((r.site_name || 'Untitled site') + '  |  ' + (r.assess_date || '')) + '</option>').join('') + '</optgroup>';
+    }
+    sel.innerHTML = html;
+    renderAuthBar();
   });
 }
 function openAssessment(id) {
-  idbGet('assessments', id).then(a => {
+  return idbGet('assessments', id).then(a => {
     if (!a) { showToast('Assessment not found', true); return; }
     S = a;
     S.c2rows = (S.c2rows && S.c2rows.length) ? migrateC2(S.c2rows) : blankC2();
@@ -1746,7 +2258,10 @@ window.addEventListener('beforeprint', () => {
 });
 
 // ── BOOT ───────────────────────────────────────────────────
-document.getElementById('assessPicker').addEventListener('change', function () { openAssessment(this.value); });
+document.getElementById('assessPicker').addEventListener('change', function () {
+  if (this.value.indexOf('remote:') === 0) { openRemote(this.value.slice(7)); return; }
+  openAssessment(this.value);
+});
 
 idb().then(() => idbAll('assessments')).then(all => {
   const wanted = localStorage.getItem('ep-sa-current');
@@ -1755,7 +2270,8 @@ idb().then(() => idbAll('assessments')).then(all => {
   return idbPut('assessments', JSON.parse(JSON.stringify(S))).then(() => {
     localStorage.setItem('ep-sa-current', S.id); render(); refreshPicker();
   });
-}).catch(e => {
+}).then(() => { try { initSync(); } catch (e) { console.warn('sync init', e); } })
+.catch(e => {
   showToast('Storage unavailable: ' + e.message + '. Work will not be saved.', true);
   render();
 });
