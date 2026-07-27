@@ -288,6 +288,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .st-no{background:rgba(229,72,77,0.18);color:#FF9EA1;}
 .st-draft{background:rgba(255,255,255,0.1);color:var(--ep-gray);}
 .adm-bad{color:#FF9EA1;} .adm-warn{color:#FFD08A;}
+.adm-act{white-space:nowrap;display:flex;gap:6px;}
 .adm-msg{padding:18px 22px;font-size:0.8rem;color:var(--ep-gray);}
 .adm-msg.err{color:#FF9EA1;}
 
@@ -487,7 +488,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // Pending amendments (SP 20, SP 23, SP 33, SP 36) are NOT reflected.
 // ============================================================
 const COW_REF = 'CoW 107W-2025-04534, effective 14 JAN 2026 to 31 JAN 2030';
-const TOOL_VER = '6.1';
+const TOOL_VER = '6.2';
 const BUILD_DATE = '2026-07-27';
 
 // ── INDEXEDDB ──────────────────────────────────────────────
@@ -1844,6 +1845,15 @@ async function pushOne(rec) {
   var res;
   if (rec.remote_id) {
     res = await c.from('site_assessments').update(row).eq('id', rec.remote_id).select('id,updated_at').single();
+    // The row may have been deleted by an admin. Do not silently recreate it:
+    // drop the link and keep the work local so nothing is lost.
+    if (res.error && (res.error.code === 'PGRST116' || /0 rows|not found/i.test(res.error.message || ''))) {
+      delete rec.remote_id; rec.dirty = true;
+      await idbPut('assessments', JSON.parse(JSON.stringify(rec)));
+      if (rec.id === S.id) { delete S.remote_id; S.dirty = true; }
+      showToast('"' + (rec.fields.siteName || 'Assessment') + '" was deleted on the server. Your copy is now local only.', true);
+      return rec;
+    }
   } else {
     res = await c.from('site_assessments').insert(row).select('id,updated_at').single();
   }
@@ -2107,7 +2117,8 @@ function renderAdminBody() {
           '<td>' + (x.blocking_count ? '<span class="adm-bad">' + x.blocking_count + ' blocking</span>' : '') +
             (x.review_count ? ' <span class="adm-warn">' + x.review_count + ' review</span>' : '') + '</td>' +
           '<td>' + esc(shortDate(x.updated_at)) + '</td>' +
-          '<td><button class="mini-btn" onclick="adminOpen(\'' + esc(x.id) + '\')">Open</button></td></tr>';
+          '<td class="adm-act"><button class="mini-btn" onclick="adminOpen(\'' + esc(x.id) + '\')">Open</button>' +
+          '<button class="mini-btn danger" onclick="adminDelete(\'' + esc(x.id) + '\',\'' + esc((x.site_name||'').replace(/'/g,'')) + '\')">Delete</button></td></tr>';
       }).join('') + '</tbody></table></div>';
   } else {
     var reps = ADMIN.reports.filter(function (x) {
@@ -2127,6 +2138,43 @@ function renderAdminBody() {
           '<td>' + statusPill(x.status) + '</td></tr>';
       }).join('') + '</tbody></table></div>' +
       '<p class="adm-msg">AAR reports are read only here. Edit them in the AAR tool.</p>';
+  }
+}
+async function adminDelete(id, name) {
+  if (myRole() !== 'admin') { showToast('Admin role required', true); return; }
+  var c = sbClient(); if (!c) { showToast('Not connected', true); return; }
+  var med = await c.from('assessment_media').select('storage_key').eq('assessment_id', id);
+  var keys = (med.data || []).map(function (m) { return m.storage_key; });
+  var msg = 'Permanently delete "' + (name || 'this assessment') + '" from the server?\n\n' +
+            'Removes the assessment record' + (keys.length ? ', ' + keys.length + ' photo file(s)' : '') +
+            ' and any copy on this device.\n\nThis cannot be undone.';
+  if (!confirm(msg)) return;
+  try {
+    if (keys.length) {
+      var rm = await c.storage.from('media').remove(keys);
+      if (rm.error) console.warn('storage remove', rm.error.message);
+    }
+    var del = await c.from('site_assessments').delete().eq('id', id);
+    if (del.error) throw del.error;
+
+    // Purge the local copy so sync does not try to update a row that is gone.
+    var locals = (await idbAll('assessments')).filter(function (a) { return a.remote_id === id; });
+    var removedCurrent = false;
+    for (var i = 0; i < locals.length; i++) {
+      await deletePhotosFor(locals[i].id);
+      await idbDel('assessments', locals[i].id);
+      if (locals[i].id === S.id) removedCurrent = true;
+    }
+    ADMIN.assessments = ADMIN.assessments.filter(function (x) { return x.id !== id; });
+    REMOTE = (REMOTE || []).filter(function (x) { return x.id !== id; });
+    renderAdmin();
+    if (removedCurrent) {
+      var rest = (await idbAll('assessments')).sort(function (a, b) { return (b.updated || '').localeCompare(a.updated || ''); });
+      if (rest.length) { await openAssessment(rest[0].id); } else { newAssessment(); }
+    } else { refreshPicker(); }
+    showToast('Deleted "' + (name || 'assessment') + '"');
+  } catch (e) {
+    showToast('Delete failed: ' + e.message, true);
   }
 }
 function adminOpen(remoteId) { closeAdmin(); openRemote(remoteId); }
