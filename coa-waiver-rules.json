@@ -1,7 +1,7 @@
 {
-  "version": "2.3",
+  "version": "2.4",
   "certificate": "107W-2025-04534",
-  "basis": "Reconciled against Certificate of Waiver 107W-2025-04534 as issued, effective 14 JAN 2026. Version 2.2 applies Enhanced Patrol operating interpretations for SP 12, SP 13(b), SP 23 and SP 33, documented under interpretations in this file and emitted as operating conditions on any assessment that relies on them.",
+  "basis": "Reconciled against Certificate of Waiver 107W-2025-04534 as issued, effective 14 JAN 2026. Version 2.4 applies Enhanced Patrol operating interpretations for SP 12, SP 13(b), SP 23 and SP 33, documented under interpretations in this file and emitted as operating conditions on any assessment that relies on them.",
   "decisions": {
     "approvedWithConditions": "APPROVED WITH CONDITIONS",
     "notApproved": "NOT APPROVED",
@@ -145,19 +145,14 @@
                   "transient",
                   "sustained"
                 ]
-              },
-              {
-                "type": "fieldNotEquals",
-                "field": "closedAccess",
-                "value": "Yes"
               }
             ]
           }
         ]
       },
       "label": "PRS fitted",
-      "failReason": "Aircraft over 0.88 lb operating over people, over occupied moving vehicles, or at a site that is not closed or restricted access must be equipped with a PRS conforming to ASTM F3322-18 or newer.",
-      "correctiveAction": "Fit a conforming PRS. SP 23 as issued is not scoped by mission type."
+      "failReason": "Aircraft over 0.88 lb conducting operations over people or over occupied moving vehicles must be equipped with a PRS conforming to ASTM F3322-18 or newer.",
+      "correctiveAction": "Fit a conforming PRS, or plan the route to avoid overflight of people and occupied moving vehicles."
     },
     {
       "id": "AC-004",
@@ -191,11 +186,6 @@
                   "transient",
                   "sustained"
                 ]
-              },
-              {
-                "type": "fieldNotEquals",
-                "field": "closedAccess",
-                "value": "Yes"
               }
             ]
           }
@@ -1709,11 +1699,6 @@
           },
           {
             "type": "fieldEquals",
-            "field": "closedAccess",
-            "value": "Yes"
-          },
-          {
-            "type": "fieldEquals",
             "field": "oopExpected",
             "value": "No"
           },
@@ -1727,7 +1712,7 @@
           }
         ]
       },
-      "text": "PRS is not being carried on the basis that the operation is on a closed or restricted access site with no operations over people or occupied moving vehicles. SP 23 as issued requires PRS for all aircraft over 0.88 lb without that qualification; mission scoping is pending amendment language. The RPIC must record this basis in the approval decision and reassess if exposure changes in flight."
+      "text": "PRS is not being carried on the basis that no operations over people or over occupied moving vehicles are planned. SP 23 as issued requires PRS for all aircraft over 0.88 lb without that qualification; mission scoping is pending amendment language. PRS cannot be fitted in flight, so the RPIC must terminate rather than overfly if non-participants or occupied vehicles enter the operational area."
     },
     {
       "id": "COND-PRS",
@@ -1754,11 +1739,6 @@
                   "transient",
                   "sustained"
                 ]
-              },
-              {
-                "type": "fieldNotEquals",
-                "field": "closedAccess",
-                "value": "Yes"
               }
             ]
           }
@@ -1878,7 +1858,7 @@
     {
       "provision": "SP 23",
       "issue": "Requires PRS for all aircraft over 0.88 lb, without mission scoping.",
-      "handling": "EP scopes PRS to operations over people, over occupied moving vehicles, or at sites that are not closed or restricted access. This follows pending amendment language rather than the text as issued. Written confirmation outstanding."
+      "handling": "EP scopes PRS to operations over people or over occupied moving vehicles. This follows pending amendment language rather than the text as issued. Written confirmation outstanding."
     }
   ]
 }
