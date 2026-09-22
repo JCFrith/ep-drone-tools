@@ -389,9 +389,9 @@
 
 <script>
 /* Site Classification Wizard, CoW 107W-2026-01762 (effective 13 AUG 2026, supersedes 107W-2025-04534).
-   Governing airspace provision: SP 11 shielded or SP 12 non-shielded. Site character does not change it.
-   Overflight of non-participants: SP 13 (over 0.88 lb, no PRS, restricted access, 8.8 lb),
-   SP 14 (over 0.88 lb, PRS, 10 lb), SP 15 (0.88 lb or less). */
+   Governing airspace provision: Shielded Operations (SP 11) shielded or Non-Shielded Operations (SP 12) non-shielded. Site character does not change it.
+   Overflight of non-participants: Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) (over 0.88 lb, no PRS, restricted access, 8.8 lb),
+   PRS-Equipped Overflight of Non-Participants (SP 14) (over 0.88 lb, PRS, 10 lb), Overflight of Non-Participants at or Under 0.88 lb (SP 15) (0.88 lb or less). */
 const COW='107W-2026-01762';
 const STEPS=["Shielding","Airspace Mitigation","Aircraft","Overflight"];
 let step=0,answers={};
@@ -403,42 +403,42 @@ function classify(){
     const obs=num(obstHeight), grid=num(gridHeight), w=num(mtow);
     let sp,classification,ceilAGL,ceilFormula,ceilCalc=null,voRequired=false,voReason="",daaRequired=false,warnings=[],notes=[],blocks=[],pathway="None",pathwayText="";
     if(obstructions==="yes"){
-        sp="SP 11";classification="Shielded Operations";
+        sp="Shielded Operations (SP 11)";classification="Shielded Operations";
         ceilAGL=obs!==null?Math.min(Math.max(200,obs+100),400):200;
         ceilFormula="200 ft AGL, or (obstruction height + 100 ft) within a 100 ft radius, max 400 ft AGL";
-        ceilCalc=obs!==null?`Max(200, ${obs}+100) = ${ceilAGL} ft AGL`:"Enter the obstruction height for the SP 11(b) figure";
-        notes.push("Lateral constraint: 100 ft radius from the obstruction relied on (SP 11(b)).");
+        ceilCalc=obs!==null?`Max(200, ${obs}+100) = ${ceilAGL} ft AGL`:"Enter the obstruction height for the Shielded Operations, Obstruction Geometry (SP 11(b)) figure";
+        notes.push("Lateral constraint: 100 ft radius from the obstruction relied on (Shielded Operations, Obstruction Geometry (SP 11(b))).");
         notes.push("No VO or DAA requirement is stated for shielded operations. DAA does not raise the shielded ceiling in this certificate.");
-        notes.push("Must remain within the operational area defined by the CONOPS site selection performance procedures (SP 11(d), SP 32). No 1 SM range limit exists in this certificate.");
+        notes.push("Must remain within the operational area defined by the CONOPS site selection performance procedures (Shielded Operations, Operational Area Confinement (SP 11(d)), Site Selection Performance Procedures (SP 32)). No 1 SM range limit exists in this certificate.");
     }else{
-        sp="SP 12";classification="Non-Shielded Operations";
+        sp="Non-Shielded Operations (SP 12)";classification="Non-Shielded Operations";
         if(daa==="active"){ceilAGL=400;ceilFormula="400 ft AGL with DAA active and under observation";daaRequired=true;}
-        else if(daa==="compromised"){ceilAGL=200;ceilFormula="200 ft AGL where DAA effectivity or coverage is compromised (SP 12(b))";daaRequired=true;}
+        else if(daa==="compromised"){ceilAGL=200;ceilFormula="200 ft AGL where DAA effectivity or coverage is compromised (Non-Shielded Operations, DAA Requirement (SP 12(b)))";daaRequired=true;}
         else if(vo==="yes"){ceilAGL=400;ceilFormula="400 ft AGL with sufficient VO(s)";}
-        else{ceilAGL=0;ceilFormula="No pathway";classification="Not a waiver operation";blocks.push("SP 12 offers two alternatives: DAA under observation (12(b)) or VO(s) continuously observing a 2 SM radius (12(c)). With neither, fly under standard Part 107 VLOS or reclassify as SP 11 shielded.");}
-        if(vo==="yes"){voRequired=true;voReason="Sufficient VO(s) means the minimum number needed to continuously observe a 2 SM radius around the aircraft (SP 12(c)), with continuous full-duplex hands-free voice and a reliable backup (SP 12(e)). Operations cease if voice is lost (SP 21(c)).";
-            if(vo2sm==="no"&&daa!=="active")warnings.push("VO count does not cover a 2 SM radius. That coverage is the definition of sufficient VO(s) under SP 12(c).");}
+        else{ceilAGL=0;ceilFormula="No pathway";classification="Not a waiver operation";blocks.push("Non-Shielded Operations (SP 12) offers two alternatives: DAA under observation (12(b)) or VO(s) continuously observing a 2 SM radius (12(c)). With neither, fly under standard Part 107 VLOS or reclassify as Shielded Operations (SP 11) shielded.");}
+        if(vo==="yes"){voRequired=true;voReason="Sufficient VO(s) means the minimum number needed to continuously observe a 2 SM radius around the aircraft (Non-Shielded Operations, Visual Observer Coverage (SP 12(c))), with continuous full-duplex hands-free voice and a reliable backup (Non-Shielded Operations, VO Communication Equipment (SP 12(e))). Operations cease if voice is lost (Cease Operations on Loss of VO Communication (SP 21(c))).";
+            if(vo2sm==="no"&&daa!=="active")warnings.push("VO count does not cover a 2 SM radius. That coverage is the definition of sufficient VO(s) under Non-Shielded Operations, Visual Observer Coverage (SP 12(c)).");}
         else if(daa==="active")notes.push("VO not required when the DAA system described in the waiver application is active and under observation by the RPIC or Electronic Observer.");
     }
-    if(grid!==null&&ceilAGL>0&&grid<ceilAGL){ceilAGL=grid;ceilCalc=(ceilCalc?ceilCalc+" → ":"")+`capped at UASFM grid ${grid} ft`;notes.push(sp==="SP 11"?"UASFM grid height takes precedence over the 200 ft and obstruction figures (SP 11(c)).":"SP 16 authorizes operations only at or below the UASFM grid height.");}
-    if(uasfm==="yes")notes.push("SP 16: §107.41 authorized at or below the UASFM grid. File a NOTAM no more than 72 and no less than 24 hours before operating and verify it is issued. Above the grid a separate ATC authorization is required; LAANC may not be used.");
+    if(grid!==null&&ceilAGL>0&&grid<ceilAGL){ceilAGL=grid;ceilCalc=(ceilCalc?ceilCalc+" → ":"")+`capped at UASFM grid ${grid} ft`;notes.push(sp==="Shielded Operations (SP 11)"?"UASFM grid height takes precedence over the 200 ft and obstruction figures (Shielded Operations, UASFM Grid Precedence (SP 11(c))).":"UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes operations only at or below the UASFM grid height.");}
+    if(uasfm==="yes")notes.push("UASFM Grid Operations / NOTAM Requirement (SP 16): §107.41 authorized at or below the UASFM grid. File a NOTAM no more than 72 and no less than 24 hours before operating and verify it is issued. Above the grid a separate ATC authorization is required; LAANC may not be used.");
 
     if(overflight==="yes"){
         if(w===null){pathway="Not set";pathwayText="Enter maximum takeoff weight to select the pathway.";}
-        else if(w<=0.88){pathway="SP 15";pathwayText="0.88 lb or less including all attachments. Rotating component shielding (prop guards) required. No sustained overflight.";
-            if(w===0.88)warnings.push("Exactly 0.88 lb falls under both the SP 13/14 caption (=> 0.88) and SP 15 (<= 0.88). EP applies SP 15 at this weight; written FAA clarification is outstanding.");}
-        else if(prs==="yes"){pathway="SP 14";pathwayText="Over 0.88 lb with PRS. 10 lb ceiling. PRS operational and ASTM F3322-18 compliant, verified free of known defects within the previous 7 calendar days, never below the manufacturer minimum deployment height (SP 14(e)(f)(g)). No modification to the PRS; repack after any deployment (SP 24).";
-            if(w>10)blocks.push(`${w} lb exceeds the 10 lb ceiling for PRS-equipped overflight (SP 14(d)).`);}
-        else{pathway="SP 13";pathwayText="Over 0.88 lb, no PRS. Restricted access site only. Persons in the operational area must be site-related, notified and equipped with PPE. 8.8 lb ceiling.";
-            if(w>8.8)blocks.push(`${w} lb exceeds the 8.8 lb (4.0 kg) ceiling for non-PRS overflight (SP 13(f)). Fit a conforming PRS for the 10 lb SP 14 ceiling.`);
-            if(restricted!=="yes")blocks.push("SP 13(a) requires a site restricted from the general public. Restrict access, fit a PRS (SP 14), or route to avoid overflight.");
-            if(ppe!=="yes")blocks.push("SP 13(a) requires persons in the operational area to be site-related and equipped with appropriate PPE (hard hats, gloves, work boots).");}
-        if(assembly==="yes")blocks.push("Overflight of open-air assemblies of persons is prohibited on every pathway (SP 13(c), 14(a), 15(a)). The coordination alternative in the superseded certificate no longer exists.");
-        if(sustained==="yes")blocks.push("Sustained overflight (loitering, hovering, continuous or sequential) of non-participants or moving vehicles is prohibited on every pathway (SP 13(d), 14(b), 15(b)). Overflight must be transitory.");
-        notes.push("Routes must be designed to avoid overflight of human beings and traffic areas (SP 13(e), 14(c)).");
-        if(sp==="SP 11")notes.push("Overflight does not by itself require a VO. The VO rule of the superseded certificate (old SP 33) does not exist in "+COW+".");
+        else if(w<=0.88){pathway="Overflight of Non-Participants at or Under 0.88 lb (SP 15)";pathwayText="0.88 lb or less including all attachments. Rotating component shielding (prop guards) required. No sustained overflight.";
+            if(w===0.88)warnings.push("Exactly 0.88 lb falls under both the Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13)/14 caption (=> 0.88) and Overflight of Non-Participants at or Under 0.88 lb (SP 15) (<= 0.88). EP applies Overflight of Non-Participants at or Under 0.88 lb (SP 15) at this weight; written FAA clarification is outstanding.");}
+        else if(prs==="yes"){pathway="PRS-Equipped Overflight of Non-Participants (SP 14)";pathwayText="Over 0.88 lb with PRS. 10 lb ceiling. PRS operational and ASTM F3322-18 compliant, verified free of known defects within the previous 7 calendar days, never below the manufacturer minimum deployment height (PRS-Equipped Overflight of Non-Participants (SP 14(e)(f)(g))). No modification to the PRS; repack after any deployment (Parachute Recovery System Integrity (SP 24)).";
+            if(w>10)blocks.push(`${w} lb exceeds the 10 lb ceiling for PRS-equipped overflight (PRS-Equipped Overflight, Maximum Takeoff Weight (SP 14(d))).`);}
+        else{pathway="Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13)";pathwayText="Over 0.88 lb, no PRS. Restricted access site only. Persons in the operational area must be site-related, notified and equipped with PPE. 8.8 lb ceiling.";
+            if(w>8.8)blocks.push(`${w} lb exceeds the 8.8 lb (4.0 kg) ceiling for non-PRS overflight (Non-PRS Overflight, Maximum Takeoff Weight (SP 13(f))). Fit a conforming PRS for the 10 lb PRS-Equipped Overflight of Non-Participants (SP 14) ceiling.`);
+            if(restricted!=="yes")blocks.push("Non-PRS Overflight, Restricted Access and PPE (SP 13(a)) requires a site restricted from the general public. Restrict access, fit a PRS (PRS-Equipped Overflight of Non-Participants (SP 14)), or route to avoid overflight.");
+            if(ppe!=="yes")blocks.push("Non-PRS Overflight, Restricted Access and PPE (SP 13(a)) requires persons in the operational area to be site-related and equipped with appropriate PPE (hard hats, gloves, work boots).");}
+        if(assembly==="yes")blocks.push("Overflight of open-air assemblies of persons is prohibited on every pathway (Overflight, Open-Air Assembly Prohibition (SP 13(c)), 14(a), 15(a)). The coordination alternative in the superseded certificate no longer exists.");
+        if(sustained==="yes")blocks.push("Sustained overflight (loitering, hovering, continuous or sequential) of non-participants or moving vehicles is prohibited on every pathway (Overflight, No Sustained Operations (SP 13(d)), 14(b), 15(b)). Overflight must be transitory.");
+        notes.push("Routes must be designed to avoid overflight of human beings and traffic areas (Overflight, Route Design to Avoid People and Traffic (SP 13(e)), 14(c)).");
+        if(sp==="Shielded Operations (SP 11)")notes.push("Overflight does not by itself require a VO. The VO rule of the superseded certificate (old Special Provision 33 (SP 33)) does not exist in "+COW+".");
     }else{
-        pathwayText="No overflight of non-participants or moving vehicles. SP 13, 14 and 15 do not apply. No blanket MTOW ceiling applies; the aircraft must be on the eligible-UAS list (SP 25).";
+        pathwayText="No overflight of non-participants or moving vehicles. Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), 14 and 15 do not apply. No blanket MTOW ceiling applies; the aircraft must be on the eligible-UAS list (UAS and Docking Systems Eligibility (SP 25)).";
     }
     return{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes,blocks,pathway,pathwayText};
 }
@@ -471,50 +471,50 @@ function numField(k,label,ph,note){
 function stepHTML(){
     if(step===0)return`
         <div class="step-q">Is the entire route shielded?</div>
-        <div class="step-sub">Under CoW ${COW} the governing provision is SP 11 (shielded) or SP 12 (non-shielded). Site character no longer changes it.</div>
+        <div class="step-sub">Under CoW ${COW} the governing provision is Shielded Operations (SP 11) (shielded) or Non-Shielded Operations (SP 12) (non-shielded). Site character no longer changes it.</div>
         <div class="field-group">
             <span class="field-label">Qualifying obstruction continuous along the entire route and RTH path?</span>
-            ${infoBox('An obstruction is any physical object, natural or man-made, that would stop or impede the aircraft on contact. Buildings, structures, mature tree lines and terrain qualify. Gaps reclassify the affected segments to SP 12; there is no partial-shielding allowance.')}
-            <div class="grid-2">${opt('obstructions','yes','🏢','Yes, continuous shielding','SP 11')}${opt('obstructions','no','🌅','No, or gaps along the route','SP 12')}</div>
+            ${infoBox('An obstruction is any physical object, natural or man-made, that would stop or impede the aircraft on contact. Buildings, structures, mature tree lines and terrain qualify. Gaps reclassify the affected segments to Non-Shielded Operations (SP 12); there is no partial-shielding allowance.')}
+            <div class="grid-2">${opt('obstructions','yes','🏢','Yes, continuous shielding','Shielded Operations (SP 11)')}${opt('obstructions','no','🌅','No, or gaps along the route','Non-Shielded Operations (SP 12)')}</div>
         </div>
-        ${answers.obstructions==='yes'?numField('obstHeight','Controlling obstruction height (ft), optional','e.g. 45','Lowest obstruction relied on. Used for the SP 11(b) figure: 100 ft above it within a 100 ft radius, max 400 ft AGL.'):''}`;
+        ${answers.obstructions==='yes'?numField('obstHeight','Controlling obstruction height (ft), optional','e.g. 45','Lowest obstruction relied on. Used for the Shielded Operations, Obstruction Geometry (SP 11(b)) figure: 100 ft above it within a 100 ft radius, max 400 ft AGL.'):''}`;
 
     if(step===1)return`
         <div class="step-q">Airspace mitigation and UASFM</div>
-        <div class="step-sub">${answers.obstructions==='yes'?'Shielded operations carry no VO or DAA requirement. Only the UASFM question applies.':'SP 12 requires DAA under observation or sufficient VO(s). It offers no third option.'}</div>
+        <div class="step-sub">${answers.obstructions==='yes'?'Shielded operations carry no VO or DAA requirement. Only the UASFM question applies.':'Non-Shielded Operations (SP 12) requires DAA under observation or sufficient VO(s). It offers no third option.'}</div>
         ${answers.obstructions!=='yes'?`
         <div class="field-group">
             <span class="field-label">DAA system at this site</span>
-            ${infoBox('SP 12(b): the DAA system specified in the waiver application must be active and under observation by the RPIC or Electronic Observer. Where coverage is compromised the ceiling is 200 ft AGL.')}
+            ${infoBox('Non-Shielded Operations, DAA Requirement (SP 12(b)): the DAA system specified in the waiver application must be active and under observation by the RPIC or Electronic Observer. Where coverage is compromised the ceiling is 200 ft AGL.')}
             <div class="grid-1">${opt('daa','active','📡','Active and under observation','400 ft AGL')}${opt('daa','compromised','📶','Installed, coverage compromised here','200 ft AGL')}${opt('daa','none','—','Not used','')}</div>
         </div>
         <div class="field-group">
             <span class="field-label">Visual Observers assigned?</span>
             <div class="grid-2">${opt('vo','yes','👁️','Yes','')}${opt('vo','no','✗','No','')}</div>
         </div>
-        ${answers.vo==='yes'?`<div class="field-group"><span class="field-label">VO count sufficient to continuously observe a 2 SM radius?</span><div class="grid-2">${opt('vo2sm','yes','✓','Yes','SP 12(c)')}${opt('vo2sm','no','✗','No','')}</div></div>`:''}`:''}
+        ${answers.vo==='yes'?`<div class="field-group"><span class="field-label">VO count sufficient to continuously observe a 2 SM radius?</span><div class="grid-2">${opt('vo2sm','yes','✓','Yes','Non-Shielded Operations, Visual Observer Coverage (SP 12(c))')}${opt('vo2sm','no','✗','No','')}</div></div>`:''}`:''}
         <div class="field-group">
-            <span class="field-label">Controlled airspace at or below the UASFM grid (SP 16)?</span>
-            ${infoBox('SP 16 authorizes §107.41 operations at or below the published UASFM grid height with a NOTAM filed 24 to 72 hours prior. Class G needs no authorization. Above the grid needs separate ATC authorization; LAANC may not be used for waivered operations.')}
-            <div class="grid-2">${opt('uasfm','yes','🗺️','Yes, relies on SP 16','')}${opt('uasfm','no','🌾','No (Class G or separate ATC authorization)','')}</div>
+            <span class="field-label">Controlled airspace at or below the UASFM grid (UASFM Grid Operations / NOTAM Requirement (SP 16))?</span>
+            ${infoBox('UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes §107.41 operations at or below the published UASFM grid height with a NOTAM filed 24 to 72 hours prior. Class G needs no authorization. Above the grid needs separate ATC authorization; LAANC may not be used for waivered operations.')}
+            <div class="grid-2">${opt('uasfm','yes','🗺️','Yes, relies on UASFM Grid Operations / NOTAM Requirement (SP 16)','')}${opt('uasfm','no','🌾','No (Class G or separate ATC authorization)','')}</div>
         </div>
-        ${numField('gridHeight','UASFM grid height at this site (ft AGL), optional','e.g. 200','Takes precedence over the shielded altitude figures (SP 11(c)) and caps SP 16 operations.')}`;
+        ${numField('gridHeight','UASFM grid height at this site (ft AGL), optional','e.g. 200','Takes precedence over the shielded altitude figures (Shielded Operations, UASFM Grid Precedence (SP 11(c))) and caps UASFM Grid Operations / NOTAM Requirement (SP 16) operations.')}`;
 
     if(step===2)return`
         <div class="step-q">Aircraft</div>
         <div class="step-sub">Weight and PRS select the overflight pathway. There is no blanket MTOW ceiling in this certificate.</div>
-        ${numField('mtow','Maximum takeoff weight, all attachments (lb)','e.g. 2.1','Pathway caps: 0.88 lb (SP 15), 8.8 lb non-PRS (SP 13), 10 lb PRS-equipped (SP 14). Caps apply only to overflight of non-participants.')}
+        ${numField('mtow','Maximum takeoff weight, all attachments (lb)','e.g. 2.1','Pathway caps: 0.88 lb (Overflight of Non-Participants at or Under 0.88 lb (SP 15)), 8.8 lb non-PRS (Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13)), 10 lb PRS-equipped (PRS-Equipped Overflight of Non-Participants (SP 14)). Caps apply only to overflight of non-participants.')}
         <div class="field-group">
             <span class="field-label">Parachute recovery system fitted (ASTM F3322-18 as revised)?</span>
-            ${infoBox('PRS is a pathway, not a general requirement. It raises the overflight ceiling from 8.8 lb to 10 lb and removes the restricted-access condition, but the aircraft may never fly below the manufacturer minimum deployment height (SP 14(g)).')}
-            <div class="grid-2">${opt('prs','yes','🪂','Yes, PRS fitted','SP 14 pathway')}${opt('prs','no','—','No PRS','SP 13 or SP 15 pathway')}</div>
+            ${infoBox('PRS is a pathway, not a general requirement. It raises the overflight ceiling from 8.8 lb to 10 lb and removes the restricted-access condition, but the aircraft may never fly below the manufacturer minimum deployment height (PRS-Equipped Overflight, Minimum Deployment Height (SP 14(g))).')}
+            <div class="grid-2">${opt('prs','yes','🪂','Yes, PRS fitted','PRS-Equipped Overflight of Non-Participants (SP 14) pathway')}${opt('prs','no','—','No PRS','Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) or Overflight of Non-Participants at or Under 0.88 lb (SP 15) pathway')}</div>
         </div>`;
 
     if(step===3){
         const w=num(answers.mtow);
         return`
         <div class="step-q">Overflight of non-participants and moving vehicles</div>
-        <div class="step-sub">§107.39 and §107.145 are waived subject to SP 13, 14 or 15. Overflight does not itself require a VO.</div>
+        <div class="step-sub">§107.39 and §107.145 are waived subject to Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), 14 or 15. Overflight does not itself require a VO.</div>
         <div class="field-group">
             <span class="field-label">Any overflight of non-participating people or moving vehicles expected?</span>
             <div class="grid-2">${opt('overflight','yes','👥','Yes','')}${opt('overflight','no','✓','No','')}</div>
@@ -532,7 +532,7 @@ function stepHTML(){
         ${(w!==null&&w>0.88&&answers.prs!=='yes')?`
         <div class="field-group">
             <span class="field-label">Site restricted from the general public?</span>
-            ${infoBox('SP 13(a): non-PRS overflight over 0.88 lb is limited to restricted access sites where persons present are related to the site (security, construction workers, engineers, maintainers).')}
+            ${infoBox('Non-PRS Overflight, Restricted Access and PPE (SP 13(a)): non-PRS overflight over 0.88 lb is limited to restricted access sites where persons present are related to the site (security, construction workers, engineers, maintainers).')}
             <div class="grid-2">${opt('restricted','yes','🔒','Yes, restricted access','')}${opt('restricted','no','🔓','No, open to the public','')}</div>
         </div>
         <div class="field-group">
@@ -560,8 +560,8 @@ function resultHTML(){
         ${warnings.length?`<span class="sec-label">⚠ Warnings</span>${warnings.map(w=>`<div class="warning-box">${w}</div>`).join('')}`:''}
         <span class="sec-label">Operational Requirements</span>
         <div class="req-card">
-            <div class="req-row"><div class="req-icon ${voRequired?'fail':'pass'}">${voRequired?'✗':'✓'}</div><div class="req-text"><strong>Visual Observer (VO):</strong><span>${voRequired?voReason:'Not required for this configuration. VO or DAA is driven only by non-shielded classification under SP 12.'}</span></div></div>
-            <div class="req-row"><div class="req-icon ${daaRequired?'fail':'pass'}">${daaRequired?'✗':'✓'}</div><div class="req-text"><strong>DAA System:</strong><span>${daaRequired?'Relied on. Must be the system described in the waiver application, active and under observation throughout (SP 12(b)).':'Not relied on. DAA has no effect on shielded operations in this certificate.'}</span></div></div>
+            <div class="req-row"><div class="req-icon ${voRequired?'fail':'pass'}">${voRequired?'✗':'✓'}</div><div class="req-text"><strong>Visual Observer (VO):</strong><span>${voRequired?voReason:'Not required for this configuration. VO or DAA is driven only by non-shielded classification under Non-Shielded Operations (SP 12).'}</span></div></div>
+            <div class="req-row"><div class="req-icon ${daaRequired?'fail':'pass'}">${daaRequired?'✗':'✓'}</div><div class="req-text"><strong>DAA System:</strong><span>${daaRequired?'Relied on. Must be the system described in the waiver application, active and under observation throughout (Non-Shielded Operations, DAA Requirement (SP 12(b))).':'Not relied on. DAA has no effect on shielded operations in this certificate.'}</span></div></div>
             <div class="req-row"><div class="req-icon ${pathway==='None'?'pass':(pathway==='Not set'?'fail':'info')}">${pathway==='None'?'✓':(pathway==='Not set'?'✗':'ℹ')}</div><div class="req-text"><strong>Overflight pathway: ${pathway}</strong><span>${pathwayText}</span></div></div>
         </div>
         ${notes.length?`<span class="sec-label">Compliance Notes</span><div class="req-card">${notes.map(n=>`<div class="req-row"><div class="req-icon info">ℹ</div><div class="req-text"><span>${n}</span></div></div>`).join('')}</div>`:''}

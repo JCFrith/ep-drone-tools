@@ -1,7 +1,7 @@
 {
-  "version": "3.0",
+  "version": "4.0",
   "certificate": "107W-2026-01762",
-  "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 3.0 restates the shielded/non-shielded split (SP 11/SP 12), the three operations-over-non-participants pathways (SP 13/SP 14/SP 15), the SP 16 UASFM authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Items carried over from the superseded certificate as EP practice are labelled as such.",
+  "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 4.0 restates the shielded/non-shielded split, the three operations-over-non-participants pathways, the UASFM grid authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Trims Aircraft & Equipment to site-invariant items (aircraft-state checks such as Remote ID, ADS-B, maintenance log and FCC compliance now belong on a separate pre-flight readiness checklist, not a per-site record), removes duplicate Shielding Geometry and Property items already covered elsewhere, and splits the applicable sections between ground-crew and RPIC items with a single RPIC attestation gating final approval. Items carried over from the superseded certificate as EP practice are labelled as such.",
   "decisions": {
     "approvedWithConditions": "APPROVED WITH CONDITIONS",
     "notApproved": "NOT APPROVED",
@@ -89,20 +89,20 @@
       "id": "AC-001",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 13(f), SP 14(d), SP 15(c)",
+      "provision": "Non-PRS Overflight, Maximum Takeoff Weight (SP 13(f)), PRS-Equipped Overflight, Maximum Takeoff Weight (SP 14(d)), Light Aircraft Overflight, Maximum Takeoff Weight (SP 15(c))",
       "test": {
         "type": "fieldPresent",
         "field": "mtow"
       },
       "label": "Maximum takeoff weight recorded",
       "failReason": "Aircraft maximum takeoff weight has not been recorded.",
-      "correctiveAction": "Record maximum takeoff weight including all attachments. Weight selects the operations-over-non-participants pathway (SP 13, SP 14 or SP 15)."
+      "correctiveAction": "Record maximum takeoff weight including all attachments. Weight selects the operations-over-non-participants pathway (Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), PRS-Equipped Overflight of Non-Participants (SP 14) or Overflight of Non-Participants at or Under 0.88 lb (SP 15))."
     },
     {
       "id": "AC-002",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 13(f)",
+      "provision": "Non-PRS Overflight, Maximum Takeoff Weight (SP 13(f))",
       "test": {
         "type": "numberAtMost",
         "field": "mtow",
@@ -141,15 +141,15 @@
           }
         ]
       },
-      "label": "Weight within SP 13 ceiling",
+      "label": "Weight within Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) ceiling",
       "failReason": "Maximum takeoff weight exceeds 8.8 lb (4.0 kg), the ceiling for non-PRS operations over non-participants.",
-      "correctiveAction": "Use an aircraft at or below 8.8 lb, fit a conforming PRS (SP 14, 10 lb ceiling), or plan the route to avoid overflight of non-participants and moving vehicles."
+      "correctiveAction": "Use an aircraft at or below 8.8 lb, fit a conforming PRS (PRS-Equipped Overflight of Non-Participants (SP 14), 10 lb ceiling), or plan the route to avoid overflight of non-participants and moving vehicles."
     },
     {
       "id": "AC-003",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 14(d)",
+      "provision": "PRS-Equipped Overflight, Maximum Takeoff Weight (SP 14(d))",
       "test": {
         "type": "numberAtMost",
         "field": "mtow",
@@ -188,7 +188,7 @@
           }
         ]
       },
-      "label": "Weight within SP 14 ceiling",
+      "label": "Weight within PRS-Equipped Overflight of Non-Participants (SP 14) ceiling",
       "failReason": "Maximum takeoff weight exceeds 10 lb, the ceiling for PRS-equipped operations over non-participants.",
       "correctiveAction": "Use an aircraft at or below 10 lb, or plan the route to avoid overflight of non-participants and moving vehicles."
     },
@@ -196,7 +196,7 @@
       "id": "AC-004",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 14(g)",
+      "provision": "PRS-Equipped Overflight, Minimum Deployment Height (SP 14(g))",
       "test": {
         "type": "fieldPresent",
         "field": "prsMinAlt"
@@ -242,7 +242,7 @@
       "id": "AC-005",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 15(d)",
+      "provision": "Light Aircraft Overflight, Rotating Component Shielding (SP 15(d))",
       "test": {
         "type": "checkDone",
         "key": "equip.propguards"
@@ -276,14 +276,14 @@
         ]
       },
       "label": "Rotating component shielding fitted",
-      "failReason": "Prop guards or an equivalent laceration-prevention system have not been verified for the SP 15 pathway.",
+      "failReason": "Prop guards or an equivalent laceration-prevention system have not been verified for the Overflight of Non-Participants at or Under 0.88 lb (SP 15) pathway.",
       "correctiveAction": "Verify prop guards or a laceration-prevention system are fitted. Weight including all attachments must remain at or below 0.88 lb."
     },
     {
       "id": "AC-006",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 29",
+      "provision": "Anti-Collision Lighting (SP 29)",
       "test": {
         "type": "checkDone",
         "key": "equip.lighting"
@@ -293,242 +293,23 @@
       "correctiveAction": "Verify 107.29-compliant anti-collision lighting is fitted and operational at all times."
     },
     {
-      "id": "AC-007",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 26",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.adsbIn"
-      },
-      "label": "ADS-B In operational",
-      "failReason": "ADS-B In receiver has not been verified operational and monitored.",
-      "correctiveAction": "Verify an ADS-B In receiver is operational and monitored. A phone or third-party internet service does not satisfy this."
-    },
-    {
-      "id": "AC-008",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 26",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.adsbOut"
-      },
-      "label": "ADS-B Out not transmitting",
-      "failReason": "ADS-B Out has not been confirmed as not transmitting.",
-      "correctiveAction": "Confirm ADS-B Out (1090/978 MHz) is not transmitting."
-    },
-    {
-      "id": "AC-009",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 9",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.remoteid"
-      },
-      "label": "Standard remote identification",
-      "failReason": "Standard remote ID compliance has not been verified.",
-      "correctiveAction": "Verify the aircraft is a standard remote identification aircraft on the FAA declaration of compliance list."
-    },
-    {
-      "id": "AC-010",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 17(c)(d)",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.fts"
-      },
-      "when": {
-        "type": "numberGreaterThan",
-        "field": "acCount",
-        "value": 1
-      },
-      "label": "Flight termination system",
-      "failReason": "Independent flight termination system has not been verified for multi-aircraft operations.",
-      "correctiveAction": "Verify each aircraft has an independent FTS and that FTS and geofencing are verified operational before each flight."
-    },
-    {
       "id": "AC-011",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 27(a)",
+      "provision": "Ground Control Station Configuration (SP 27(a)(b)(c)(d))",
       "test": {
         "type": "checkDone",
         "key": "equip.gcsTelemetry"
       },
-      "label": "GCS telemetry display",
-      "failReason": "Required GCS telemetry display items have not been verified.",
-      "correctiveAction": "Verify the GCS displays altitude, position, direction of flight, ground speed, C2 signal strength, navigation signal condition, battery condition, and distance from the control station."
-    },
-    {
-      "id": "AC-012",
-      "category": "Aircraft & Equipment",
-      "severity": "needsProgramReview",
-      "provision": "SP 30(b)",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.maintlog"
-      },
-      "label": "Maintenance log current",
-      "failReason": "Maintenance log has not been reviewed.",
-      "correctiveAction": "Review the maintenance log for each aircraft before operations."
-    },
-    {
-      "id": "AC-013",
-      "category": "Aircraft & Equipment",
-      "severity": "needsProgramReview",
-      "provision": "SP 31",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.fcc"
-      },
-      "label": "Emitter FCC compliance",
-      "failReason": "Emitter FCC compliance has not been confirmed.",
-      "correctiveAction": "Confirm all emitters comply with their FCC authorization. An FCC Experimental authorization may not be used."
-    },
-    {
-      "id": "AC-014",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 14(f)",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.prs7day"
-      },
-      "when": {
-        "type": "allOf",
-        "of": [
-          {
-            "type": "anyOf",
-            "of": [
-              {
-                "type": "fieldEquals",
-                "field": "oopExpected",
-                "value": "Yes"
-              },
-              {
-                "type": "fieldIn",
-                "field": "oomvMode",
-                "values": [
-                  "transient",
-                  "sustained"
-                ]
-              }
-            ]
-          },
-          {
-            "type": "numberGreaterThan",
-            "field": "mtow",
-            "value": 0.88
-          },
-          {
-            "type": "fieldEquals",
-            "field": "prsEquipped",
-            "value": "Yes"
-          }
-        ]
-      },
-      "label": "PRS 7-day defect verification",
-      "failReason": "Verification that the PRS has no known safety defects within the previous 7 calendar days has not been recorded.",
-      "correctiveAction": "Responsible Person and RPIC verify the PRS has no known safety defects within the 7 calendar days before operations, and record it."
-    },
-    {
-      "id": "AC-015",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 24",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.prsMods"
-      },
-      "when": {
-        "type": "allOf",
-        "of": [
-          {
-            "type": "anyOf",
-            "of": [
-              {
-                "type": "fieldEquals",
-                "field": "oopExpected",
-                "value": "Yes"
-              },
-              {
-                "type": "fieldIn",
-                "field": "oomvMode",
-                "values": [
-                  "transient",
-                  "sustained"
-                ]
-              }
-            ]
-          },
-          {
-            "type": "numberGreaterThan",
-            "field": "mtow",
-            "value": 0.88
-          },
-          {
-            "type": "fieldEquals",
-            "field": "prsEquipped",
-            "value": "Yes"
-          }
-        ]
-      },
-      "label": "PRS unmodified and repacked",
-      "failReason": "PRS modification status and repack status after any deployment have not been confirmed.",
-      "correctiveAction": "Confirm no modification to the PRS, identical replacement parts only, and manufacturer repack after any deployment."
-    },
-    {
-      "id": "AC-016",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 28",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.nomods"
-      },
-      "label": "sUAS design unmodified",
-      "failReason": "Confirmation that the sUAS design is unmodified has not been recorded.",
-      "correctiveAction": "Confirm no modification to the sUAS design. Repairs use identical replacement parts only."
-    },
-    {
-      "id": "AC-017",
-      "category": "Aircraft & Equipment",
-      "severity": "needsProgramReview",
-      "provision": "SP 30(c)",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.functest"
-      },
-      "label": "Functional test flight after maintenance",
-      "failReason": "Post-maintenance functional test flight status has not been confirmed.",
-      "correctiveAction": "Confirm any aircraft that underwent maintenance completed a logged functional test flight under standard Part 107 before waivered operations."
-    },
-    {
-      "id": "AC-018",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 17(a)",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.fms"
-      },
-      "when": {
-        "type": "numberGreaterThan",
-        "field": "acCount",
-        "value": 1
-      },
-      "label": "Multi-UAS make, model and FMS as specified",
-      "failReason": "Multi-aircraft operations have not been confirmed to use the make/model and Flight Management System specified in the waiver application.",
-      "correctiveAction": "Confirm the aircraft and FMS match the waiver application for multi-UAS operations, or operate a single aircraft."
+      "label": "GCS configured per GCS Telemetry Display (SP 27(a)) to (d): telemetry display, alerting, emergency profiles, avoidance sensors",
+      "failReason": "Required GCS configuration items have not been verified: telemetry display, alerting for degraded performance/geofence loss/control link loss/intrusion, automated emergency profiles, and collision/obstacle avoidance sensors.",
+      "correctiveAction": "Verify the GCS displays required telemetry, is configured to alert on degraded performance, geofence loss of containment, control link loss and intrusion, has automated emergency profiles configured, and any installed avoidance sensors are operational."
     },
     {
       "id": "AC-019",
       "category": "Aircraft & Equipment",
       "severity": "notApproved",
-      "provision": "SP 17(a)",
+      "provision": "Multiple UAS Operations, Aircraft and FMS as Specified (SP 17(a))",
       "test": {
         "type": "numberAtMost",
         "field": "acCount",
@@ -543,36 +324,23 @@
       "correctiveAction": "Reduce simultaneous aircraft to six or fewer."
     },
     {
-      "id": "AC-020",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "SP 25(a)(b)(v)",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.eligible"
-      },
-      "label": "Aircraft on eligible-UAS list",
-      "failReason": "Aircraft has not been confirmed on the Responsible Person eligible-UAS list.",
-      "correctiveAction": "Confirm the make and model appears on the eligible-UAS list with date added and affirming person."
-    },
-    {
       "id": "CLS-001",
       "category": "Classification",
       "severity": "notApproved",
-      "provision": "SP 11, SP 12",
+      "provision": "Shielded Operations (SP 11), Non-Shielded Operations (SP 12)",
       "test": {
         "type": "fieldPresent",
         "field": "shieldContinuity"
       },
       "label": "Obstruction continuity recorded",
       "failReason": "Obstruction continuity has not been recorded.",
-      "correctiveAction": "Record whether obstruction is continuous, present with gaps, or absent along the entire route. This selects SP 11 (shielded) or SP 12 (non-shielded)."
+      "correctiveAction": "Record whether obstruction is continuous, present with gaps, or absent along the entire route. This selects Shielded Operations (SP 11) (shielded) or Non-Shielded Operations (SP 12) (non-shielded)."
     },
     {
       "id": "CLS-002",
       "category": "Classification",
       "severity": "notApproved",
-      "provision": "SP 12",
+      "provision": "Non-Shielded Operations (SP 12)",
       "test": {
         "type": "fieldPresent",
         "field": "daaStatus"
@@ -585,7 +353,7 @@
       "id": "CLS-003",
       "category": "Classification",
       "severity": "notApproved",
-      "provision": "SP 12(b)(c)",
+      "provision": "Non-Shielded Operations (SP 12(b)(c))",
       "test": {
         "type": "anyOf",
         "of": [
@@ -607,14 +375,14 @@
         "value": "continuous"
       },
       "label": "Non-shielded mitigation present",
-      "failReason": "Non-shielded with neither DAA nor a Visual Observer. SP 12 offers two alternatives, DAA or VO(s). With neither, this is not an operation under this waiver.",
-      "correctiveAction": "Conduct the flight under standard Part 107 within visual line of sight, reclassify as SP 11 shielded, assign VO(s) sufficient for a 2 SM radius, or use the DAA system described in the waiver application."
+      "failReason": "Non-shielded with neither DAA nor a Visual Observer. Non-Shielded Operations (SP 12) offers two alternatives, DAA or VO(s). With neither, this is not an operation under this waiver.",
+      "correctiveAction": "Conduct the flight under standard Part 107 within visual line of sight, reclassify as Shielded Operations (SP 11) shielded, assign VO(s) sufficient for a 2 SM radius, or use the DAA system described in the waiver application."
     },
     {
       "id": "CLS-004",
       "category": "Classification",
       "severity": "needsProgramReview",
-      "provision": "SP 11, SP 12",
+      "provision": "Shielded Operations (SP 11), Non-Shielded Operations (SP 12)",
       "test": {
         "type": "checkDone",
         "key": "cls.gapsdocumented"
@@ -626,13 +394,13 @@
       },
       "label": "Shielding gaps documented",
       "failReason": "Shielding gaps have not been identified and documented.",
-      "correctiveAction": "Identify every segment that reclassifies to SP 12 and document it. The certificate provides no partial-shielding allowance."
+      "correctiveAction": "Identify every segment that reclassifies to Non-Shielded Operations (SP 12) and document it. The certificate provides no partial-shielding allowance."
     },
     {
       "id": "CLS-005",
       "category": "Classification",
       "severity": "notApproved",
-      "provision": "SP 13, SP 14, SP 15",
+      "provision": "Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), PRS-Equipped Overflight of Non-Participants (SP 14), Overflight of Non-Participants at or Under 0.88 lb (SP 15)",
       "test": {
         "type": "fieldPresent",
         "field": "openAirAssembly"
@@ -663,7 +431,7 @@
       "id": "CLS-006",
       "category": "Classification",
       "severity": "notApproved",
-      "provision": "SP 13(c), SP 14(a), SP 15(a)",
+      "provision": "Overflight, Open-Air Assembly Prohibition (SP 13(c)), Overflight, Open-Air Assembly Prohibition (SP 14(a)), Overflight, Open-Air Assembly Prohibition (SP 15(a))",
       "test": {
         "type": "fieldNotEquals",
         "field": "openAirAssembly",
@@ -695,7 +463,7 @@
       "id": "CLS-007",
       "category": "Classification",
       "severity": "notApproved",
-      "provision": "SP 13(d), SP 14(b), SP 15(b)",
+      "provision": "Overflight, No Sustained Operations (SP 13(d)), Overflight, No Sustained Operations (SP 14(b)), Overflight, No Sustained Operations (SP 15(b))",
       "test": {
         "type": "fieldNotEquals",
         "field": "oomvMode",
@@ -709,20 +477,20 @@
       "id": "CLS-008",
       "category": "Classification",
       "severity": "notApproved",
-      "provision": "SP 16",
+      "provision": "UASFM Grid Operations / NOTAM Requirement (SP 16)",
       "test": {
         "type": "fieldPresent",
         "field": "uasfmOps"
       },
       "label": "UASFM operation status recorded",
-      "failReason": "Whether the site relies on the SP 16 \u00a7107.41 authorization (at or below UASFM grid altitudes) has not been recorded.",
-      "correctiveAction": "Record whether operations at this site rely on SP 16."
+      "failReason": "Whether the site relies on the UASFM Grid Operations / NOTAM Requirement (SP 16) \u00a7107.41 authorization (at or below UASFM grid altitudes) has not been recorded.",
+      "correctiveAction": "Record whether operations at this site rely on UASFM Grid Operations / NOTAM Requirement (SP 16)."
     },
     {
       "id": "VO-001",
       "category": "Crew & Visual Observers",
       "severity": "notApproved",
-      "provision": "SP 12(d), SP 12(e)",
+      "provision": "Non-Shielded Operations, VO Positioning and Communication (SP 12(d)), Non-Shielded Operations, VO Communication Equipment (SP 12(e))",
       "test": {
         "type": "checkDone",
         "key": "rf.voVoice"
@@ -734,13 +502,13 @@
       },
       "label": "Direct voice with every VO",
       "failReason": "Direct voice communication with every VO has not been confirmed.",
-      "correctiveAction": "Confirm continuous full-duplex, hands-free voice with each VO and a reliable backup. Operations cease if voice is lost (SP 21(c))."
+      "correctiveAction": "Confirm continuous full-duplex, hands-free voice with each VO and a reliable backup. Operations cease if voice is lost (Cease Operations on Loss of VO Communication (SP 21(c)))."
     },
     {
       "id": "VO-002",
       "category": "Crew & Visual Observers",
       "severity": "notApproved",
-      "provision": "SP 12(c)",
+      "provision": "Non-Shielded Operations, Visual Observer Coverage (SP 12(c))",
       "test": {
         "type": "fieldEquals",
         "field": "vo2sm",
@@ -767,14 +535,14 @@
         ]
       },
       "label": "VO count sufficient for 2 SM",
-      "failReason": "VO coverage of a 2 statute mile radius has not been confirmed. This is the definition of sufficient VO(s) under SP 12(c).",
+      "failReason": "VO coverage of a 2 statute mile radius has not been confirmed. This is the definition of sufficient VO(s) under Non-Shielded Operations, Visual Observer Coverage (SP 12(c)).",
       "correctiveAction": "Confirm the number of VOs continuously observes at least a 2 SM radius around the aircraft, or add VOs."
     },
     {
       "id": "VO-003",
       "category": "Crew & Visual Observers",
       "severity": "needsProgramReview",
-      "provision": "SP 12(f)",
+      "provision": "Non-Shielded Operations, VO Training (SP 12(f))",
       "test": {
         "type": "checkDone",
         "key": "doc.voTraining"
@@ -786,13 +554,13 @@
       },
       "label": "VO training documented",
       "failReason": "Documented VO training (operational volume scanning, communications and phraseology, overall waiver operations) has not been confirmed.",
-      "correctiveAction": "Confirm each VO has documented training for the SP 12(f) items."
+      "correctiveAction": "Confirm each VO has documented training for the Non-Shielded Operations, VO Training (SP 12(f)) items."
     },
     {
       "id": "OONP-001",
       "category": "Operations Over Non-Participants",
       "severity": "notApproved",
-      "provision": "SP 13(a)",
+      "provision": "Non-PRS Overflight, Restricted Access and PPE (SP 13(a))",
       "test": {
         "type": "fieldEquals",
         "field": "closedAccess",
@@ -833,13 +601,13 @@
       },
       "label": "Restricted access site",
       "failReason": "Operations over non-participants with an aircraft over 0.88 lb and no PRS require a site restricted from the general public, with persons present related to the site.",
-      "correctiveAction": "Restrict site access to the general public, fit a conforming PRS (SP 14), use an aircraft at or below 0.88 lb (SP 15), or plan the route to avoid overflight."
+      "correctiveAction": "Restrict site access to the general public, fit a conforming PRS (PRS-Equipped Overflight of Non-Participants (SP 14)), use an aircraft at or below 0.88 lb (Overflight of Non-Participants at or Under 0.88 lb (SP 15)), or plan the route to avoid overflight."
     },
     {
       "id": "OONP-002",
       "category": "Operations Over Non-Participants",
       "severity": "notApproved",
-      "provision": "SP 13(a)",
+      "provision": "Non-PRS Overflight, Restricted Access and PPE (SP 13(a))",
       "test": {
         "type": "fieldEquals",
         "field": "ppeConfirmed",
@@ -880,13 +648,13 @@
       },
       "label": "Persons on site equipped with PPE",
       "failReason": "Persons in the operational area have not been confirmed as site-related and equipped with appropriate PPE (hard hats, gloves, work boots or similar).",
-      "correctiveAction": "Confirm the client will require PPE for persons in the operational area during operations, or use the SP 14 or SP 15 pathway."
+      "correctiveAction": "Confirm the client will require PPE for persons in the operational area during operations, or use the PRS-Equipped Overflight of Non-Participants (SP 14) or Overflight of Non-Participants at or Under 0.88 lb (SP 15) pathway."
     },
     {
       "id": "OONP-003",
       "category": "Operations Over Non-Participants",
       "severity": "notApproved",
-      "provision": "SP 13(b)",
+      "provision": "Non-PRS Overflight, Notification of Authorized Persons (SP 13(b))",
       "test": {
         "type": "checkDone",
         "key": "prop.notification"
@@ -932,7 +700,7 @@
       "id": "OONP-004",
       "category": "Operations Over Non-Participants",
       "severity": "notApproved",
-      "provision": "SP 13(e), SP 14(c)",
+      "provision": "Overflight, Route Design to Avoid People and Traffic (SP 13(e)), Overflight, Route Design to Avoid People and Traffic (SP 14(c))",
       "test": {
         "type": "checkDone",
         "key": "ground.route"
@@ -973,7 +741,7 @@
       "id": "OONP-005",
       "category": "Operations Over Non-Participants",
       "severity": "notApproved",
-      "provision": "SP 14(e)",
+      "provision": "PRS-Equipped Overflight, PRS Operational Status (SP 14(e))",
       "test": {
         "type": "checkDone",
         "key": "equip.prsChecked"
@@ -1019,7 +787,7 @@
       "id": "OONP-006",
       "category": "Operations Over Non-Participants",
       "severity": "notApproved",
-      "provision": "SP 14(g)",
+      "provision": "PRS-Equipped Overflight, Minimum Deployment Height (SP 14(g))",
       "test": {
         "type": "fieldAtLeastField",
         "field": "plannedAlt",
@@ -1076,52 +844,6 @@
       "correctiveAction": "Raise the planned altitude to at least the PRS minimum deployment height, or use another pathway."
     },
     {
-      "id": "OONP-007",
-      "category": "Operations Over Non-Participants",
-      "severity": "needsProgramReview",
-      "provision": "SP 14(g)",
-      "test": {
-        "type": "fieldPresent",
-        "field": "oomvFloor"
-      },
-      "when": {
-        "type": "allOf",
-        "of": [
-          {
-            "type": "anyOf",
-            "of": [
-              {
-                "type": "fieldEquals",
-                "field": "oopExpected",
-                "value": "Yes"
-              },
-              {
-                "type": "fieldIn",
-                "field": "oomvMode",
-                "values": [
-                  "transient",
-                  "sustained"
-                ]
-              }
-            ]
-          },
-          {
-            "type": "numberGreaterThan",
-            "field": "mtow",
-            "value": 0.88
-          },
-          {
-            "type": "fieldEquals",
-            "field": "prsEquipped",
-            "value": "Yes"
-          }
-        ]
-      },
-      "label": "PRS floor recorded",
-      "failReason": "Minimum altitude floor for overflight has not been recorded.",
-      "correctiveAction": "Record the PRS minimum deployment height as the floor for this site."
-    },
-    {
       "id": "AIR-001",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
@@ -1138,20 +860,20 @@
       "id": "AIR-002",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
-      "provision": "SP 16, 14 CFR 107.41",
+      "provision": "UASFM Grid Operations / NOTAM Requirement (SP 16), 14 CFR 107.41",
       "test": {
         "type": "checkDone",
         "key": "air.authorization"
       },
       "label": "Airspace authorization basis confirmed",
       "failReason": "Airspace authorization basis has not been confirmed.",
-      "correctiveAction": "Class G: none required. Controlled airspace at or below the UASFM grid: SP 16 authorizes it with a NOTAM. Above the grid or grid zero: separate ATC authorization; LAANC may not be used for waivered operations."
+      "correctiveAction": "Class G: none required. Controlled airspace at or below the UASFM grid: UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes it with a NOTAM. Above the grid or grid zero: separate ATC authorization; LAANC may not be used for waivered operations."
     },
     {
       "id": "AIR-003",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
-      "provision": "SP 16",
+      "provision": "UASFM Grid Operations / NOTAM Requirement (SP 16)",
       "test": {
         "type": "fieldPresent",
         "field": "laancCeiling"
@@ -1162,14 +884,14 @@
         "value": "Yes"
       },
       "label": "UASFM grid ceiling recorded",
-      "failReason": "The UASFM grid altitude at this site has not been recorded. SP 11(c) makes it the controlling altitude and SP 16 limits the authorization to it.",
+      "failReason": "The UASFM grid altitude at this site has not been recorded. Shielded Operations, UASFM Grid Precedence (SP 11(c)) makes it the controlling altitude and UASFM Grid Operations / NOTAM Requirement (SP 16) limits the authorization to it.",
       "correctiveAction": "Record the published UASFM grid altitude for the site."
     },
     {
       "id": "AIR-004",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
-      "provision": "SP 16(a)",
+      "provision": "UASFM Grid Operations, NOTAM Filing (SP 16(a))",
       "test": {
         "type": "checkDone",
         "key": "air.notamFiled"
@@ -1180,14 +902,14 @@
         "value": "Yes"
       },
       "label": "NOTAM procedure assigned",
-      "failReason": "The NOTAM filing procedure for SP 16 operations has not been assigned.",
+      "failReason": "The NOTAM filing procedure for UASFM Grid Operations / NOTAM Requirement (SP 16) operations has not been assigned.",
       "correctiveAction": "Assign responsibility to file a NOTAM no more than 72 and no less than 24 hours before operations, and to verify it is issued before flight."
     },
     {
       "id": "AIR-005",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
-      "provision": "SP 16",
+      "provision": "UASFM Grid Operations / NOTAM Requirement (SP 16)",
       "test": {
         "type": "fieldAtMostField",
         "field": "plannedAlt",
@@ -1212,14 +934,14 @@
         ]
       },
       "label": "Planned altitude within UASFM grid",
-      "failReason": "Planned altitude exceeds the UASFM grid altitude. SP 16 authorizes operations only at or below it.",
+      "failReason": "Planned altitude exceeds the UASFM grid altitude. UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes operations only at or below it.",
       "correctiveAction": "Lower the planned altitude to the grid altitude or obtain a separate ATC authorization."
     },
     {
       "id": "AIR-006",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
-      "provision": "SP 19(d)",
+      "provision": "Facility Notification Within 3 Miles (SP 19(d))",
       "test": {
         "type": "checkDone",
         "key": "air.3mile.identified"
@@ -1232,7 +954,7 @@
       "id": "AIR-007",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
-      "provision": "SP 19(d)",
+      "provision": "Facility Notification Within 3 Miles (SP 19(d))",
       "test": {
         "type": "checkDone",
         "key": "air.3mile.notified"
@@ -1245,7 +967,7 @@
       "id": "AIR-008",
       "category": "Airspace & Regulatory",
       "severity": "notApproved",
-      "provision": "EP practice (former SP 31(a))",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
         "key": "air.1sm.lowlevel"
@@ -1297,7 +1019,7 @@
       "id": "AIR-012",
       "category": "Airspace & Regulatory",
       "severity": "needsProgramReview",
-      "provision": "SP 2",
+      "provision": "Waiver Not Combined With Other Authorizations (SP 2)",
       "test": {
         "type": "checkDone",
         "key": "air.nocombine"
@@ -1336,20 +1058,20 @@
       "id": "PROP-003",
       "category": "Property & Access",
       "severity": "needsProgramReview",
-      "provision": "EP practice (former SP 18(f))",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
         "key": "prop.notification"
       },
       "label": "Non-participant notification",
       "failReason": "Notification of non-participants inside the operational area has not been addressed.",
-      "correctiveAction": "Confirm non-participants will be notified of operations. Mandatory under SP 13(b) on that pathway; EP practice otherwise."
+      "correctiveAction": "Confirm non-participants will be notified of operations. Mandatory under Non-PRS Overflight, Notification of Authorized Persons (SP 13(b)) on that pathway; EP practice otherwise."
     },
     {
       "id": "PROP-004",
       "category": "Property & Access",
       "severity": "needsProgramReview",
-      "provision": "EP practice (former SP 18(g))",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
         "key": "prop.participants"
@@ -1357,37 +1079,6 @@
       "label": "Direct participants identifiable",
       "failReason": "Direct participant identification has not been addressed.",
       "correctiveAction": "Confirm direct participants are visually identifiable by apparel or safety vests. Retained as EP practice; not stated in 107W-2026-01762."
-    },
-    {
-      "id": "PROP-005",
-      "category": "Property & Access",
-      "severity": "notApproved",
-      "provision": "SP 13(c), SP 14(a), SP 15(a)",
-      "test": {
-        "type": "checkDone",
-        "key": "prop.assembly"
-      },
-      "when": {
-        "type": "anyOf",
-        "of": [
-          {
-            "type": "fieldEquals",
-            "field": "oopExpected",
-            "value": "Yes"
-          },
-          {
-            "type": "fieldIn",
-            "field": "oomvMode",
-            "values": [
-              "transient",
-              "sustained"
-            ]
-          }
-        ]
-      },
-      "label": "Open-air assembly excluded",
-      "failReason": "Exclusion of open-air assemblies of persons from the operational area has not been confirmed.",
-      "correctiveAction": "Confirm no open-air assembly of persons is within the operational area, or that the route excludes it."
     },
     {
       "id": "PROP-006",
@@ -1403,56 +1094,10 @@
       "correctiveAction": "Identify and record the client POC."
     },
     {
-      "id": "PROP-007",
-      "category": "Property & Access",
-      "severity": "notApproved",
-      "provision": "SP 13(a)",
-      "test": {
-        "type": "checkDone",
-        "key": "prop.ppe"
-      },
-      "when": {
-        "type": "allOf",
-        "of": [
-          {
-            "type": "anyOf",
-            "of": [
-              {
-                "type": "fieldEquals",
-                "field": "oopExpected",
-                "value": "Yes"
-              },
-              {
-                "type": "fieldIn",
-                "field": "oomvMode",
-                "values": [
-                  "transient",
-                  "sustained"
-                ]
-              }
-            ]
-          },
-          {
-            "type": "numberGreaterThan",
-            "field": "mtow",
-            "value": 0.88
-          },
-          {
-            "type": "fieldNotEquals",
-            "field": "prsEquipped",
-            "value": "Yes"
-          }
-        ]
-      },
-      "label": "PPE arrangements confirmed on site",
-      "failReason": "PPE arrangements for persons in the operational area have not been confirmed.",
-      "correctiveAction": "Confirm with the client that persons in the operational area are site-related and equipped with appropriate PPE."
-    },
-    {
       "id": "SHLD-001",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11",
+      "provision": "Shielded Operations (SP 11)",
       "test": {
         "type": "checkDone",
         "key": "shield.features"
@@ -1470,7 +1115,7 @@
       "id": "SHLD-002",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11(b)",
+      "provision": "Shielded Operations, Obstruction Geometry (SP 11(b))",
       "test": {
         "type": "checkDone",
         "key": "shield.qualifies"
@@ -1488,7 +1133,7 @@
       "id": "SHLD-003",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11(b)",
+      "provision": "Shielded Operations, Obstruction Geometry (SP 11(b))",
       "test": {
         "type": "checkDone",
         "key": "shield.measured"
@@ -1506,7 +1151,7 @@
       "id": "SHLD-004",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11",
+      "provision": "Shielded Operations (SP 11)",
       "test": {
         "type": "fieldPresent",
         "field": "shieldMaxAGL"
@@ -1524,7 +1169,7 @@
       "id": "SHLD-005",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11(b)",
+      "provision": "Shielded Operations, Obstruction Geometry (SP 11(b))",
       "test": {
         "type": "checkDone",
         "key": "shield.radius"
@@ -1536,13 +1181,13 @@
       },
       "label": "100 ft lateral radius confirmed",
       "failReason": "The 100 ft lateral radius from the controlling obstruction has not been confirmed along the route.",
-      "correctiveAction": "Confirm the aircraft remains within 100 ft laterally of a qualifying obstruction wherever it relies on SP 11(b) above 200 ft AGL."
+      "correctiveAction": "Confirm the aircraft remains within 100 ft laterally of a qualifying obstruction wherever it relies on Shielded Operations, Obstruction Geometry (SP 11(b)) above 200 ft AGL."
     },
     {
       "id": "SHLD-006",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11",
+      "provision": "Shielded Operations (SP 11)",
       "test": {
         "type": "checkDone",
         "key": "shield.continuity"
@@ -1557,41 +1202,10 @@
       "correctiveAction": "Confirm continuity through climb, cruise, and descent."
     },
     {
-      "id": "SHLD-007",
-      "category": "Shielding Geometry",
-      "severity": "notApproved",
-      "provision": "SP 18(d)",
-      "test": {
-        "type": "checkDone",
-        "key": "shield.rth"
-      },
-      "when": {
-        "type": "fieldEquals",
-        "field": "shieldContinuity",
-        "value": "continuous"
-      },
-      "label": "RTH inside shielding",
-      "failReason": "The RTH path has not been confirmed inside the shielding geometry.",
-      "correctiveAction": "Validate the RTH path against the shielding geometry."
-    },
-    {
-      "id": "SHLD-008",
-      "category": "Shielding Geometry",
-      "severity": "notApproved",
-      "provision": "SP 11(d), SP 32",
-      "test": {
-        "type": "checkDone",
-        "key": "shield.opsarea"
-      },
-      "label": "Within defined operational area",
-      "failReason": "Confinement to the defined operational area has not been confirmed.",
-      "correctiveAction": "Confirm the aircraft remains within the operational area defined by the CONOPS site selection performance procedures."
-    },
-    {
       "id": "SHLD-009",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11(c)",
+      "provision": "Shielded Operations, UASFM Grid Precedence (SP 11(c))",
       "test": {
         "type": "checkDone",
         "key": "shield.uasfm"
@@ -1609,7 +1223,7 @@
       "id": "SHLD-010",
       "category": "Shielding Geometry",
       "severity": "notApproved",
-      "provision": "SP 11(c)",
+      "provision": "Shielded Operations, UASFM Grid Precedence (SP 11(c))",
       "test": {
         "type": "fieldAtMostField",
         "field": "shieldMaxAGL",
@@ -1634,14 +1248,14 @@
         ]
       },
       "label": "Shielded altitude within UASFM grid",
-      "failReason": "Computed shielded altitude exceeds the UASFM grid height, which takes precedence under SP 11(c).",
+      "failReason": "Computed shielded altitude exceeds the UASFM grid height, which takes precedence under Shielded Operations, UASFM Grid Precedence (SP 11(c)).",
       "correctiveAction": "Cap the shielded altitude at the grid height."
     },
     {
       "id": "GRD-001",
       "category": "Ground Risk",
       "severity": "notApproved",
-      "provision": "SP 18(e)",
+      "provision": "Launch and Recovery Area Monitoring (SP 18(e))",
       "test": {
         "type": "checkDone",
         "key": "ground.launch"
@@ -1654,7 +1268,7 @@
       "id": "GRD-002",
       "category": "Ground Risk",
       "severity": "notApproved",
-      "provision": "SP 18(e)",
+      "provision": "Launch and Recovery Area Monitoring (SP 18(e))",
       "test": {
         "type": "checkDone",
         "key": "ground.monitored"
@@ -1693,7 +1307,7 @@
       "id": "GRD-005",
       "category": "Ground Risk",
       "severity": "notApproved",
-      "provision": "EP practice (former SP 31(b))",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
         "key": "ground.traffic"
@@ -1719,7 +1333,7 @@
       "id": "GRD-007",
       "category": "Ground Risk",
       "severity": "needsProgramReview",
-      "provision": "EP practice (former SP 38)",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "anyOf",
         "of": [
@@ -1743,7 +1357,7 @@
       "id": "GRD-008",
       "category": "Ground Risk",
       "severity": "notApproved",
-      "provision": "SP 25(b)(iv)",
+      "provision": "Docking Station Evaluation (SP 25(b)(iv))",
       "test": {
         "type": "checkDone",
         "key": "ground.dock"
@@ -1764,7 +1378,7 @@
       "id": "C2-001",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 18(a)(ii)",
+      "provision": "Site Survey, C2 Signal Validation (SP 18(a)(ii))",
       "test": {
         "type": "c2AllSegmentsDesignated"
       },
@@ -1776,7 +1390,7 @@
       "id": "C2-002",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 18(a)(ii)",
+      "provision": "Site Survey, C2 Signal Validation (SP 18(a)(ii))",
       "test": {
         "type": "c2NoRedSegments"
       },
@@ -1788,7 +1402,7 @@
       "id": "C2-003",
       "category": "C2 & Communications",
       "severity": "needsProgramReview",
-      "provision": "SP 18(a)(ii)",
+      "provision": "Site Survey, C2 Signal Validation (SP 18(a)(ii))",
       "test": {
         "type": "c2NoYellowUnexplained"
       },
@@ -1800,7 +1414,7 @@
       "id": "C2-004",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 18(a)(ii)",
+      "provision": "Site Survey, C2 Signal Validation (SP 18(a)(ii))",
       "test": {
         "type": "checkDone",
         "key": "rf.c2validated"
@@ -1813,7 +1427,7 @@
       "id": "C2-005",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 12(e)(i)(ii)",
+      "provision": "Non-Shielded Operations (SP 12(e)(i)(ii))",
       "test": {
         "type": "checkDone",
         "key": "rf.voiceCrewLink"
@@ -1831,7 +1445,7 @@
       "id": "C2-006",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 12(e)(iii)",
+      "provision": "Non-Shielded Operations (SP 12(e)(iii))",
       "test": {
         "type": "checkDone",
         "key": "rf.p25backup"
@@ -1843,13 +1457,13 @@
       },
       "label": "Backup crew link tested",
       "failReason": "The backup crew communication method has not been tested at this site.",
-      "correctiveAction": "Test the backup crew link. SP 12(e)(iii) requires a reliable backup where VO communication is by electronic device."
+      "correctiveAction": "Test the backup crew link. Non-Shielded Operations (SP 12(e)(iii)) requires a reliable backup where VO communication is by electronic device."
     },
     {
       "id": "C2-007",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 21(c)",
+      "provision": "Cease Operations on Loss of VO Communication (SP 21(c))",
       "test": {
         "type": "checkDone",
         "key": "rf.ceaseOnLoss"
@@ -1867,7 +1481,7 @@
       "id": "C2-008",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 10",
+      "provision": "RPIC Location Within the Continental United States (SP 10)",
       "test": {
         "type": "checkDone",
         "key": "rf.rpicConus"
@@ -1880,7 +1494,7 @@
       "id": "C2-009",
       "category": "C2 & Communications",
       "severity": "needsProgramReview",
-      "provision": "SP 26",
+      "provision": "ADS-B In/Out Requirements (SP 26)",
       "test": {
         "type": "checkDone",
         "key": "rf.adsbReception"
@@ -1893,7 +1507,7 @@
       "id": "C2-010",
       "category": "C2 & Communications",
       "severity": "notApproved",
-      "provision": "SP 12(b)",
+      "provision": "Non-Shielded Operations, DAA Requirement (SP 12(b))",
       "test": {
         "type": "checkDone",
         "key": "rf.daaObserved"
@@ -1924,7 +1538,7 @@
       "id": "OBS-001",
       "category": "Obstacle & Terrain",
       "severity": "notApproved",
-      "provision": "SP 18(a)(i)",
+      "provision": "Site Survey, Obstacles and Boundaries (SP 18(a)(i))",
       "test": {
         "type": "checkDone",
         "key": "obs.route"
@@ -1937,7 +1551,7 @@
       "id": "OBS-002",
       "category": "Obstacle & Terrain",
       "severity": "notApproved",
-      "provision": "EP practice (former SP 31(c))",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "fieldPresent",
         "field": "highestObstacle"
@@ -1963,7 +1577,7 @@
       "id": "GEO-001",
       "category": "Geofence & Containment",
       "severity": "notApproved",
-      "provision": "SP 18(c)",
+      "provision": "Geofencing of the Operational Volume (SP 18(c))",
       "test": {
         "type": "checkDone",
         "key": "geo.contains"
@@ -1976,7 +1590,7 @@
       "id": "GEO-002",
       "category": "Geofence & Containment",
       "severity": "notApproved",
-      "provision": "SP 18(c)",
+      "provision": "Geofencing of the Operational Volume (SP 18(c))",
       "test": {
         "type": "checkDone",
         "key": "geo.perimeter"
@@ -2002,7 +1616,7 @@
       "id": "GEO-004",
       "category": "Geofence & Containment",
       "severity": "needsProgramReview",
-      "provision": "EP practice (former SP 32)",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
         "key": "geo.rth5sec"
@@ -2015,7 +1629,7 @@
       "id": "GEO-005",
       "category": "Geofence & Containment",
       "severity": "notApproved",
-      "provision": "SP 18(d)",
+      "provision": "Return-to-Home Containment (SP 18(d))",
       "test": {
         "type": "checkDone",
         "key": "geo.noDeviation"
@@ -2028,7 +1642,7 @@
       "id": "GEO-006",
       "category": "Geofence & Containment",
       "severity": "notApproved",
-      "provision": "SP 22",
+      "provision": "Lost Link Procedures (SP 22)",
       "test": {
         "type": "checkDone",
         "key": "geo.reestablish"
@@ -2041,7 +1655,7 @@
       "id": "GEO-007",
       "category": "Geofence & Containment",
       "severity": "notApproved",
-      "provision": "SP 27(b)",
+      "provision": "GCS Alerting Configuration (SP 27(b))",
       "test": {
         "type": "checkDone",
         "key": "geo.conformance"
@@ -2054,7 +1668,7 @@
       "id": "PATH-001",
       "category": "Flight Path",
       "severity": "notApproved",
-      "provision": "SP 18(b)",
+      "provision": "Preplanned Waypoint Routes (SP 18(b))",
       "test": {
         "type": "checkDone",
         "key": "path.waypoints"
@@ -2093,7 +1707,7 @@
       "id": "PATH-004",
       "category": "Flight Path",
       "severity": "notApproved",
-      "provision": "SP 11, SP 12",
+      "provision": "Shielded Operations (SP 11), Non-Shielded Operations (SP 12)",
       "test": {
         "type": "fieldAtMostField",
         "field": "plannedAlt",
@@ -2133,7 +1747,7 @@
       "id": "PATH-006",
       "category": "Flight Path",
       "severity": "needsProgramReview",
-      "provision": "EP practice (former SP 41)",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
         "key": "path.simulation"
@@ -2164,7 +1778,7 @@
       "id": "DOC-001",
       "category": "Documentation",
       "severity": "notApproved",
-      "provision": "SP 18(a)(iv)",
+      "provision": "Site Survey, Flight Risk Assessment (SP 18(a)(iv))",
       "test": {
         "type": "checkDone",
         "key": "doc.fra"
@@ -2177,7 +1791,7 @@
       "id": "DOC-002",
       "category": "Documentation",
       "severity": "notApproved",
-      "provision": "EP practice (former SP 31)",
+      "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
         "key": "doc.checklist"
@@ -2190,20 +1804,20 @@
       "id": "DOC-003",
       "category": "Documentation",
       "severity": "notApproved",
-      "provision": "SP 23",
+      "provision": "Pre-Flight Safety Review (SP 23)",
       "test": {
         "type": "checkDone",
         "key": "doc.safetyreview"
       },
       "label": "Safety review completed",
       "failReason": "Required safety review items have not been addressed.",
-      "correctiveAction": "Address all SP 23 safety review items."
+      "correctiveAction": "Address all Pre-Flight Safety Review (SP 23) safety review items."
     },
     {
       "id": "DOC-004",
       "category": "Documentation",
       "severity": "notApproved",
-      "provision": "SP 4, SP 19(a)",
+      "provision": "Waiver Available at Ground Control Station (SP 4), Waiver Copy Available to RPIC (SP 19(a))",
       "test": {
         "type": "checkDone",
         "key": "doc.waivercopy"
@@ -2216,7 +1830,7 @@
       "id": "DOC-005",
       "category": "Documentation",
       "severity": "notApproved",
-      "provision": "SP 19(b)",
+      "provision": "Operations Manual Availability (SP 19(b))",
       "test": {
         "type": "checkDone",
         "key": "doc.opsmanual"
@@ -2229,7 +1843,7 @@
       "id": "DOC-006",
       "category": "Documentation",
       "severity": "notApproved",
-      "provision": "SP 32",
+      "provision": "Site Selection Performance Procedures (SP 32)",
       "test": {
         "type": "checkDone",
         "key": "doc.siteselection"
@@ -2314,7 +1928,7 @@
       },
       "label": "Open certificate items reviewed",
       "failReason": "Open certificate items have not been reviewed with the RPIC.",
-      "correctiveAction": "Review with the RPIC: the undefined term 'open air assemblies of persons' (SP 13(c), 14(a), 15(a)) and the 0.88 lb boundary that appears in both SP 13/14 and SP 15."
+      "correctiveAction": "Review with the RPIC: the undefined term 'open air assemblies of persons' (Overflight, Open-Air Assembly Prohibition (SP 13(c)), 14(a), 15(a)) and the 0.88 lb boundary that appears in both Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13)/14 and Overflight of Non-Participants at or Under 0.88 lb (SP 15)."
     },
     {
       "id": "RISK-007",
@@ -2430,7 +2044,7 @@
   "conditions": [
     {
       "id": "COND-001",
-      "text": "Operate only within the assessed site, documented route, mapped geofence, and approved operational volume (SP 11(d), SP 18(c), SP 32)."
+      "text": "Operate only within the assessed site, documented route, mapped geofence, and approved operational volume (Shielded Operations, Operational Area Confinement (SP 11(d)), Geofencing of the Operational Volume (SP 18(c)), Site Selection Performance Procedures (SP 32))."
     },
     {
       "id": "COND-002",
@@ -2438,11 +2052,11 @@
     },
     {
       "id": "COND-003",
-      "text": "C2 link health, telemetry continuity, command response, and video stability must be confirmed before launch and monitored during flight (SP 27)."
+      "text": "C2 link health, telemetry continuity, command response, and video stability must be confirmed before launch and monitored during flight (Ground Control Station Configuration (SP 27))."
     },
     {
       "id": "COND-004",
-      "text": "Lost link, RTH, emergency descent, and recovery procedures must remain inside the assessed containment area (SP 18(d), SP 22)."
+      "text": "Lost link, RTH, emergency descent, and recovery procedures must remain inside the assessed containment area (Return-to-Home Containment (SP 18(d)), Lost Link Procedures (SP 22))."
     },
     {
       "id": "COND-005",
@@ -2458,7 +2072,7 @@
     },
     {
       "id": "COND-008",
-      "text": "Airspace: SP 16 authorizes operations only at or below the published UASFM grid altitude. Any operation above the grid requires a separate ATC authorization; LAANC may not be used for waivered operations. Class G requires no authorization."
+      "text": "Airspace: UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes operations only at or below the published UASFM grid altitude. Any operation above the grid requires a separate ATC authorization; LAANC may not be used for waivered operations. Class G requires no authorization."
     },
     {
       "id": "COND-SP11",
@@ -2467,7 +2081,7 @@
         "field": "shieldContinuity",
         "value": "continuous"
       },
-      "text": "Shielded operations (SP 11): 200 ft AGL, or up to 100 ft above an obstruction within a 100 ft radius of the aircraft, never above 400 ft AGL. The UASFM grid height takes precedence where one applies. No VO or DAA is required by the certificate for shielded operations."
+      "text": "Shielded operations (Shielded Operations (SP 11)): 200 ft AGL, or up to 100 ft above an obstruction within a 100 ft radius of the aircraft, never above 400 ft AGL. The UASFM grid height takes precedence where one applies. No VO or DAA is required by the certificate for shielded operations."
     },
     {
       "id": "COND-SP12",
@@ -2476,7 +2090,7 @@
         "field": "shieldContinuity",
         "value": "continuous"
       },
-      "text": "Non-shielded operations (SP 12): 400 ft AGL with active DAA under observation or with VO(s) continuously observing a 2 SM radius. With neither, the flight is not conducted under this waiver."
+      "text": "Non-shielded operations (Non-Shielded Operations (SP 12)): 400 ft AGL with active DAA under observation or with VO(s) continuously observing a 2 SM radius. With neither, the flight is not conducted under this waiver."
     },
     {
       "id": "COND-DAA",
@@ -2495,7 +2109,7 @@
           }
         ]
       },
-      "text": "DAA coverage is compromised at this site. Non-shielded operations are limited to 200 ft AGL (SP 12(b))."
+      "text": "DAA coverage is compromised at this site. Non-shielded operations are limited to 200 ft AGL (Non-Shielded Operations, DAA Requirement (SP 12(b)))."
     },
     {
       "id": "COND-VO",
@@ -2504,7 +2118,7 @@
         "field": "voCount",
         "value": 1
       },
-      "text": "Visual Observers must be positioned to identify non-participating aircraft before they enter the operational area and to give the RPIC sufficient notice to remain well clear, with continuous full-duplex hands-free voice and a reliable backup. Operations cease if voice is lost (SP 12(c)(d)(e), SP 21(c))."
+      "text": "Visual Observers must be positioned to identify non-participating aircraft before they enter the operational area and to give the RPIC sufficient notice to remain well clear, with continuous full-duplex hands-free voice and a reliable backup. Operations cease if voice is lost (Non-Shielded Operations (SP 12(c)(d)(e)), Cease Operations on Loss of VO Communication (SP 21(c)))."
     },
     {
       "id": "COND-SP13",
@@ -2541,7 +2155,7 @@
           }
         ]
       },
-      "text": "Operations over non-participants on the SP 13 pathway (over 0.88 lb, no PRS): the site stays restricted to the general public, every person in the operational area is site-related, equipped with PPE and notified, overflight is transitory only, routes avoid people and traffic areas, and the aircraft does not exceed 8.8 lb."
+      "text": "Operations over non-participants on the Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) pathway (over 0.88 lb, no PRS): the site stays restricted to the general public, every person in the operational area is site-related, equipped with PPE and notified, overflight is transitory only, routes avoid people and traffic areas, and the aircraft does not exceed 8.8 lb."
     },
     {
       "id": "COND-SP14",
@@ -2578,7 +2192,7 @@
           }
         ]
       },
-      "text": "Operations over non-participants on the SP 14 pathway (over 0.88 lb, PRS): PRS operational and ASTM F3322-18 compliant, verified free of known defects within the previous 7 calendar days, unmodified and repacked by the manufacturer after any deployment, aircraft never below the PRS minimum deployment height, overflight transitory only, aircraft does not exceed 10 lb."
+      "text": "Operations over non-participants on the PRS-Equipped Overflight of Non-Participants (SP 14) pathway (over 0.88 lb, PRS): PRS operational and ASTM F3322-18 compliant, verified free of known defects within the previous 7 calendar days, unmodified and repacked by the manufacturer after any deployment, aircraft never below the PRS minimum deployment height, overflight transitory only, aircraft does not exceed 10 lb."
     },
     {
       "id": "COND-SP15",
@@ -2610,7 +2224,7 @@
           }
         ]
       },
-      "text": "Operations over non-participants on the SP 15 pathway (0.88 lb or less including all attachments): rotating component shielding fitted, no sustained overflight including any payload delivery portion of flight."
+      "text": "Operations over non-participants on the Overflight of Non-Participants at or Under 0.88 lb (SP 15) pathway (0.88 lb or less including all attachments): rotating component shielding fitted, no sustained overflight including any payload delivery portion of flight."
     },
     {
       "id": "COND-OPENAIR",
@@ -2653,7 +2267,7 @@
         "field": "uasfmOps",
         "value": "Yes"
       },
-      "text": "SP 16 operations: a NOTAM must be filed no more than 72 and no less than 24 hours before operating, and verified issued before flight. Altitude is capped at the UASFM grid height."
+      "text": "UASFM Grid Operations / NOTAM Requirement (SP 16) operations: a NOTAM must be filed no more than 72 and no less than 24 hours before operating, and verified issued before flight. Altitude is capped at the UASFM grid height."
     },
     {
       "id": "COND-MULTI",
@@ -2662,7 +2276,7 @@
         "field": "acCount",
         "value": 1
       },
-      "text": "Multi-aircraft operations are limited to six aircraft of the make/model and Flight Management System specified in the waiver application, each with an independent flight termination system verified with geofencing before every flight (SP 17)."
+      "text": "Multi-aircraft operations are limited to six aircraft of the make/model and Flight Management System specified in the waiver application, each with an independent flight termination system verified with geofencing before every flight (Multiple UAS Operations (SP 17))."
     },
     {
       "id": "COND-DOCK",
@@ -2674,7 +2288,7 @@
           "Both"
         ]
       },
-      "text": "Dock operations require the dock evaluation under SP 25(b)(iv): the RPIC must be able to determine the aircraft is safe for flight, clear the immediate flight area, and assess weather at the dock from the remote location."
+      "text": "Dock operations require the dock evaluation under Docking Station Evaluation (SP 25(b)(iv)): the RPIC must be able to determine the aircraft is safe for flight, clear the immediate flight area, and assess weather at the dock from the remote location."
     },
     {
       "id": "COND-TACTICAL",
@@ -2706,28 +2320,28 @@
     },
     {
       "id": "COND-MAINT",
-      "text": "Any aircraft that undergoes maintenance completes a logged functional test flight under standard Part 107 before returning to waivered operations (SP 30(c))."
+      "text": "Any aircraft that undergoes maintenance completes a logged functional test flight under standard Part 107 before returning to waivered operations (Post-Maintenance Functional Test Flight (SP 30(c)))."
     }
   ],
   "interpretations": [
     {
-      "provision": "SP 12",
+      "provision": "Non-Shielded Operations (SP 12)",
       "issue": "Captioned 'using VO(s) and or DAA'. Sub-provisions (b) and (c) are alternatives; no configuration without either is described.",
-      "handling": "EP treats a non-shielded profile with neither DAA nor VO(s) as outside the waiver: fly it under standard Part 107 VLOS, or reclassify as SP 11 shielded. Shielded operations carry no VO or DAA requirement on the face of the certificate."
+      "handling": "EP treats a non-shielded profile with neither DAA nor VO(s) as outside the waiver: fly it under standard Part 107 VLOS, or reclassify as Shielded Operations (SP 11) shielded. Shielded operations carry no VO or DAA requirement on the face of the certificate."
     },
     {
-      "provision": "SP 13, SP 14, SP 15",
-      "issue": "SP 13 and SP 14 are captioned 'sUA => 0.88 lbs' and SP 15 'sUA <= 0.88lbs'. An aircraft weighing exactly 0.88 lb falls under both captions.",
-      "handling": "EP applies SP 15 at exactly 0.88 lb (the pathway written for that weight, including all attachments) and SP 13 or SP 14 above it. Written FAA clarification recommended; the boundary is not to be used to select the less restrictive pathway."
+      "provision": "Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), PRS-Equipped Overflight of Non-Participants (SP 14), Overflight of Non-Participants at or Under 0.88 lb (SP 15)",
+      "issue": "Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) and PRS-Equipped Overflight of Non-Participants (SP 14) are captioned 'sUA => 0.88 lbs' and Overflight of Non-Participants at or Under 0.88 lb (SP 15) 'sUA <= 0.88lbs'. An aircraft weighing exactly 0.88 lb falls under both captions.",
+      "handling": "EP applies Overflight of Non-Participants at or Under 0.88 lb (SP 15) at exactly 0.88 lb (the pathway written for that weight, including all attachments) and Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) or PRS-Equipped Overflight of Non-Participants (SP 14) above it. Written FAA clarification recommended; the boundary is not to be used to select the less restrictive pathway."
     },
     {
-      "provision": "SP 13(c), SP 14(a), SP 15(a)",
-      "issue": "'Open air assemblies of persons' is undefined in the certificate. The coordination pathway of the superseded certificate (old SP 29) no longer exists.",
+      "provision": "Overflight, Open-Air Assembly Prohibition (SP 13(c)), Overflight, Open-Air Assembly Prohibition (SP 14(a)), Overflight, Open-Air Assembly Prohibition (SP 15(a))",
+      "issue": "'Open air assemblies of persons' is undefined in the certificate. The coordination pathway of the superseded certificate (old Anti-Collision Lighting (SP 29)) no longer exists.",
       "handling": "EP treats the term at its plain meaning: any gathering of persons in the open. Overflight is prohibited on every pathway. Written FAA clarification recommended."
     },
     {
       "provision": "Items retained from 107W-2025-04534",
-      "issue": "The superseded certificate stated items this certificate does not: pre-flight hazard checklist with 1 SM low-level traffic, pedestrian and vehicle traffic, and highest obstacle (old SP 31); RTH 5 second trigger and altitude (old SP 32); illumination or daytime assessment (old SP 38); simulation testing (old SP 41); non-participant notification and participant vests (old SP 18(f)(g)).",
+      "issue": "The superseded certificate stated items this certificate does not: pre-flight hazard checklist with 1 SM low-level traffic, pedestrian and vehicle traffic, and highest obstacle (old Emitter FCC Compliance (SP 31)); RTH 5 second trigger and altitude (old Site Selection Performance Procedures (SP 32)); illumination or daytime assessment (old Special Provision 38 (SP 38)); simulation testing (old Special Provision 41 (SP 41)); non-participant notification and participant vests (old RPIC Pre-Flight and Operational Duties (SP 18(f)(g))).",
       "handling": "Retained in this matrix as EP practice, labelled 'EP practice' in the provision column, with the same severity they carried in matrix v2.4. Program Manager decides whether to keep, downgrade, or drop each."
     }
   ]
