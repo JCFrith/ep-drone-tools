@@ -1327,7 +1327,7 @@ const SECTIONS = [
     { text: "RTH trigger on link loss configured to match the loss of C2 procedure in the waiver application", sp: "EP practice", role: "rpic" },
     { text: "Predetermined route to reestablish command and control link defined, and loss of C2 procedure per the waiver application", sp: "Lost Link Procedures (SP 22)", role: "rpic" },
     { text: "Restricted polygons placed over ground-risk hotspots", role: "rpic" },
-    { text: "Geofence loss-of-containment and intrusion alerting functional", sp: "GCS Alerting Configuration (SP 27(b))", role: "ground" },
+    { text: "Geofence loss-of-containment and intrusion alerting functional", sp: "GCS Alerting Configuration (SP 27(b))", role: "rpic" },
     { text: "Annotated site image attached", ev: "photo", photoKey: "site_detail_image", role: "ground" }
   ],
   notes: true
@@ -1351,10 +1351,10 @@ const SECTIONS = [
     { text: "Flight Risk Assessment completed and documented", sp: "Site Survey, Flight Risk Assessment (SP 18(a)(iv))", role: "rpic" },
     { text: "Pre-flight hazard checklist prepared and briefed to VOs and the person flying the aircraft", sp: "EP practice", role: "rpic" },
     { text: "Safety review items addressed (crew positions, operating area, launch and recovery areas, geofence verification, RTH profile, avoidance procedures, waiver procedures, land vehicle speed, intended flight path, abnormal and emergency procedures)", sp: "Pre-Flight Safety Review (SP 23)", role: "rpic" },
-    { text: "Copy of the waiver and application available to the RPIC at the ground control station", sp: "Waiver Available at Ground Control Station (SP 4), Waiver Copy Available to RPIC (SP 19(a))", role: "ground" },
-    { text: "Current operations manual available to the RPIC and all direct participants", sp: "Operations Manual Availability (SP 19(b))", role: "ground" },
-    { text: "Annotated site map attached showing geofence, no-fly zones, obstruction heights and operational volume", ev: "photo", photoKey: "annotated_map", role: "ground" },
-    { text: "Copies of 3 mile notification letters attached", ev: "photo", photoKey: "notification_letters", role: "ground" },
+    { text: "Copy of the waiver and application available to the RPIC at the ground control station", sp: "Waiver Available at Ground Control Station (SP 4), Waiver Copy Available to RPIC (SP 19(a))", role: "rpic" },
+    { text: "Current operations manual available to the RPIC and all direct participants", sp: "Operations Manual Availability (SP 19(b))", role: "rpic" },
+    { text: "Annotated site map attached showing geofence, no-fly zones, obstruction heights and operational volume", ev: "photo", photoKey: "annotated_map", role: "ground", regularOnly: true },
+    { text: "Copies of 3 mile notification letters attached", ev: "photo", photoKey: "notification_letters", role: "ground", regularOnly: true },
     { text: "Site meets the site selection performance procedures in the waiver application", sp: "Site Selection Performance Procedures (SP 32)", role: "rpic" },
     { text: "Documented VO training on file for each VO (operational volume scanning, communications and phraseology, overall waiver operations)", sp: "Non-Shielded Operations, VO Training (SP 12(f))", role: "rpic" }
   ],
@@ -1386,7 +1386,7 @@ function groundCrewItems() {
   ['airspace', 'property', 'geofence', 'flightpath', 'docs', 'risk'].forEach(secId => {
     const sec = SECTIONS.find(s => s.id === secId);
     if (!sec) return;
-    (sec.checks || []).forEach((c, idx) => { if (c.role === 'ground') out.push({ sec, c, idx }); });
+    (sec.checks || []).forEach((c, idx) => { if (c.role === 'ground' && !c.regularOnly) out.push({ sec, c, idx }); });
   });
   return out;
 }
