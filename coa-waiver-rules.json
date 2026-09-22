@@ -1,5 +1,5 @@
 {
-  "version": "4.1",
+  "version": "4.2",
   "certificate": "107W-2026-01762",
   "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 4.0 restates the shielded/non-shielded split, the three operations-over-non-participants pathways, the UASFM grid authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Trims Aircraft & Equipment to site-invariant items (aircraft-state checks such as Remote ID, ADS-B, maintenance log and FCC compliance now belong on a separate pre-flight readiness checklist, not a per-site record), removes duplicate Shielding Geometry and Property items already covered elsewhere, and splits the applicable sections between ground-crew and RPIC items with a single RPIC attestation gating final approval. Items carried over from the superseded certificate as EP practice are labelled as such.",
   "decisions": {
@@ -1081,24 +1081,6 @@
       "correctiveAction": "Identify and record the client POC."
     },
     {
-      "id": "SHLD-001",
-      "category": "Shielding Geometry",
-      "severity": "notApproved",
-      "provision": "Shielded Operations (SP 11)",
-      "test": {
-        "type": "checkDone",
-        "key": "shield.features"
-      },
-      "when": {
-        "type": "fieldEquals",
-        "field": "shieldContinuity",
-        "value": "continuous"
-      },
-      "label": "Obstruction features identified",
-      "failReason": "Obstruction features have not been identified and photographed.",
-      "correctiveAction": "Identify and photograph the obstruction features relied on."
-    },
-    {
       "id": "SHLD-002",
       "category": "Shielding Geometry",
       "severity": "notApproved",
@@ -1115,24 +1097,6 @@
       "label": "Obstruction qualifies",
       "failReason": "Obstruction qualification has not been confirmed.",
       "correctiveAction": "Confirm each obstruction is a physical object, natural or man-made, that would stop or impede the aircraft on contact."
-    },
-    {
-      "id": "SHLD-003",
-      "category": "Shielding Geometry",
-      "severity": "notApproved",
-      "provision": "Shielded Operations, Obstruction Geometry (SP 11(b))",
-      "test": {
-        "type": "checkDone",
-        "key": "shield.measured"
-      },
-      "when": {
-        "type": "fieldEquals",
-        "field": "shieldContinuity",
-        "value": "continuous"
-      },
-      "label": "Obstruction heights verified",
-      "failReason": "Obstruction heights have not been measured or verified.",
-      "correctiveAction": "Measure or verify heights. Estimated heights are not sufficient."
     },
     {
       "id": "SHLD-004",
@@ -1504,19 +1468,6 @@
       "correctiveAction": "Identify obstacles and boundaries to avoid collision with or damage to property."
     },
     {
-      "id": "OBS-002",
-      "category": "Obstacle & Terrain",
-      "severity": "notApproved",
-      "provision": "EP practice, carried over from the superseded certificate",
-      "test": {
-        "type": "fieldPresent",
-        "field": "highestObstacle"
-      },
-      "label": "Highest obstacle recorded",
-      "failReason": "The highest obstacle between takeoff and any point along the route has not been recorded.",
-      "correctiveAction": "Record the highest obstacle height for RTH altitude planning. Retained as EP practice; not stated in 107W-2026-01762."
-    },
-    {
       "id": "OBS-003",
       "category": "Obstacle & Terrain",
       "severity": "needsProgramReview",
@@ -1531,38 +1482,25 @@
     },
     {
       "id": "GEO-001",
-      "category": "Geofence & Containment",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "Geofencing of the Operational Volume (SP 18(c))",
       "test": {
         "type": "checkDone",
-        "key": "geo.contains"
+        "key": "gp.geofence"
       },
-      "label": "Geofence contains operational volume",
-      "failReason": "Geofence coverage has not been confirmed.",
-      "correctiveAction": "Set the geofence to confine all aircraft to the operational volume."
-    },
-    {
-      "id": "GEO-002",
-      "category": "Geofence & Containment",
-      "severity": "notApproved",
-      "provision": "Geofencing of the Operational Volume (SP 18(c))",
-      "test": {
-        "type": "checkDone",
-        "key": "geo.perimeter"
-      },
-      "label": "Geofence matches perimeter and altitude",
-      "failReason": "Geofence alignment to property or access perimeter and maximum altitude has not been confirmed.",
-      "correctiveAction": "Align the geofence to the perimeter plus the maximum allowed altitude."
+      "label": "Geofence confines the operational volume, matching perimeter and altitude",
+      "failReason": "Geofence coverage and alignment to the property or access perimeter plus maximum allowed altitude has not been confirmed.",
+      "correctiveAction": "Set the geofence to confine all aircraft to the operational volume, aligned to the perimeter plus the maximum allowed altitude."
     },
     {
       "id": "GEO-003",
-      "category": "Geofence & Containment",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "EP practice (107.51(b))",
       "test": {
         "type": "checkDone",
-        "key": "geo.rthAltitude"
+        "key": "gp.rthAltitude"
       },
       "label": "RTH altitude programmed",
       "failReason": "RTH altitude has not been confirmed to clear obstructions and stay at or below 400 ft AGL.",
@@ -1570,12 +1508,12 @@
     },
     {
       "id": "GEO-004",
-      "category": "Geofence & Containment",
+      "category": "Geofence & Flight Path",
       "severity": "needsProgramReview",
       "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
-        "key": "geo.rth5sec"
+        "key": "gp.rth5sec"
       },
       "label": "RTH trigger configured",
       "failReason": "RTH trigger on signal loss has not been confirmed.",
@@ -1583,25 +1521,25 @@
     },
     {
       "id": "GEO-005",
-      "category": "Geofence & Containment",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "Return-to-Home Containment (SP 18(d))",
       "test": {
         "type": "checkDone",
-        "key": "geo.noDeviation"
+        "key": "gp.containment"
       },
-      "label": "RTH stays inside volume",
-      "failReason": "RTH deviation outside the operational volume has not been ruled out.",
-      "correctiveAction": "Configure RTH so it cannot deviate from the defined operational volume."
+      "label": "Route, RTH path, and emergency descent routes stay inside containment",
+      "failReason": "The route, RTH path, and emergency descent and landing routes have not all been validated inside the operational volume.",
+      "correctiveAction": "Configure RTH so it cannot deviate from the defined operational volume, and validate the route and emergency descent and landing routes stay inside containment."
     },
     {
       "id": "GEO-006",
-      "category": "Geofence & Containment",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "Lost Link Procedures (SP 22)",
       "test": {
         "type": "checkDone",
-        "key": "geo.reestablish"
+        "key": "gp.reestablish"
       },
       "label": "Link reestablishment route defined",
       "failReason": "A predetermined route to reestablish command and control has not been defined.",
@@ -1609,12 +1547,12 @@
     },
     {
       "id": "GEO-007",
-      "category": "Geofence & Containment",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "GCS Alerting Configuration (SP 27(b))",
       "test": {
         "type": "checkDone",
-        "key": "geo.conformance"
+        "key": "gp.conformance"
       },
       "label": "Conformance monitoring functional",
       "failReason": "Conformance monitoring and alerts have not been confirmed functional.",
@@ -1622,33 +1560,20 @@
     },
     {
       "id": "PATH-001",
-      "category": "Flight Path",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "Preplanned Waypoint Routes (SP 18(b))",
       "test": {
         "type": "checkDone",
-        "key": "path.waypoints"
+        "key": "gp.waypoints"
       },
       "label": "Routes preplanned with waypoints",
       "failReason": "Routes have not been preplanned with waypoints.",
       "correctiveAction": "Program waypoint-based routes the aircraft follows automatically. Manual flight is allowed as necessary."
     },
     {
-      "id": "PATH-002",
-      "category": "Flight Path",
-      "severity": "notApproved",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "checkDone",
-        "key": "path.containment"
-      },
-      "label": "Route within containment",
-      "failReason": "The entire route has not been validated inside containment.",
-      "correctiveAction": "Validate route containment or revise the route."
-    },
-    {
       "id": "PATH-003",
-      "category": "Flight Path",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "Site Assessment",
       "test": {
@@ -1661,7 +1586,7 @@
     },
     {
       "id": "PATH-004",
-      "category": "Flight Path",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "Shielded Operations (SP 11), Non-Shielded Operations (SP 12)",
       "test": {
@@ -1687,26 +1612,13 @@
       "correctiveAction": "Lower the planned altitude or re-verify the computed ceiling."
     },
     {
-      "id": "PATH-005",
-      "category": "Flight Path",
-      "severity": "notApproved",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "checkDone",
-        "key": "path.emergency"
-      },
-      "label": "Emergency routes validated",
-      "failReason": "Emergency descent and landing routes have not been validated.",
-      "correctiveAction": "Validate emergency descent and landing routes."
-    },
-    {
       "id": "PATH-006",
-      "category": "Flight Path",
+      "category": "Geofence & Flight Path",
       "severity": "needsProgramReview",
       "provision": "EP practice, carried over from the superseded certificate",
       "test": {
         "type": "checkDone",
-        "key": "path.simulation"
+        "key": "gp.simulation"
       },
       "label": "Simulation testing completed",
       "failReason": "Simulation-based testing has not been completed.",
@@ -1714,7 +1626,7 @@
     },
     {
       "id": "PATH-007",
-      "category": "Flight Path",
+      "category": "Geofence & Flight Path",
       "severity": "notApproved",
       "provision": "14 CFR 107.51(b)",
       "test": {
@@ -1809,47 +1721,8 @@
       "correctiveAction": "Confirm the site meets the site selection performance procedures in the waiver application."
     },
     {
-      "id": "RISK-001",
-      "category": "Risk Determination",
-      "severity": "notApproved",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "checkDone",
-        "key": "risk.level"
-      },
-      "label": "Overall risk level assigned",
-      "failReason": "Overall site risk level has not been assigned.",
-      "correctiveAction": "Assign low, medium, or high overall site risk."
-    },
-    {
-      "id": "RISK-002",
-      "category": "Risk Determination",
-      "severity": "notApproved",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "checkDone",
-        "key": "risk.mitigations"
-      },
-      "label": "Risk mitigations documented",
-      "failReason": "Risk mitigations have not been documented.",
-      "correctiveAction": "Document the mitigations relied on."
-    },
-    {
-      "id": "RISK-003",
-      "category": "Risk Determination",
-      "severity": "needsProgramReview",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "checkDone",
-        "key": "risk.unresolved"
-      },
-      "label": "Unresolved risks flagged",
-      "failReason": "Unresolved risks have not been documented.",
-      "correctiveAction": "Document unresolved risks and follow-up actions, or mark not applicable."
-    },
-    {
       "id": "RISK-004",
-      "category": "Risk Determination",
+      "category": "Approval",
       "severity": "notApproved",
       "provision": "Site Assessment",
       "test": {
@@ -1862,43 +1735,16 @@
     },
     {
       "id": "RISK-005",
-      "category": "Risk Determination",
+      "category": "Approval",
       "severity": "needsProgramReview",
       "provision": "Site Assessment",
       "test": {
-        "type": "checkDone",
-        "key": "risk.triggers"
+        "type": "fieldPresent",
+        "field": "reassessTriggers"
       },
-      "label": "Reassessment triggers identified",
-      "failReason": "Conditions requiring reassessment have not been identified.",
-      "correctiveAction": "Identify triggers such as infrastructure, staging, C2, construction, or seasonal change."
-    },
-    {
-      "id": "RISK-006",
-      "category": "Risk Determination",
-      "severity": "needsProgramReview",
-      "provision": "Open certificate items",
-      "test": {
-        "type": "checkDone",
-        "key": "risk.openitems"
-      },
-      "label": "Open certificate items reviewed",
-      "failReason": "Open certificate items have not been reviewed with the RPIC.",
-      "correctiveAction": "Review with the RPIC: the undefined term 'open air assemblies of persons' (Overflight, Open-Air Assembly Prohibition (SP 13(c)), 14(a), 15(a)) and the 0.88 lb boundary that appears in both Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13)/14 and Overflight of Non-Participants at or Under 0.88 lb (SP 15)."
-    },
-    {
-      "id": "RISK-007",
-      "category": "Risk Determination",
-      "severity": "needsProgramReview",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "fieldNotEquals",
-        "field": "ev-risk-0",
-        "value": "High"
-      },
-      "label": "Site risk not high",
-      "failReason": "Overall site risk is marked high.",
-      "correctiveAction": "Reduce risk through mitigation or escalate for Program Manager review."
+      "label": "Conditions requiring reassessment recorded",
+      "failReason": "Conditions requiring reassessment have not been recorded.",
+      "correctiveAction": "Record conditions such as infrastructure, staging, C2, construction, or seasonal change."
     },
     {
       "id": "PHOTO-001",
@@ -1925,24 +1771,6 @@
       "label": "Access control photo evidence",
       "failReason": "Access control photo evidence is missing.",
       "correctiveAction": "Add access control photo evidence."
-    },
-    {
-      "id": "PHOTO-003",
-      "category": "Evidence",
-      "severity": "notApproved",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "photoPresent",
-        "photo": "shielding_features"
-      },
-      "when": {
-        "type": "fieldEquals",
-        "field": "shieldContinuity",
-        "value": "continuous"
-      },
-      "label": "Shielding features photo evidence",
-      "failReason": "Shielding features photo evidence is missing.",
-      "correctiveAction": "Add shielding features photo evidence."
     },
     {
       "id": "PHOTO-004",
