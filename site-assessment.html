@@ -73,6 +73,11 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 /* ── ASSESSMENT BAR ── */
 .assess-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.12);padding:12px 16px;margin-bottom:16px;}
 .assess-bar select{flex:1;min-width:180px;}
+.type-toggle{display:flex;border:1px solid rgba(252,192,14,0.3);border-radius:5px;overflow:hidden;flex-shrink:0;}
+.type-toggle-btn{background:transparent;border:none;color:var(--ep-gray);padding:8px 14px;font-size:0.76rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;}
+.type-toggle-btn.active{background:var(--ep-gold);color:var(--ep-navy,#0d1b2e);}
+.type-toggle-btn:not(.active):hover{background:rgba(252,192,14,0.1);color:var(--ep-white);}
+
 .mini-btn{font-family:'Gotham Bold',sans-serif;font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px;background:transparent;border:1px solid rgba(255,255,255,0.14);color:var(--ep-gray);cursor:pointer;transition:border-color 0.2s,color 0.2s;white-space:nowrap;}
 .mini-btn:hover{border-color:var(--ep-gold);color:var(--ep-gold);}
 .mini-btn.danger:hover{border-color:var(--ep-block);color:var(--ep-block);}
@@ -435,6 +440,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="main-container">
 
   <div class="assess-bar no-print">
+    <div class="type-toggle" id="typeToggle" role="group" aria-label="Assessment type">
+      <button class="type-toggle-btn active" data-type="fixed" onclick="setAssessmentType('fixed')">Fixed</button>
+      <button class="type-toggle-btn" data-type="hasty" onclick="setAssessmentType('hasty')">Hasty</button>
+    </div>
     <select id="assessPicker" aria-label="Open assessment"></select>
     <button class="mini-btn" onclick="newAssessment()">New</button>
     <button class="mini-btn" onclick="duplicateAssessment()">Duplicate</button>
@@ -1377,6 +1386,7 @@ const SECTIONS = [
 
 // ── RENDER ─────────────────────────────────────────────────
 function render() {
+  renderTypeToggle();
   if (S.fields.assessmentType === 'hasty' && S.fields.groundCrewStatus !== 'ground_crew_complete') { renderHastyForm(); return; }
   renderFullSections();
 }
@@ -2486,32 +2496,29 @@ function openAssessment(id) {
   }).then(() => { render(); refreshPicker(); });
 }
 function newAssessment() {
-  const backdrop = document.createElement('div');
-  backdrop.className = 'type-modal-backdrop';
-  backdrop.innerHTML =
-    '<div class="type-modal">' +
-    '<h3>New Assessment</h3>' +
-    '<p>Choose the assessment type. This decides which sections open first and cannot be changed after ground crew items are entered.</p>' +
-    '<button class="type-choice" data-type="fixed"><div class="tc-title">Fixed Site Assessment</div>' +
-    '<div class="tc-desc">A site the crew will operate at regularly. All sections, full detail.</div></button>' +
-    '<button class="type-choice" data-type="hasty"><div class="tc-title">Hasty Assessment</div>' +
-    '<div class="tc-desc">A short-duration mission such as search and rescue or crash documentation. Ground crew completes a short form on site in under 5 minutes; the RPIC completes the remaining sections afterward.</div></button>' +
-    '<button class="cancel-btn">Cancel</button>' +
-    '</div>';
-  document.body.appendChild(backdrop);
-  backdrop.addEventListener('click', function (e) { if (e.target === backdrop) backdrop.remove(); });
-  backdrop.querySelector('.cancel-btn').addEventListener('click', function () { backdrop.remove(); });
-  backdrop.querySelectorAll('.type-choice').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      const type = this.dataset.type;
-      backdrop.remove();
-      S = blankAssessment();
-      S.fields.assessmentType = type;
-      if (type === 'hasty') S.fields.groundCrewStatus = 'in_progress';
-      PHOTOS = {};
-      idbPut('assessments', JSON.parse(JSON.stringify(S)))
-        .then(() => { localStorage.setItem('ep-sa-current', S.id); render(); refreshPicker(); showToast(type === 'hasty' ? 'Hasty assessment started' : 'New assessment started'); });
-    });
+  S = blankAssessment();
+  S.fields.assessmentType = 'fixed';
+  PHOTOS = {};
+  idbPut('assessments', JSON.parse(JSON.stringify(S)))
+    .then(() => { localStorage.setItem('ep-sa-current', S.id); render(); refreshPicker(); showToast('New assessment started. Fixed by default, use the toggle above to switch to Hasty.'); });
+}
+/* Persistent type toggle at the top of the page. Switching is non-destructive: nothing already
+   entered is deleted, it only changes which items render (render()'s dispatcher already decides
+   full-sections vs the hasty ground-crew form from assessmentType + groundCrewStatus). */
+function setAssessmentType(type) {
+  if (S.fields.assessmentType === type) return;
+  S.fields.assessmentType = type;
+  if (type === 'hasty' && !S.fields.groundCrewStatus) S.fields.groundCrewStatus = 'in_progress';
+  save();
+  render(); refreshPicker(); renderTypeToggle();
+  showToast(type === 'hasty' ? 'Switched to Hasty Assessment' : 'Switched to Fixed Site Assessment');
+}
+function renderTypeToggle() {
+  const el = document.getElementById('typeToggle');
+  if (!el) return;
+  const t = S.fields.assessmentType === 'hasty' ? 'hasty' : 'fixed';
+  el.querySelectorAll('.type-toggle-btn').forEach(function (btn) {
+    btn.classList.toggle('active', btn.dataset.type === t);
   });
 }
 function duplicateAssessment() {
