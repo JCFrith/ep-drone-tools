@@ -1381,9 +1381,27 @@ function render() {
   renderFullSections();
 }
 
+function groundCrewItems() {
+  const out = [];
+  ['airspace', 'property', 'geofence', 'flightpath', 'docs', 'risk'].forEach(secId => {
+    const sec = SECTIONS.find(s => s.id === secId);
+    if (!sec) return;
+    (sec.checks || []).forEach((c, idx) => { if (c.role === 'ground') out.push({ sec, c, idx }); });
+  });
+  return out;
+}
 function renderHastyForm() {
   const main = document.getElementById('mainContent');
   main.innerHTML = '';
+  if (S.fields.groundCrewStatus === 'rejected') {
+    const rb = document.createElement('div');
+    rb.className = 'hasty-banner';
+    rb.style.cssText = 'border-color:#ff9d8a;background:rgba(220,80,60,0.14);';
+    rb.innerHTML = '<b>Sent back by the RPIC' + (S.fields.rpicRejectedBy ? ' (' + esc(S.fields.rpicRejectedBy) + ')' : '') +
+      (S.fields.rpicRejectedAt ? ' on ' + esc(String(S.fields.rpicRejectedAt).slice(0, 16).replace('T', ' ')) : '') + ':</b><br>' +
+      esc(S.fields.rpicRejectionNote || 'No reason given.');
+    main.appendChild(rb);
+  }
   const wrap = document.createElement('div');
   wrap.className = 'section open';
   wrap.innerHTML =
@@ -1392,22 +1410,37 @@ function renderHastyForm() {
   main.appendChild(wrap);
   const body = wrap.querySelector('#hastyBody');
   body.innerHTML =
-    '<p class="hint" style="margin-bottom:14px;">Minimum data to get the crew flying safely. Everything else, including all remaining sections and the approval decision, is completed by the RPIC afterward. Target: under 5 minutes.</p>' +
+    '<p class="hint" style="margin-bottom:14px;">Everything on this page is ground-crew work: the core site data below, plus every item labeled Ground Crew from the rest of the assessment. Attach photos as you go. Everything else is completed by the RPIC after you submit.</p>' +
     '<div class="field-row">' + fText('siteName', 'Site name or description') + fDate('assessDate', 'Date') + '</div>' +
     '<div class="field-row">' + fText('assessedBy', 'Assessed by (ground crew)') + fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment', 'Both']) + '</div>' +
     '<div class="field-row">' + fNum('mapLat', 'Latitude') + fNum('mapLng', 'Longitude') + '</div>' +
     (EXTERNAL_OK ? '<div class="form-group" style="margin-bottom:16px;"><button class="map-locate-btn no-print" onclick="locateMeHasty()">Use my location</button></div>' : '') +
     '<div class="section-divider"></div>' +
-    '<div class="field-row">' + fSel('shieldContinuity', 'Obstruction continuity along the entire route', [['continuous', 'Continuous for the entire route'], ['gaps', 'Present with gaps'], ['none', 'No usable obstruction']], 'Continuous makes this a ' + 'Shielded Operations (SP 11)' + ' site; anything else is ' + 'Non-Shielded Operations (SP 12)' + '.') +
+    '<div class="field-row">' + fSel('shieldContinuity', 'Obstruction continuity along the entire route', [['continuous', 'Continuous for the entire route'], ['gaps', 'Present with gaps'], ['none', 'No usable obstruction']], 'Continuous makes this a Shielded Operations (SP 11) site; anything else is Non-Shielded Operations (SP 12).') +
     fNum('plannedAlt', 'Planned altitude (ft AGL)') + '</div>' +
     '<div class="field-row">' + fSel('openAirAssembly', 'Open-air assembly of persons present', YN, 'Overflight of an assembly is prohibited on every pathway. If yes, do not overfly it.') +
     fSel('hastyWiresPresent', 'Overhead wires or power lines in the operational area', YN) + '</div>' +
-    '<div class="fg-label" style="margin-top:6px;">Hazard photo</div><div class="photo-upload-area" id="photos-hasty_hazard"></div>' +
-    '<div class="section-divider"></div>' +
-    '<div class="form-group"><button class="action-btn" id="hastySubmitBtn" style="width:100%;font-size:0.95rem;padding:14px;" onclick="submitHastyToRpic()">Submit to RPIC</button>' +
-    '<div class="hint" style="margin-top:8px;">This locks the ground-crew portion and opens the full assessment for the RPIC to complete before approval.</div></div>';
+    '<div class="fg-label" style="margin-top:6px;">Site photos</div><div class="photo-upload-area" id="photos-hasty_hazard"></div>';
   bindFields(body);
   setTimeout(() => renderPhotos('hasty_hazard'), 10);
+  const items = groundCrewItems();
+  let lastSecId = null;
+  items.forEach(({ sec, c, idx }) => {
+    if (sec.id !== lastSecId) {
+      const h = document.createElement('div'); h.className = 'role-heading role-ground';
+      h.style.marginTop = '16px';
+      h.innerHTML = '<span class="role-badge">GROUND CREW</span> ' + esc(sec.title);
+      body.appendChild(h);
+      lastSecId = sec.id;
+    }
+    renderCheckItem(body, sec, c, idx);
+  });
+  const submitWrap = document.createElement('div');
+  submitWrap.innerHTML =
+    '<div class="section-divider"></div>' +
+    '<div class="form-group"><button class="action-btn" id="hastySubmitBtn" style="width:100%;font-size:0.95rem;padding:14px;" onclick="submitHastyToRpic()">Submit to RPIC</button>' +
+    '<div class="hint" style="margin-top:8px;">This locks the ground-crew portion and sends it to the RPIC to complete the remaining sections and make the approval decision.</div></div>';
+  body.appendChild(submitWrap);
 }
 function locateMeHasty() {
   if (!navigator.geolocation) { showToast('Geolocation is not available in this browser', true); return; }
@@ -1418,24 +1451,77 @@ function locateMeHasty() {
     save(); renderHastyForm(); showToast('Location set');
   }, err => showToast('Location error: ' + err.message, true), { enableHighAccuracy: true, timeout: 15000 });
 }
-function submitHastyToRpic() {
+async function submitHastyToRpic() {
   const req = ['siteName', 'assessDate', 'assessedBy', 'launchMethod', 'shieldContinuity'];
   const missing = req.filter(k => !S.fields[k]);
-  if (missing.length) { showToast('Fill in every field before submitting: ' + missing.join(', '), true); return; }
+  if (missing.length) { showToast('Fill in every required field before submitting: ' + missing.join(', '), true); return; }
   S.fields.groundCrewStatus = 'ground_crew_complete';
   S.fields.groundCrewCompletedAt = new Date().toISOString();
   S.fields.groundCrewBy = S.fields.assessedBy;
+  S.fields.rpicRejectionNote = '';
   save();
-  showToast('Ground crew portion submitted. Opening full assessment for the RPIC.');
   render(); refreshPicker();
+  await handOffToRpic('Ground crew portion submitted.');
 }
-
+async function handOffToRpic(prefix) {
+  if (!SESSION) {
+    showToast(prefix + ' Saved on this device only. Sign in so the RPIC can pull it up elsewhere.', true);
+    openSignIn();
+    return;
+  }
+  if (!canWrite()) {
+    showToast(prefix + ' Saved on this device only. This account cannot sync; an admin needs to grant write access.', true);
+    return;
+  }
+  if (!navigator.onLine) {
+    showToast(prefix + ' Offline, saved locally. It will sync automatically once back online.', true);
+    return;
+  }
+  try {
+    await pushOne(JSON.parse(JSON.stringify(S)));
+    showToast(prefix + ' Sent to the RPIC.');
+  } catch (e) {
+    showToast(prefix + ' Saved locally, but the sync failed (' + e.message + '). Try Sync from the menu.', true);
+  }
+}
+function openRejectPanel() {
+  if (document.getElementById('rejectPanel')) return;
+  const bar = document.querySelector('.hasty-banner');
+  if (!bar) return;
+  const p = document.createElement('div');
+  p.id = 'rejectPanel';
+  p.style.cssText = 'margin-top:10px;padding-top:10px;border-top:1px solid rgba(220,80,60,0.3);';
+  p.innerHTML =
+    '<label style="font-size:0.78rem;color:var(--ep-gray);text-transform:uppercase;letter-spacing:0.5px;">What needs to be fixed</label>' +
+    '<textarea id="rejectReason" placeholder="e.g. Hazard photo missing, obstruction height looks wrong for this site" style="width:100%;margin-top:6px;"></textarea>' +
+    '<div style="display:flex;gap:8px;margin-top:8px;"><button class="action-btn" id="rejectConfirmBtn">Send back to ground crew</button>' +
+    '<button class="action-btn" style="opacity:0.7" onclick="document.getElementById(&#39;rejectPanel&#39;).remove()">Cancel</button></div>';
+  bar.appendChild(p);
+  document.getElementById('rejectConfirmBtn').addEventListener('click', rejectToGroundCrew);
+  document.getElementById('rejectReason').focus();
+}
+async function rejectToGroundCrew() {
+  const reasonEl = document.getElementById('rejectReason');
+  const reason = reasonEl ? reasonEl.value.trim() : '';
+  if (!reason) { showToast('Enter what needs to be fixed before sending it back.', true); return; }
+  S.fields.groundCrewStatus = 'rejected';
+  S.fields.rpicRejectionNote = reason;
+  S.fields.rpicRejectedBy = S.fields.rpicAttestedBy || S.fields.rpicReviewing || '';
+  S.fields.rpicRejectedAt = new Date().toISOString();
+  S.fields.rpicAttested = '';
+  S.fields.rpicAttestedAt = '';
+  save();
+  render(); refreshPicker();
+  await handOffToRpic('Sent back to the ground crew.');
+}
 function renderFullSections() {
   const main = document.getElementById('mainContent');
   main.innerHTML = '';
   if (S.fields.assessmentType === 'hasty' && S.fields.groundCrewStatus === 'ground_crew_complete') {
     const b = document.createElement('div'); b.className = 'hasty-banner';
-    b.textContent = 'Hasty assessment. Ground crew portion completed ' + (S.fields.groundCrewCompletedAt || '').slice(0, 16).replace('T', ' ') + ' by ' + (S.fields.groundCrewBy || 'unrecorded') + '. RPIC completes the remaining sections below before approval.';
+    b.innerHTML =
+      '<span id="hastyBannerText">Hasty assessment. Ground crew portion completed ' + esc((S.fields.groundCrewCompletedAt || '').slice(0, 16).replace('T', ' ')) + ' by ' + esc(S.fields.groundCrewBy || 'unrecorded') + '. RPIC completes the remaining sections below before approval.</span>' +
+      ' <button class="action-btn no-print" style="padding:4px 10px;font-size:0.72rem;margin-left:6px;" onclick="openRejectPanel()">Send back to ground crew</button>';
     main.appendChild(b);
   }
   SECTIONS.forEach(sec => {
