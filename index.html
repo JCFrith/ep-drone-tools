@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* Canonical host is Vercel. GitHub Pages redirects there. Append ?stay=1 to bypass (e.g. to export a local draft left on the old origin). */
+(function(){ if (location.hostname === 'jcfrith.github.io' && location.search.indexOf('stay=1') < 0) {
+  var p = location.pathname.replace(/^\/ep-drone-tools\/?/, '/');
+  location.replace('https://ep-drone-tools-style-os.vercel.app' + (p === '/' ? '/index.html' : p) + location.search + location.hash);
+} })();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Drone Operations Tools | Enhanced Patrol</title>
@@ -384,7 +392,7 @@
     <h1>Drone Operations <em>Tools</em></h1>
     <p>Purpose-built tools for planning, pricing, and compliance under Enhanced Patrol's nationwide BVLOS authorization. Built for operators, not administrators.</p>
     <div class="hero-badges">
-        <div class="hero-badge"><div class="dot"></div>CoW 107W-2025-04534</div>
+        <div class="hero-badge"><div class="dot"></div>CoW 107W-2026-01762</div>
         <div class="hero-badge"><div class="dot"></div>Nationwide BVLOS Authorization</div>
         <div class="hero-badge"><div class="dot"></div>NDAA-Compliant Stack</div>
         <div class="hero-badge"><div class="dot"></div>1:6 Pilot-to-Aircraft Ratio</div>
@@ -430,13 +438,13 @@
                     <div class="tool-icon">🛡️</div>
                     <div class="tool-tag">Step 2 — Waiver Compliance</div>
                     <div class="tool-name">Site Classification Wizard</div>
-                    <p class="tool-desc">Determine the correct BVLOS operational classification, altitude ceiling, and Visual Observer requirement for any site under CoW 107W-2025-04534. Grounded in the actual Special Provisions.</p>
+                    <p class="tool-desc">Determine the governing provision (SP 11 shielded or SP 12 non-shielded), altitude ceiling, VO or DAA requirement, and overflight pathway (SP 13, 14 or 15) for any site under CoW 107W-2026-01762. Grounded in the actual Special Provisions.</p>
                     <ul class="tool-features">
                         <li>Shielded vs. non-shielded determination</li>
                         <li>Altitude ceiling calculation with formula</li>
-                        <li>VO requirement — SP 33 logic applied</li>
-                        <li>DAA system impact on ceiling</li>
-                        <li>Private property mitigation check</li>
+                        <li>VO or DAA requirement, SP 12 logic applied</li>
+                        <li>UASFM grid height and SP 16 NOTAM check</li>
+                        <li>Overflight pathway by weight and PRS (SP 13, 14, 15)</li>
                     </ul>
                 </div>
                 <div class="tool-card-footer">
@@ -501,13 +509,13 @@
                 <div class="cow-strip-left">
                     <div class="cow-strip-icon">📜</div>
                     <div>
-                        <div class="cow-strip-title">FAA Certificate of Waiver 107W-2025-04534</div>
-                        <div class="cow-strip-sub">14 CFR §107.31 · §107.35 · §107.39 · §107.145 · 1:6 Pilot-to-Aircraft Ratio · Nationwide</div>
+                        <div class="cow-strip-title">FAA Certificate of Waiver and Authorization 107W-2026-01762</div>
+                        <div class="cow-strip-sub">14 CFR §107.31 · §107.33(b)(c)(2) · §107.35 · §107.39 · §107.145 · §107.41 at or below UASFM · 1:6 Pilot-to-Aircraft Ratio · Nationwide · Effective 13 AUG 2026 to 31 JAN 2030</div>
                     </div>
                 </div>
                 <div class="cow-strip-right">
                     <strong>All tools are built against EP's active waiver.</strong><br>
-                    Classification logic reflects FAA ASI correspondence as of January 2026.
+                    Supersedes 107W-2025-04534. Classification logic reflects the certificate as issued 13 AUG 2026.
                 </div>
             </div>
         </div>

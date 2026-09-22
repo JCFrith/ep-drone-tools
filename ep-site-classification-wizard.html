@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* Canonical host is Vercel. GitHub Pages redirects there. Append ?stay=1 to bypass (e.g. to export a local draft left on the old origin). */
+(function(){ if (location.hostname === 'jcfrith.github.io' && location.search.indexOf('stay=1') < 0) {
+  var p = location.pathname.replace(/^\/ep-drone-tools\/?/, '/');
+  location.replace('https://ep-drone-tools-style-os.vercel.app' + (p === '/' ? '/index.html' : p) + location.search + location.hash);
+} })();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BVLOS Site Classification Wizard | Enhanced Patrol</title>
@@ -310,7 +318,7 @@
     </div>
     <h1>BVLOS Site <em>Classification</em> Wizard</h1>
     <p>Determine your operational classification, altitude ceiling, and Visual Observer requirement under Enhanced Patrol's nationwide BVLOS waiver.</p>
-    <div class="cow-pill">CoW 107W-2025-04534 &nbsp;·&nbsp; 14 CFR §107.31 / §107.35 / §107.39 / §107.145</div>
+    <div class="cow-pill">CoW 107W-2026-01762 &nbsp;·&nbsp; 14 CFR §107.31 / §107.33(b)(c)(2) / §107.35 / §107.39 / §107.145 / §107.41 at or below UASFM</div>
 </div>
 
 <main>
@@ -380,91 +388,66 @@
 </footer>
 
 <script>
-const STEPS=["Site Type","Access & Obstructions","DAA & Range","OOP / OOMV"];
+/* Site Classification Wizard, CoW 107W-2026-01762 (effective 13 AUG 2026, supersedes 107W-2025-04534).
+   Governing airspace provision: SP 11 shielded or SP 12 non-shielded. Site character does not change it.
+   Overflight of non-participants: SP 13 (over 0.88 lb, no PRS, restricted access, 8.8 lb),
+   SP 14 (over 0.88 lb, PRS, 10 lb), SP 15 (0.88 lb or less). */
+const COW='107W-2026-01762';
+const STEPS=["Shielding","Airspace Mitigation","Aircraft","Overflight"];
 let step=0,answers={};
-const SITES=[
-    {v:"critical_infra",i:"⚡",l:"Critical Infrastructure",d:"Power, water, comms, fuel — 42 U.S.C. 5195c(e)"},
-    {v:"construction",i:"🏗️",l:"Closed Access Construction",d:"Active construction site, restricted public access"},
-    {v:"linear_above",i:"🔌",l:"Linear Infrastructure (Above Ground)",d:"Powerlines, pipelines, roadways, rail — above surface"},
-    {v:"linear_buried",i:"🛢️",l:"Buried ROW / Pipeline",d:"Subsurface pipeline or buried right-of-way"},
-    {v:"facility",i:"🏭",l:"Industrial / Commercial Facility",d:"Factory, warehouse, distribution center"},
-    {v:"standard",i:"🏢",l:"Commercial / HOA / Campus",d:"Office park, retail, residential community"},
-    {v:"open",i:"🌾",l:"Open / Uncontrolled Area",d:"No qualifying shielding obstructions"},
-];
+
+function num(v){const n=parseFloat(v);return isNaN(n)?null:n;}
 
 function classify(){
-    const{siteType,accessControl,obstructions,obstHeight,daa,beyondOneSM,oop_oomv,publicArea,mitigations}=answers;
-    const obs=parseFloat(obstHeight)||0;
-    let classification,sp,ceilAGL,ceilFormula,ceilCalc=null,voRequired=false,voReason="",daaRequired=false,warnings=[],notes=[];
-    if(siteType==="critical_infra"){
-        classification="Critical Infrastructure Shielding";sp="SP 14";
-        const b=obs>0?obs+200:null;ceilAGL=b?Math.min(Math.max(200,b),400):200;
-        ceilFormula="200 ft AGL  OR  (obs height + 200 ft), max 400 ft AGL";
-        ceilCalc=b?`Max(200, ${obs}+200) = ${ceilAGL} ft AGL`:null;
-        notes.push("Transition corridors between assets: 100 ft AGL, sparsely populated, no non-company personnel/vehicles.");
-        notes.push("Must remain within controlled access area per CONOPS Site Selection Performance procedures.");
-    }else if(siteType==="construction"){
-        classification="Closed Access Construction Site Shielding";sp="SP 15";
-        const b=obs>0?obs+200:null;ceilAGL=b?Math.min(Math.max(200,b),400):200;
-        ceilFormula="200 ft AGL  OR  (obs height + 200 ft within 200 ft radius), max 400 ft AGL";
-        ceilCalc=b?`Max(200, ${obs}+200) = ${ceilAGL} ft AGL`:null;
-        notes.push("All persons in operational area must be related to the site (workers, engineers, maintainers).");
-        if(accessControl==="no")warnings.push("Access control required — site must be restricted from general public for this classification.");
-    }else if(siteType==="linear_above"){
-        classification="Long Range Linear Infrastructure Shielding";sp="SP 16";
-        const b=obs>0?obs+100:null;ceilAGL=b?Math.min(Math.max(100,b),400):100;
-        ceilFormula="100 ft AGL  OR  (obs height + 100 ft), max 400 ft AGL";
-        ceilCalc=b?`Max(100, ${obs}+100) = ${ceilAGL} ft AGL`:null;
-        notes.push("Lateral obstruction radius: 200 ft perpendicular to direction of flight.");
-        notes.push("Longitudinal obstruction radius: 500 ft along direction of flight.");
-    }else if(siteType==="linear_buried"){
-        classification="Buried Right of Way Non-Shielded";sp="SP 17";
-        ceilAGL=250;ceilFormula="250 ft AGL max · Must remain within 100 ft radius of ROW";
-        daaRequired=true;
-        warnings.push("DAA system (DO-381a / ASTM F3442) required and must be active and monitored during all operations.");
-    }else if(siteType==="facility"&&accessControl==="yes"){
-        classification="Closed Access Facility Shielding";sp="SP 15b";
-        const b=obs>0?obs+50:null;ceilAGL=b?Math.min(Math.max(100,b),400):100;
-        ceilFormula="100 ft AGL  OR  (obs height + 50 ft within 50 ft radius), max 400 ft AGL";
-        ceilCalc=b?`Max(100, ${obs}+50) = ${ceilAGL} ft AGL`:null;
-        notes.push("All persons must be related to the facility. Site must be restricted from general public.");
-    }else if(obstructions==="yes"){
-        classification="Standard Shielding";sp="SP 13";
-        const wD=daa==="yes",inc=wD?200:100;
-        const b=obs>0?obs+inc:null;ceilAGL=b?Math.min(Math.max(inc,b),400):inc;
-        ceilFormula=wD?`200 ft AGL  OR  (obs height + 200 ft within 200 ft radius), max 400 ft AGL  [DAA active]`:`100 ft AGL  OR  (obs height + 100 ft within 100 ft radius), max 400 ft AGL`;
-        ceilCalc=b?`Max(${inc}, ${obs}+${inc}) = ${ceilAGL} ft AGL`:null;
-        if(beyondOneSM==="yes"){voRequired=true;voReason="Flight beyond 1 SM from takeoff under Standard Shielding requires VOs continuously observing 2 SM radius airspace (SP 13d).";}
-        notes.push(`Obstruction radius: ${wD?200:100} ft from sUA.`);
-        if(beyondOneSM==="no")notes.push("Within 1 SM of takeoff — VO not required for airspace observation under SP 13d.");
-    }else if(daa==="yes"){
-        classification="Non-Shielded Operations (VO + DAA)";sp="SP 11";
-        ceilAGL=400;ceilFormula="400 ft AGL max";
-        voRequired=true;voReason="Non-shielded operations require VOs continuously observing 2 SM radius airspace.";
-        daaRequired=true;notes.push("DAA system must be active and observed by RPIC or Electronic Observer throughout flight.");
+    const{obstructions,obstHeight,gridHeight,uasfm,daa,vo,vo2sm,mtow,prs,overflight,sustained,assembly,restricted,ppe}=answers;
+    const obs=num(obstHeight), grid=num(gridHeight), w=num(mtow);
+    let sp,classification,ceilAGL,ceilFormula,ceilCalc=null,voRequired=false,voReason="",daaRequired=false,warnings=[],notes=[],blocks=[],pathway="None",pathwayText="";
+    if(obstructions==="yes"){
+        sp="SP 11";classification="Shielded Operations";
+        ceilAGL=obs!==null?Math.min(Math.max(200,obs+100),400):200;
+        ceilFormula="200 ft AGL, or (obstruction height + 100 ft) within a 100 ft radius, max 400 ft AGL";
+        ceilCalc=obs!==null?`Max(200, ${obs}+100) = ${ceilAGL} ft AGL`:"Enter the obstruction height for the SP 11(b) figure";
+        notes.push("Lateral constraint: 100 ft radius from the obstruction relied on (SP 11(b)).");
+        notes.push("No VO or DAA requirement is stated for shielded operations. DAA does not raise the shielded ceiling in this certificate.");
+        notes.push("Must remain within the operational area defined by the CONOPS site selection performance procedures (SP 11(d), SP 32). No 1 SM range limit exists in this certificate.");
     }else{
-        classification="Non-Shielded Baseline";sp="SP 12";
-        ceilAGL=200;ceilFormula="200 ft AGL max · Operations limited to 1 SM from takeoff";
-        warnings.push("Baseline non-shielded envelope — lowest altitude ceiling. If qualifying obstructions exist, re-classify as Standard Shielding for a higher ceiling.");
+        sp="SP 12";classification="Non-Shielded Operations";
+        if(daa==="active"){ceilAGL=400;ceilFormula="400 ft AGL with DAA active and under observation";daaRequired=true;}
+        else if(daa==="compromised"){ceilAGL=200;ceilFormula="200 ft AGL where DAA effectivity or coverage is compromised (SP 12(b))";daaRequired=true;}
+        else if(vo==="yes"){ceilAGL=400;ceilFormula="400 ft AGL with sufficient VO(s)";}
+        else{ceilAGL=0;ceilFormula="No pathway";classification="Not a waiver operation";blocks.push("SP 12 offers two alternatives: DAA under observation (12(b)) or VO(s) continuously observing a 2 SM radius (12(c)). With neither, fly under standard Part 107 VLOS or reclassify as SP 11 shielded.");}
+        if(vo==="yes"){voRequired=true;voReason="Sufficient VO(s) means the minimum number needed to continuously observe a 2 SM radius around the aircraft (SP 12(c)), with continuous full-duplex hands-free voice and a reliable backup (SP 12(e)). Operations cease if voice is lost (SP 21(c)).";
+            if(vo2sm==="no"&&daa!=="active")warnings.push("VO count does not cover a 2 SM radius. That coverage is the definition of sufficient VO(s) under SP 12(c).");}
+        else if(daa==="active")notes.push("VO not required when the DAA system described in the waiver application is active and under observation by the RPIC or Electronic Observer.");
     }
-    if(oop_oomv==="yes"){
-        if(publicArea==="yes"){
-            voRequired=true;
-            voReason=(voReason?voReason+" Additionally — ":"")+"§107.39/§107.145 OOP/OOMV in uncontrolled public area requires VO (SP 33).";
-        }else if(mitigations==="yes"){
-            notes.push("✓ Private property + documented mitigations (signage, controlled access, notification) — VO not required for transient OOP/OOMV per FAA ASI Arvay guidance (Jan 20, 2026).");
-        }else if(mitigations==="no"){
-            warnings.push("OOP/OOMV on private property without complete mitigations. Document signage + controlled access + advance notification, or deploy VO.");
-        }
+    if(grid!==null&&ceilAGL>0&&grid<ceilAGL){ceilAGL=grid;ceilCalc=(ceilCalc?ceilCalc+" → ":"")+`capped at UASFM grid ${grid} ft`;notes.push(sp==="SP 11"?"UASFM grid height takes precedence over the 200 ft and obstruction figures (SP 11(c)).":"SP 16 authorizes operations only at or below the UASFM grid height.");}
+    if(uasfm==="yes")notes.push("SP 16: §107.41 authorized at or below the UASFM grid. File a NOTAM no more than 72 and no less than 24 hours before operating and verify it is issued. Above the grid a separate ATC authorization is required; LAANC may not be used.");
+
+    if(overflight==="yes"){
+        if(w===null){pathway="Not set";pathwayText="Enter maximum takeoff weight to select the pathway.";}
+        else if(w<=0.88){pathway="SP 15";pathwayText="0.88 lb or less including all attachments. Rotating component shielding (prop guards) required. No sustained overflight.";
+            if(w===0.88)warnings.push("Exactly 0.88 lb falls under both the SP 13/14 caption (=> 0.88) and SP 15 (<= 0.88). EP applies SP 15 at this weight; written FAA clarification is outstanding.");}
+        else if(prs==="yes"){pathway="SP 14";pathwayText="Over 0.88 lb with PRS. 10 lb ceiling. PRS operational and ASTM F3322-18 compliant, verified free of known defects within the previous 7 calendar days, never below the manufacturer minimum deployment height (SP 14(e)(f)(g)). No modification to the PRS; repack after any deployment (SP 24).";
+            if(w>10)blocks.push(`${w} lb exceeds the 10 lb ceiling for PRS-equipped overflight (SP 14(d)).`);}
+        else{pathway="SP 13";pathwayText="Over 0.88 lb, no PRS. Restricted access site only. Persons in the operational area must be site-related, notified and equipped with PPE. 8.8 lb ceiling.";
+            if(w>8.8)blocks.push(`${w} lb exceeds the 8.8 lb (4.0 kg) ceiling for non-PRS overflight (SP 13(f)). Fit a conforming PRS for the 10 lb SP 14 ceiling.`);
+            if(restricted!=="yes")blocks.push("SP 13(a) requires a site restricted from the general public. Restrict access, fit a PRS (SP 14), or route to avoid overflight.");
+            if(ppe!=="yes")blocks.push("SP 13(a) requires persons in the operational area to be site-related and equipped with appropriate PPE (hard hats, gloves, work boots).");}
+        if(assembly==="yes")blocks.push("Overflight of open-air assemblies of persons is prohibited on every pathway (SP 13(c), 14(a), 15(a)). The coordination alternative in the superseded certificate no longer exists.");
+        if(sustained==="yes")blocks.push("Sustained overflight (loitering, hovering, continuous or sequential) of non-participants or moving vehicles is prohibited on every pathway (SP 13(d), 14(b), 15(b)). Overflight must be transitory.");
+        notes.push("Routes must be designed to avoid overflight of human beings and traffic areas (SP 13(e), 14(c)).");
+        if(sp==="SP 11")notes.push("Overflight does not by itself require a VO. The VO rule of the superseded certificate (old SP 33) does not exist in "+COW+".");
+    }else{
+        pathwayText="No overflight of non-participants or moving vehicles. SP 13, 14 and 15 do not apply. No blanket MTOW ceiling applies; the aircraft must be on the eligible-UAS list (SP 25).";
     }
-    return{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes};
+    return{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes,blocks,pathway,pathwayText};
 }
 
 function canAdvance(){
-    if(step===0)return!!answers.siteType;
-    if(step===1)return!!answers.accessControl&&!!answers.obstructions;
-    if(step===2)return answers.daa!==undefined&&answers.beyondOneSM!==undefined;
-    if(step===3)return answers.oop_oomv!==undefined;
+    if(step===0)return!!answers.obstructions;
+    if(step===1)return answers.obstructions==="yes"?answers.uasfm!==undefined:(answers.daa!==undefined&&answers.vo!==undefined&&answers.uasfm!==undefined);
+    if(step===2)return answers.mtow!==undefined&&answers.mtow!==""&&answers.prs!==undefined;
+    if(step===3)return answers.overflight==="no"||(answers.overflight==="yes"&&answers.sustained!==undefined&&answers.assembly!==undefined&&(num(answers.mtow)<=0.88||answers.prs==="yes"||(answers.restricted!==undefined&&answers.ppe!==undefined)));
     return true;
 }
 
@@ -478,86 +461,111 @@ function opt(k,v,icon,label,desc=''){
 function infoBox(t){return`<div class="info-box">${t}</div>`;}
 
 function progress(){
-    return`<div class="progress-track">${STEPS.map((_,i)=>`<div class="progress-seg ${i<step?'done':i===step?'active':''}"></div>`).join('')}</div><div class="progress-meta">Step ${step+1} of ${STEPS.length} &nbsp;—&nbsp; ${STEPS[step]}</div>`;
+    return`<div class="progress-track">${STEPS.map((_,i)=>`<div class="progress-seg ${i<step?'done':i===step?'active':''}"></div>`).join('')}</div><div class="progress-meta">Step ${step+1} of ${STEPS.length} &nbsp;·&nbsp; ${STEPS[step]}</div>`;
+}
+
+function numField(k,label,ph,note){
+    return`<div class="field-group"><span class="field-label">${label}</span><input class="field-input" type="number" step="any" placeholder="${ph}" value="${answers[k]||''}" oninput="answers['${k}']=this.value"/>${note?`<div class="field-note">${note}</div>`:''}</div>`;
 }
 
 function stepHTML(){
     if(step===0)return`
-        <div class="step-q">What type of site is this?</div>
-        <div class="step-sub">Select the operational environment. This determines which Special Provision applies under CoW 107W-2025-04534.</div>
-        <div class="grid-1">${SITES.map(s=>opt('siteType',s.v,s.i,s.l,s.d)).join('')}</div>`;
+        <div class="step-q">Is the entire route shielded?</div>
+        <div class="step-sub">Under CoW ${COW} the governing provision is SP 11 (shielded) or SP 12 (non-shielded). Site character no longer changes it.</div>
+        <div class="field-group">
+            <span class="field-label">Qualifying obstruction continuous along the entire route and RTH path?</span>
+            ${infoBox('An obstruction is any physical object, natural or man-made, that would stop or impede the aircraft on contact. Buildings, structures, mature tree lines and terrain qualify. Gaps reclassify the affected segments to SP 12; there is no partial-shielding allowance.')}
+            <div class="grid-2">${opt('obstructions','yes','🏢','Yes, continuous shielding','SP 11')}${opt('obstructions','no','🌅','No, or gaps along the route','SP 12')}</div>
+        </div>
+        ${answers.obstructions==='yes'?numField('obstHeight','Controlling obstruction height (ft), optional','e.g. 45','Lowest obstruction relied on. Used for the SP 11(b) figure: 100 ft above it within a 100 ft radius, max 400 ft AGL.'):''}`;
 
     if(step===1)return`
-        <div class="step-q">Access Control &amp; Obstructions</div>
-        <div class="step-sub">Shielding classifications require qualifying obstructions within the defined radius. Buildings, structures, trees, and terrain all qualify.</div>
+        <div class="step-q">Airspace mitigation and UASFM</div>
+        <div class="step-sub">${answers.obstructions==='yes'?'Shielded operations carry no VO or DAA requirement. Only the UASFM question applies.':'SP 12 requires DAA under observation or sufficient VO(s). It offers no third option.'}</div>
+        ${answers.obstructions!=='yes'?`
         <div class="field-group">
-            <span class="field-label">Is site access restricted from the general public?</span>
-            <div class="grid-2">${opt('accessControl','yes','🔒','Yes — Controlled Access','Secured entry, badges, fencing, etc.')}${opt('accessControl','no','🔓','No — Open to Public','Public roads, parks, open areas')}</div>
+            <span class="field-label">DAA system at this site</span>
+            ${infoBox('SP 12(b): the DAA system specified in the waiver application must be active and under observation by the RPIC or Electronic Observer. Where coverage is compromised the ceiling is 200 ft AGL.')}
+            <div class="grid-1">${opt('daa','active','📡','Active and under observation','400 ft AGL')}${opt('daa','compromised','📶','Installed, coverage compromised here','200 ft AGL')}${opt('daa','none','—','Not used','')}</div>
         </div>
         <div class="field-group">
-            <span class="field-label">Are qualifying shielding obstructions present?</span>
-            ${infoBox('Buildings, structures, trees, and terrain all qualify. Trees and natural terrain count as shielding per FAA ASI Arvay guidance.')}
-            <div class="grid-2">${opt('obstructions','yes','🏢','Yes — Obstructions Present','')}${opt('obstructions','no','🌅','No — Open / Unobstructed','')}</div>
+            <span class="field-label">Visual Observers assigned?</span>
+            <div class="grid-2">${opt('vo','yes','👁️','Yes','')}${opt('vo','no','✗','No','')}</div>
         </div>
-        ${answers.obstructions==='yes'?`<div class="field-group"><span class="field-label">Height of tallest obstruction (ft AGL) — optional</span><input class="field-input" type="number" placeholder="e.g. 45" value="${answers.obstHeight||''}" oninput="answers.obstHeight=this.value"/><div class="field-note">Used to calculate altitude ceiling. Leave blank to see formula only.</div></div>`:''}`;
+        ${answers.vo==='yes'?`<div class="field-group"><span class="field-label">VO count sufficient to continuously observe a 2 SM radius?</span><div class="grid-2">${opt('vo2sm','yes','✓','Yes','SP 12(c)')}${opt('vo2sm','no','✗','No','')}</div></div>`:''}`:''}
+        <div class="field-group">
+            <span class="field-label">Controlled airspace at or below the UASFM grid (SP 16)?</span>
+            ${infoBox('SP 16 authorizes §107.41 operations at or below the published UASFM grid height with a NOTAM filed 24 to 72 hours prior. Class G needs no authorization. Above the grid needs separate ATC authorization; LAANC may not be used for waivered operations.')}
+            <div class="grid-2">${opt('uasfm','yes','🗺️','Yes, relies on SP 16','')}${opt('uasfm','no','🌾','No (Class G or separate ATC authorization)','')}</div>
+        </div>
+        ${numField('gridHeight','UASFM grid height at this site (ft AGL), optional','e.g. 200','Takes precedence over the shielded altitude figures (SP 11(c)) and caps SP 16 operations.')}`;
 
     if(step===2)return`
-        <div class="step-q">DAA System &amp; Flight Range</div>
-        <div class="step-sub">These two factors directly affect your altitude ceiling and Visual Observer requirement under the waiver.</div>
+        <div class="step-q">Aircraft</div>
+        <div class="step-sub">Weight and PRS select the overflight pathway. There is no blanket MTOW ceiling in this certificate.</div>
+        ${numField('mtow','Maximum takeoff weight, all attachments (lb)','e.g. 2.1','Pathway caps: 0.88 lb (SP 15), 8.8 lb non-PRS (SP 13), 10 lb PRS-equipped (SP 14). Caps apply only to overflight of non-participants.')}
         <div class="field-group">
-            <span class="field-label">Will an active DAA system be in use?</span>
-            ${infoBox('Active DAA (DO-381a / ASTM F3442) increases Standard Shielding ceiling from 100 ft to 200 ft AGL and enables Non-Shielded + DAA operations up to 400 ft AGL.')}
-            <div class="grid-2">${opt('daa','yes','📡','Yes — DAA Active','')}${opt('daa','no','—','No DAA System','')}</div>
-        </div>
-        <div class="field-group">
-            <span class="field-label">Will any flight segment exceed 1 SM from takeoff?</span>
-            <div class="grid-2">${opt('beyondOneSM','yes','↔️','Yes — Beyond 1 SM','')}${opt('beyondOneSM','no','📍','No — Within 1 SM','')}</div>
+            <span class="field-label">Parachute recovery system fitted (ASTM F3322-18 as revised)?</span>
+            ${infoBox('PRS is a pathway, not a general requirement. It raises the overflight ceiling from 8.8 lb to 10 lb and removes the restricted-access condition, but the aircraft may never fly below the manufacturer minimum deployment height (SP 14(g)).')}
+            <div class="grid-2">${opt('prs','yes','🪂','Yes, PRS fitted','SP 14 pathway')}${opt('prs','no','—','No PRS','SP 13 or SP 15 pathway')}</div>
         </div>`;
 
-    if(step===3)return`
-        <div class="step-q">OOP / OOMV Exposure</div>
-        <div class="step-sub">Operations Over People (§107.39) and Operations Over Moving Vehicles (§107.145) trigger SP 33 VO requirements in uncontrolled public areas.</div>
+    if(step===3){
+        const w=num(answers.mtow);
+        return`
+        <div class="step-q">Overflight of non-participants and moving vehicles</div>
+        <div class="step-sub">§107.39 and §107.145 are waived subject to SP 13, 14 or 15. Overflight does not itself require a VO.</div>
         <div class="field-group">
-            <span class="field-label">Is any OOP or OOMV exposure anticipated?</span>
-            <div class="grid-2">${opt('oop_oomv','yes','👥','Yes','')}${opt('oop_oomv','no','✓','No','')}</div>
+            <span class="field-label">Any overflight of non-participating people or moving vehicles expected?</span>
+            <div class="grid-2">${opt('overflight','yes','👥','Yes','')}${opt('overflight','no','✓','No','')}</div>
         </div>
-        ${answers.oop_oomv==='yes'?`
+        ${answers.overflight==='yes'?`
         <div class="field-group">
-            <span class="field-label">Is this exposure in an uncontrolled public area?</span>
-            ${infoBox('Public roads, sidewalks, parks = public area. Private property you or your client controls = private.')}
-            <div class="grid-2">${opt('publicArea','yes','🌐','Yes — Public Area','Streets, parks, public access')}${opt('publicArea','no','🏢','No — Private Property','Site you or client controls')}</div>
+            <span class="field-label">Would any overflight be sustained (loitering, hovering, continuous or sequential)?</span>
+            <div class="grid-2">${opt('sustained','no','↔️','No, transitory only','')}${opt('sustained','yes','⏸️','Yes, sustained','Prohibited')}</div>
         </div>
-        ${answers.publicArea==='no'?`
         <div class="field-group">
-            <span class="field-label">Are all three mitigations documented and active?</span>
-            ${infoBox('Per FAA ASI Arvay (Jan 20, 2026): signage at entry points + controlled access + advance notification to site personnel removes VO requirement for transient OOP/OOMV on private property.')}
-            <div class="grid-2">${opt('mitigations','yes','✓','Yes — All Three Active','Signage + controlled access + notification')}${opt('mitigations','no','✗','No / Incomplete','Missing one or more mitigations')}</div>
-        </div>`:''}`:''}`
-    ;
+            <span class="field-label">Open-air assembly of persons within or adjacent to the route?</span>
+            ${infoBox('Prohibited on every pathway (SP 13(c), 14(a), 15(a)). The term is undefined in the certificate; treat any gathering of persons in the open as an assembly.')}
+            <div class="grid-2">${opt('assembly','no','✓','No','')}${opt('assembly','yes','🎪','Yes','Prohibited')}</div>
+        </div>
+        ${(w!==null&&w>0.88&&answers.prs!=='yes')?`
+        <div class="field-group">
+            <span class="field-label">Site restricted from the general public?</span>
+            ${infoBox('SP 13(a): non-PRS overflight over 0.88 lb is limited to restricted access sites where persons present are related to the site (security, construction workers, engineers, maintainers).')}
+            <div class="grid-2">${opt('restricted','yes','🔒','Yes, restricted access','')}${opt('restricted','no','🔓','No, open to the public','')}</div>
+        </div>
+        <div class="field-group">
+            <span class="field-label">Persons in the operational area site-related, notified and equipped with PPE?</span>
+            <div class="grid-2">${opt('ppe','yes','🦺','Yes','Hard hats, gloves, work boots or similar')}${opt('ppe','no','✗','No or unknown','')}</div>
+        </div>`:''}`:''}`;
+    }
 }
 
 function resultHTML(){
     const r=classify();
-    const{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes}=r;
+    const{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes,blocks,pathway,pathwayText}=r;
     return`<div class="result-wrap">
         <span class="sec-label">Classification Result</span>
         <div class="result-card">
             <div class="sp-badge">${sp}</div>
             <div class="class-name">${classification}</div>
             <div class="ceil-label">Maximum Altitude Ceiling</div>
-            <div><span class="ceil-value">${ceilAGL}</span><span class="ceil-unit">ft AGL max</span></div>
+            <div><span class="ceil-value">${ceilAGL>0?ceilAGL:'—'}</span><span class="ceil-unit">${ceilAGL>0?'ft AGL max':'no pathway'}</span></div>
             <hr class="divider">
             <span class="sec-label">Altitude Formula</span>
             <div class="formula-box">${ceilFormula}${ceilCalc?`<br><span class="formula-calc">→ ${ceilCalc}</span>`:''}</div>
         </div>
+        ${blocks.length?`<span class="sec-label">⛔ Not authorized as planned</span>${blocks.map(w=>`<div class="warning-box">${w}</div>`).join('')}`:''}
         ${warnings.length?`<span class="sec-label">⚠ Warnings</span>${warnings.map(w=>`<div class="warning-box">${w}</div>`).join('')}`:''}
         <span class="sec-label">Operational Requirements</span>
         <div class="req-card">
-            <div class="req-row"><div class="req-icon ${voRequired?'fail':'pass'}">${voRequired?'✗':'✓'}</div><div class="req-text"><strong>Visual Observer (VO):</strong><span>${voRequired?voReason:'Not required for this configuration.'}</span></div></div>
-            <div class="req-row"><div class="req-icon ${daaRequired?'fail':'pass'}">${daaRequired?'✗':'✓'}</div><div class="req-text"><strong>DAA System:</strong><span>${daaRequired?'Required — must be active and monitored throughout all operations.':'Not required (active DAA would increase Standard Shielding ceiling to 200 ft AGL).'}</span></div></div>
+            <div class="req-row"><div class="req-icon ${voRequired?'fail':'pass'}">${voRequired?'✗':'✓'}</div><div class="req-text"><strong>Visual Observer (VO):</strong><span>${voRequired?voReason:'Not required for this configuration. VO or DAA is driven only by non-shielded classification under SP 12.'}</span></div></div>
+            <div class="req-row"><div class="req-icon ${daaRequired?'fail':'pass'}">${daaRequired?'✗':'✓'}</div><div class="req-text"><strong>DAA System:</strong><span>${daaRequired?'Relied on. Must be the system described in the waiver application, active and under observation throughout (SP 12(b)).':'Not relied on. DAA has no effect on shielded operations in this certificate.'}</span></div></div>
+            <div class="req-row"><div class="req-icon ${pathway==='None'?'pass':(pathway==='Not set'?'fail':'info')}">${pathway==='None'?'✓':(pathway==='Not set'?'✗':'ℹ')}</div><div class="req-text"><strong>Overflight pathway: ${pathway}</strong><span>${pathwayText}</span></div></div>
         </div>
         ${notes.length?`<span class="sec-label">Compliance Notes</span><div class="req-card">${notes.map(n=>`<div class="req-row"><div class="req-icon info">ℹ</div><div class="req-text"><span>${n}</span></div></div>`).join('')}</div>`:''}
-        <div class="cow-ref-box"><strong>Regulatory Authority:</strong> Certificate of Waiver 107W-2025-04534 — 14 CFR §107.31, §107.35, §107.39, §107.145 at 1:6 pilot-to-aircraft ratio. Nationwide authorization issued to Enhanced Patrol LLC.</div>
+        <div class="cow-ref-box"><strong>Regulatory Authority:</strong> Certificate of Waiver and Authorization ${COW}, effective 13 AUG 2026 to 31 JAN 2030. 14 CFR §107.31, §107.33(b) and (c)(2), §107.35 (up to 6 aircraft), §107.39, §107.145, and §107.41 at or below UASFM grid altitudes. Supersedes 107W-2025-04534. Nationwide authorization issued to Enhanced Patrol.</div>
         <button class="btn-reset" onclick="reset()">← Run Another Classification</button>
     </div>`;
 }

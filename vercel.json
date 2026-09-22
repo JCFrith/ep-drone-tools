@@ -1,0 +1,7 @@
+{
+  "cleanUrls": true,
+  "headers": [
+    { "source": "/coa-waiver-rules.json", "headers": [ { "key": "Cache-Control", "value": "no-store" } ] },
+    { "source": "/(.*)", "headers": [ { "key": "X-Frame-Options", "value": "SAMEORIGIN" }, { "key": "X-Content-Type-Options", "value": "nosniff" } ] }
+  ]
+}

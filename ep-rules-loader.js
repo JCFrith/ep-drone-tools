@@ -1,4 +1,4 @@
-/* Enhanced Patrol COA/Waiver rule engine, loader v2.0
+/* Enhanced Patrol COA/Waiver rule engine, loader v3.0 (matrix v3.0, CoW 107W-2026-01762)
    Rules reference stable semantic keys. Forms declare window.EP_CHECK_KEYS mapping
    key -> check id. Renumbering a form cannot silently break the matrix: an unmapped
    key is reported as unmapped, never as a pass and never as a spurious failure. */
@@ -78,6 +78,8 @@
       case 'numberAtMost':      n = numOf(F[t.field]); return n === null ? false : n <= t.value;
       case 'numberAtLeast':     n = numOf(F[t.field]); return n === null ? false : n >= t.value;
       case 'numberGreaterThan': n = numOf(F[t.field]); return n === null ? false : n > t.value;
+      case 'fieldAtMostField': n = numOf(F[t.field]); var o1 = numOf(F[t.other]); return (n === null || o1 === null) ? true : n <= o1;
+      case 'fieldAtLeastField': n = numOf(F[t.field]); var o2 = numOf(F[t.other]); return (n === null || o2 === null) ? true : n >= o2;
       case 'locationPresent':   return !!(str(F.mapAddress) || str(F.mapLat) || str(F.mapLng));
       case 'photoPresent':      return !!(P[t.photo] && P[t.photo].length);
 
