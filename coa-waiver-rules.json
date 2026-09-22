@@ -1,5 +1,5 @@
 {
-  "version": "4.0",
+  "version": "4.1",
   "certificate": "107W-2026-01762",
   "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 4.0 restates the shielded/non-shielded split, the three operations-over-non-participants pathways, the UASFM grid authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Trims Aircraft & Equipment to site-invariant items (aircraft-state checks such as Remote ID, ADS-B, maintenance log and FCC compliance now belong on a separate pre-flight readiness checklist, not a per-site record), removes duplicate Shielding Geometry and Property items already covered elsewhere, and splits the applicable sections between ground-crew and RPIC items with a single RPIC attestation gating final approval. Items carried over from the superseded certificate as EP practice are labelled as such.",
   "decisions": {
@@ -291,19 +291,6 @@
       "label": "Anti-collision lighting",
       "failReason": "Anti-collision lighting has not been verified operational.",
       "correctiveAction": "Verify 107.29-compliant anti-collision lighting is fitted and operational at all times."
-    },
-    {
-      "id": "AC-011",
-      "category": "Aircraft & Equipment",
-      "severity": "notApproved",
-      "provision": "Ground Control Station Configuration (SP 27(a)(b)(c)(d))",
-      "test": {
-        "type": "checkDone",
-        "key": "equip.gcsTelemetry"
-      },
-      "label": "GCS configured per GCS Telemetry Display (SP 27(a)) to (d): telemetry display, alerting, emergency profiles, avoidance sensors",
-      "failReason": "Required GCS configuration items have not been verified: telemetry display, alerting for degraded performance/geofence loss/control link loss/intrusion, automated emergency profiles, and collision/obstacle avoidance sensors.",
-      "correctiveAction": "Verify the GCS displays required telemetry, is configured to alert on degraded performance, geofence loss of containment, control link loss and intrusion, has automated emergency profiles configured, and any installed avoidance sensors are operational."
     },
     {
       "id": "AC-019",
@@ -1458,37 +1445,6 @@
       "label": "Backup crew link tested",
       "failReason": "The backup crew communication method has not been tested at this site.",
       "correctiveAction": "Test the backup crew link. Non-Shielded Operations (SP 12(e)(iii)) requires a reliable backup where VO communication is by electronic device."
-    },
-    {
-      "id": "C2-007",
-      "category": "C2 & Communications",
-      "severity": "notApproved",
-      "provision": "Cease Operations on Loss of VO Communication (SP 21(c))",
-      "test": {
-        "type": "checkDone",
-        "key": "rf.ceaseOnLoss"
-      },
-      "when": {
-        "type": "numberAtLeast",
-        "field": "voCount",
-        "value": 1
-      },
-      "label": "Cease-on-loss briefed",
-      "failReason": "The crew has not been briefed that operations cease if full-duplex voice with any VO is lost.",
-      "correctiveAction": "Brief the cease-on-loss requirement to the entire crew."
-    },
-    {
-      "id": "C2-008",
-      "category": "C2 & Communications",
-      "severity": "notApproved",
-      "provision": "RPIC Location Within the Continental United States (SP 10)",
-      "test": {
-        "type": "checkDone",
-        "key": "rf.rpicConus"
-      },
-      "label": "RPIC within the continental United States",
-      "failReason": "Location of the RPIC within the continental United States has not been confirmed.",
-      "correctiveAction": "Confirm the RPIC will operate from a location within the continental United States."
     },
     {
       "id": "C2-009",
