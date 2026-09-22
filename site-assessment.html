@@ -1413,8 +1413,16 @@ function renderHastyForm() {
     '<p class="hint" style="margin-bottom:14px;">Everything on this page is ground-crew work: the core site data below, plus every item labeled Ground Crew from the rest of the assessment. Attach photos as you go. Everything else is completed by the RPIC after you submit.</p>' +
     '<div class="field-row">' + fText('siteName', 'Site name or description') + fDate('assessDate', 'Date') + '</div>' +
     '<div class="field-row">' + fText('assessedBy', 'Assessed by (ground crew)') + fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment', 'Both']) + '</div>' +
-    '<div class="field-row">' + fNum('mapLat', 'Latitude') + fNum('mapLng', 'Longitude') + '</div>' +
-    (EXTERNAL_OK ? '<div class="form-group" style="margin-bottom:16px;"><button class="map-locate-btn no-print" onclick="locateMeHasty()">Use my location</button></div>' : '') +
+    '<div class="map-container"><label>Location</label>' +
+    (EXTERNAL_OK
+      ? '<div class="map-wrap"><div id="locationMap"></div><button class="map-locate-btn no-print" onclick="locateMe()">My location</button></div>'
+      : '<div class="map-off">External map and geocoding are off for this device. Enter coordinates manually below.</div>') +
+    '<div class="map-coords-row"><div class="field-group"><label for="mapLat">Latitude</label><input id="mapLat" type="text" data-field="mapLat" value="' + esc(S.fields.mapLat) + '" placeholder="35.8456"></div>' +
+    '<div class="field-group"><label for="mapLng">Longitude</label><input id="mapLng" type="text" data-field="mapLng" value="' + esc(S.fields.mapLng) + '" placeholder="-86.3903"></div>' +
+    (EXTERNAL_OK ? '<button class="btn-lookup no-print" onclick="lookupCoords()">Show</button>' : '<span></span>') + '</div>' +
+    '<div class="map-addr-row"><div class="field-group" style="margin-bottom:0;"><label for="mapAddress">Address</label><input id="mapAddress" type="text" data-field="mapAddress" value="' + esc(S.fields.mapAddress) + '" placeholder="Type an address, then Find"></div>' +
+    (EXTERNAL_OK ? '<button class="btn-lookup no-print" onclick="lookupAddress()">Find</button>' : '<span></span>') + '</div>' +
+    '<div class="map-hint">Type an address and press Find, or enter coordinates and press Show. Drag the pin to adjust. Geolocation requires HTTPS.</div></div>' +
     '<div class="section-divider"></div>' +
     '<div class="field-row">' + fSel('shieldContinuity', 'Obstruction continuity along the entire route', [['continuous', 'Continuous for the entire route'], ['gaps', 'Present with gaps'], ['none', 'No usable obstruction']], 'Continuous makes this a Shielded Operations (SP 11) site; anything else is Non-Shielded Operations (SP 12).') +
     fNum('plannedAlt', 'Planned altitude (ft AGL)') + '</div>' +
@@ -1422,6 +1430,9 @@ function renderHastyForm() {
     fSel('hastyWiresPresent', 'Overhead wires or power lines in the operational area', YN) + '</div>' +
     '<div class="fg-label" style="margin-top:6px;">Site photos</div><div class="photo-upload-area" id="photos-hasty_hazard"></div>';
   bindFields(body);
+  const addrEl = body.querySelector('#mapAddress');
+  if (addrEl) addrEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lookupAddress(); } });
+  if (EXTERNAL_OK) setTimeout(initMap, 120);
   setTimeout(() => renderPhotos('hasty_hazard'), 10);
   const items = groundCrewItems();
   let lastSecId = null;
@@ -1441,15 +1452,6 @@ function renderHastyForm() {
     '<div class="form-group"><button class="action-btn" id="hastySubmitBtn" style="width:100%;font-size:0.95rem;padding:14px;" onclick="submitHastyToRpic()">Submit to RPIC</button>' +
     '<div class="hint" style="margin-top:8px;">This locks the ground-crew portion and sends it to the RPIC to complete the remaining sections and make the approval decision.</div></div>';
   body.appendChild(submitWrap);
-}
-function locateMeHasty() {
-  if (!navigator.geolocation) { showToast('Geolocation is not available in this browser', true); return; }
-  if (location.protocol !== 'https:' && location.hostname !== 'localhost') { showToast('Geolocation needs HTTPS. Enter coordinates manually.', true); return; }
-  showToast('Getting location');
-  navigator.geolocation.getCurrentPosition(p => {
-    S.fields.mapLat = p.coords.latitude.toFixed(6); S.fields.mapLng = p.coords.longitude.toFixed(6);
-    save(); renderHastyForm(); showToast('Location set');
-  }, err => showToast('Location error: ' + err.message, true), { enableHighAccuracy: true, timeout: 15000 });
 }
 async function submitHastyToRpic() {
   const req = ['siteName', 'assessDate', 'assessedBy', 'launchMethod', 'shieldContinuity'];
