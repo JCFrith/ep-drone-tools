@@ -987,7 +987,7 @@
 <div class="print-header">
     <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
     <div>
-        <div class="print-header-title">Drone Security Program &mdash; Pricing Quote</div>
+        <div class="print-header-title">Drone Security Program - Pricing Quote</div>
         <div class="print-header-sub">Enhanced Patrol LLC &nbsp;&bull;&nbsp; enhancedpatrol.com &nbsp;&bull;&nbsp; Confidential</div>
     </div>
 </div>
@@ -1032,23 +1032,39 @@
             </div>
 
             <div class="form-group">
-                <label>Markups for this quote (blank = catalog default) <span class="print-value" id="markupPrint"></span></label>
+                <label>Markup override for this quote only <span class="print-value" id="markupPrint"></span></label>
+                <div class="kit-contents" style="margin-bottom:6px;">Leave either field blank to use the catalog default markup set in Catalog &amp; Pricing Settings. A number here overrides it for this quote only and is not saved back to the catalog.</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-                    <input type="number" step="any" id="hwMarkupPct" placeholder="hardware %">
-                    <input type="number" step="any" id="laborMarkupPct" placeholder="labor %">
+                    <div>
+                        <label for="hwMarkupPct" style="font-size:0.75rem;font-weight:normal;text-transform:none;letter-spacing:0;">Hardware &amp; equipment markup %</label>
+                        <input type="number" step="any" id="hwMarkupPct" placeholder="catalog default">
+                        <div class="kit-contents">Docks, aircraft, and kit components (any item priced cost plus markup).</div>
+                    </div>
+                    <div>
+                        <label for="laborMarkupPct" style="font-size:0.75rem;font-weight:normal;text-transform:none;letter-spacing:0;">Labor markup %</label>
+                        <input type="number" step="any" id="laborMarkupPct" placeholder="catalog default">
+                        <div class="kit-contents">Pilot and supervisor billing rates versus their internal cost rate.</div>
+                    </div>
                 </div>
-                <div class="kit-contents" id="markupModeNote"></div>
+                <div class="kit-contents" id="markupModeNote" style="margin-top:6px;"></div>
             </div>
 
             <div class="divider"></div>
 
             <div class="form-group">
-                <label>Autonomous DFR Maintenance Level <span class="print-value" id="maintenancePrint"></span></label>
-                <select id="maintenanceLevel" onchange="calculate()">
-                    <option value="10000" selected>Basic — $10,000 / year</option>
-                    <option value="20000">Standard — $20,000 / year</option>
-                    <option value="40000">Premium — $40,000 / year</option>
-                </select>
+                <div class="checkbox-group" style="margin-bottom:8px;">
+                    <input type="checkbox" id="includeDFRMaintenance" checked onchange="toggleMaintenance(this.checked)">
+                    <label for="includeDFRMaintenance">Include Autonomous DFR Maintenance</label>
+                </div>
+                <div id="maintenanceLevelWrap">
+                    <label>Autonomous DFR Maintenance Level <span class="print-value" id="maintenancePrint"></span></label>
+                    <select id="maintenanceLevel" onchange="calculate()">
+                        <option value="0">None - $0 / year</option>
+                        <option value="10000" selected>Basic - $10,000 / year</option>
+                        <option value="20000">Standard - $20,000 / year</option>
+                        <option value="40000">Premium - $40,000 / year</option>
+                    </select>
+                </div>
             </div>
 
             <div class="form-group">
@@ -1060,6 +1076,7 @@
                 <label>Coverage Hours / Day <span class="print-value" id="hoursPrint"></span></label>
                 <select id="coverageHours" onchange="coverageHoursChanged(this.value)">
                     <option value="24" selected>24 Hours (Full Day)</option>
+                    <option value="16">16 Hours / Day</option>
                     <option value="12">12 Hours (Half Day)</option>
                     <option value="8">8 Hours (Shift-Based)</option>
                     <option value="hybrid">Hybrid Strategic (12-Hr Weekday / 24-Hr Weekend)</option>
@@ -1261,7 +1278,7 @@
             <a href="#">Terms &amp; Service</a>
         </div>
         <p class="footer-bottom-copy">
-            &copy; Copyright 2024 &mdash; All rights reserved.
+            &copy; Copyright 2024 - All rights reserved.
             <br><small>Developed by <a href="https://multisitedev.com/">MultisiteDev</a></small>
         </p>
     </div>
@@ -1719,11 +1736,13 @@ function calculate() {
     var M = quoteMarkups();
 
     var maintEl = el('maintenanceLevel'), minsEl = el('minsPerHourPerDock'), termEl = el('termYears'), upfrontEl = el('payUpfront');
+    var maintChkEl = el('includeDFRMaintenance');
     var supvEl = el('includeSupervisor'), hoursEl = el('coverageHours'), shiftsEl = el('numShifts');
     var pilotRateEl = el('pilotBillingRate'), supvRateEl = el('supvBillingRate');
     if (!maintEl || !minsEl || !termEl || !upfrontEl) return;
 
-    var maintenanceLevel   = parseInt(maintEl.value) || 40000;
+    var maintenanceLevel   = parseInt(maintEl.value, 10); if (isNaN(maintenanceLevel)) maintenanceLevel = 10000;
+    var includeDFRMaintenance = maintChkEl ? maintChkEl.checked : true;
     var minsPerHourPerDock = parseInt(minsEl.value)  || 0;
     var termYears          = parseInt(termEl.value)  || 3;
     var payUpfront         = upfrontEl.checked;
@@ -1733,7 +1752,8 @@ function calculate() {
     var options            = readOptions();
 
     var laborMultiplier = 1.0;
-    if      (coverageHours === '12')     laborMultiplier = 0.5;
+    if      (coverageHours === '16')     laborMultiplier = 16 / 24;
+    else if (coverageHours === '12')     laborMultiplier = 0.5;
     else if (coverageHours === '8')      laborMultiplier = (1/3) * numShifts;
     else if (coverageHours === 'hybrid') laborMultiplier = 108 / 168;
 
@@ -1775,7 +1795,7 @@ function calculate() {
         fr.innerHTML = fh;
     }
     setText('dockCountPrint',  ': ' + totalDocks);
-    setText('maintenancePrint','$' + maintenanceLevel.toLocaleString() + '/yr');
+    setText('maintenancePrint', includeDFRMaintenance ? ('$' + maintenanceLevel.toLocaleString() + '/yr') : 'Not included');
     setText('minsPrint',       ': ' + minsPerHourPerDock);
     setText('termPrint',       ': ' + termYears + ' Year' + (termYears > 1 ? 's' : ''));
 
@@ -1845,8 +1865,8 @@ function calculate() {
         setupCosts.push({ name: kit.label, basis: 'per kit', qty: 1, unitCost: total, total: total, subItems: kit.components });
     });
     // Recurring: maintenance level first, then labor
-    if (totalDocks > 0) recurringCosts.unshift({ name: 'Autonomous DFR Maintenance', basis: 'per program / yr', qty: 1, unitCost: maintenanceLevel, total: maintenanceLevel });
-    var laborLabel = coverageHours === '24' ? '24/7' : coverageHours === '12' ? '12hr/day' : coverageHours === 'hybrid' ? 'Hybrid (12hr wkday / 24hr wkend)' : numShifts + ' Shift' + (numShifts > 1 ? 's' : '') + '/day';
+    if (totalDocks > 0 && includeDFRMaintenance && maintenanceLevel > 0) recurringCosts.unshift({ name: 'Autonomous DFR Maintenance', basis: 'per program / yr', qty: 1, unitCost: maintenanceLevel, total: maintenanceLevel });
+    var laborLabel = coverageHours === '24' ? '24/7' : coverageHours === '16' ? '16hr/day' : coverageHours === '12' ? '12hr/day' : coverageHours === 'hybrid' ? 'Hybrid (12hr wkday / 24hr wkend)' : numShifts + ' Shift' + (numShifts > 1 ? 's' : '') + '/day';
     if (pilots > 0)
         recurringCosts.push({ name: 'TOC Labor, Remote Pilot (' + laborLabel + ')', basis: 'per pilot', qty: pilots, unitCost: Math.round(pilotAnnualBilled), total: Math.round(pilots * pilotAnnualBilled), billingRate: pilotBillingRate, payRate: pilotInternalRate, isLabor: true });
     if (supervisors > 0 && includeSupervisor)
@@ -1889,7 +1909,7 @@ function calculate() {
     setupCosts.forEach(function(item) {
         var d = '';
         if (item.note) d += '<div class="kit-contents">' + escHtml(item.note) + '</div>';
-        if (item.subItems) item.subItems.forEach(function(c) { if (c.qty > 0) d += '<div class="kit-contents">(x' + c.qty + ') ' + escHtml(c.name) + ' &mdash; ' + fmt(c.qty * c.unitPrice) + '</div>'; });
+        if (item.subItems) item.subItems.forEach(function(c) { if (c.qty > 0) d += '<div class="kit-contents">(x' + c.qty + ') ' + escHtml(c.name) + ' - ' + fmt(c.qty * c.unitPrice) + '</div>'; });
         tbl += '<tr><td>' + escHtml(item.name) + d + '</td><td>' + item.basis + '</td><td>' + item.qty + '</td><td>' + fmt(item.unitCost) + '</td><td>' + fmt(item.total) + '</td></tr>';
     });
     tbl += '<tr class="subtotal"><td colspan="4">Setup Subtotal</td><td>' + fmt(initialTotal) + '</td></tr>';
@@ -2070,6 +2090,11 @@ function coverageHoursChanged(val) {
     if (sg) sg.style.display = val === '8' ? '' : 'none';
     calculate();
 }
+function toggleMaintenance(checked) {
+    var wrap = el('maintenanceLevelWrap');
+    if (wrap) wrap.style.display = checked ? '' : 'none';
+    calculate();
+}
 function toggleKitSection(checkbox, areaId) {
     var area = el(areaId);
     if (area) area.style.display = checkbox.checked ? '' : 'none';
@@ -2097,6 +2122,7 @@ function buildQuoteData() {
         hwMarkupPct:           hw && hw.value !== '' ? hw.value : null,
         laborMarkupPct:        lb && lb.value !== '' ? lb.value : null,
         maintenanceLevel:      el('maintenanceLevel') ? el('maintenanceLevel').value : 10000,
+        includeDFRMaintenance: el('includeDFRMaintenance') ? el('includeDFRMaintenance').checked : true,
         minsPerHourPerDock:    el('minsPerHourPerDock') ? el('minsPerHourPerDock').value : 0,
         coverageHours:         el('coverageHours') ? el('coverageHours').value : '24',
         numShifts:             el('numShifts') ? el('numShifts').value : '1',
@@ -2125,7 +2151,9 @@ function applyQuoteData(data, savedAt) {
     LOADED_QUOTE_META = { legacy: legacy, savedAt: (savedAt || (data.pricing && data.pricing.snapshot_at) || '').slice(0, 10) };
 
     if (el('numDocks'))           el('numDocks').value              = data.numDocks || 0;
-    if (el('maintenanceLevel'))   el('maintenanceLevel').value      = data.maintenanceLevel || 10000;
+    if (el('maintenanceLevel'))   el('maintenanceLevel').value      = (data.maintenanceLevel === 0 || data.maintenanceLevel) ? data.maintenanceLevel : 10000;
+    if (el('includeDFRMaintenance')) el('includeDFRMaintenance').checked = data.includeDFRMaintenance !== false;
+    { var mw = el('maintenanceLevelWrap'); if (mw) mw.style.display = data.includeDFRMaintenance === false ? 'none' : ''; }
     if (el('minsPerHourPerDock')) el('minsPerHourPerDock').value    = data.minsPerHourPerDock || 0;
     if (el('coverageHours'))      el('coverageHours').value         = data.coverageHours || '24';
     if (el('numShifts'))          el('numShifts').value             = data.numShifts || '1';
@@ -2242,7 +2270,12 @@ function renderAdmin() {
             '<td style="white-space:nowrap">' + fmt(price) + '</td>' +
             '<td><input type="checkbox"' + (it.active ? ' checked' : '') + ' data-f="active" ' + ix + '></td></tr>';
     });
-    h += '</tbody></table></div><button class="kit-add-btn" onclick="adminAddItem()">+ Add catalog item</button>';
+    h += '</tbody></table></div><div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button class="kit-add-btn" onclick="adminAddItem(\'dock\')">+ Add dock</button>' +
+        '<button class="kit-add-btn" onclick="adminAddItem(\'aircraft\')">+ Add aircraft</button>' +
+        '<button class="kit-add-btn" onclick="adminAddItem(\'component\')">+ Add kit component</button>' +
+        '<button class="kit-add-btn" onclick="adminAddItem(\'software\')">+ Add software line</button>' +
+        '<button class="kit-add-btn" onclick="adminAddItem(\'service\')">+ Add service line</button></div>';
     // Kits
     h += '<h3>Kit templates <span class="kit-contents">Components reference catalog items; their prices follow the catalog.</span></h3>';
     D.kits.forEach(function(k, ki) {
@@ -2261,7 +2294,9 @@ function renderAdmin() {
         });
         h += '</div><button class="kit-add-btn" onclick="adminKitCompAdd(' + ki + ')">+ Add component</button></div>';
     });
-    h += '<button class="kit-add-btn" onclick="adminAddKit()">+ Add kit template</button>';
+    h += '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button class="kit-add-btn" onclick="adminAddKit(\'tactical\')">+ Add tactical kit template</button>' +
+        '<button class="kit-add-btn" onclick="adminAddKit(\'maintenance\')">+ Add maintenance kit template</button></div>';
     h += '<div class="admin-head" style="margin-top:14px;"><span></span><button class="kit-add-btn" onclick="saveAdmin()">Save all changes</button></div>';
     setHTML('adminPanel', h);
 }
@@ -2283,12 +2318,31 @@ function adminItem(inp) {
     else it[f] = inp.value;
     if (inp.tagName === 'SELECT' || inp.type === 'checkbox') renderAdmin();
 }
-function adminAddItem() {
-    var name = prompt('Item name (e.g. Vantage beeper)'); if (!name) return;
+function adminAddItem(category) {
+    // No window.prompt(): several embedded browsers (including in-app views) silently no-op prompt/alert/confirm,
+    // which made this button appear to do nothing. A blank, immediately-editable row avoids that dependency.
+    category = category || 'component';
+    var base = { dock: 'New Dock', aircraft: 'New Aircraft', software: 'New Software', service: 'New Service' }[category] || 'New Component';
+    var name = base, n = 1;
+    while (ADMIN_DRAFT.items.some(function(i) { return i.name === name; })) { n++; name = base + ' ' + n; }
     var slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (ADMIN_DRAFT.items.some(function(i) { return i.slug === slug; })) slug += '-' + Date.now().toString(36);
-    ADMIN_DRAFT.items.push({ slug: slug, sort: 1000, category: 'component', name: name, unit_cost: 0, price_mode: 'cost_plus', markup_override_pct: null, basis: 'one_time', trigger: 'kit', default_on: false, applies_to_tag: null, attributes: {}, note: null, active: true, id: null });
+    var byCategory = {
+        dock:      { trigger: 'fleet',  attributes: { capacity: 1 } },
+        aircraft:  { trigger: 'fleet',  attributes: {} },
+        component: { trigger: 'kit',    attributes: {} },
+        software:  { trigger: 'toggle', price_mode: 'fixed', attributes: {} },
+        service:   { trigger: 'toggle', price_mode: 'fixed', attributes: {} }
+    }[category] || { trigger: 'kit', attributes: {} };
+    var it = { slug: slug, sort: 1000, category: category, name: name, unit_cost: 0, price_mode: 'cost_plus', markup_override_pct: null, basis: 'one_time', trigger: 'kit', default_on: false, applies_to_tag: null, attributes: {}, note: null, active: true, id: null };
+    Object.assign(it, byCategory);
+    ADMIN_DRAFT.items.push(it);
     renderAdmin();
+    var idx = ADMIN_DRAFT.items.length - 1;
+    setTimeout(function() {
+        var row = document.querySelector('#adminPanel input[data-f="name"][data-i="' + idx + '"]');
+        if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); row.focus(); row.select(); }
+    }, 30);
 }
 function adminKit(inp) {
     var k = ADMIN_DRAFT.kits[parseInt(inp.dataset.k)], f = inp.dataset.f; if (!k) return;
@@ -2302,12 +2356,20 @@ function adminKitComp(inp) {
 }
 function adminKitCompAdd(ki) { var first = ADMIN_DRAFT.items.filter(function(i) { return i.category === 'component'; })[0]; ADMIN_DRAFT.kits[ki].components.push({ item_slug: first ? first.slug : '', default_qty: 1 }); renderAdmin(); }
 function adminKitCompRemove(ki, ci) { ADMIN_DRAFT.kits[ki].components.splice(ci, 1); renderAdmin(); }
-function adminAddKit() {
-    var label = prompt('Kit label'); if (!label) return;
+function adminAddKit(kitType) {
+    kitType = kitType || 'tactical';
+    var base = kitType === 'maintenance' ? 'New Maintenance Kit' : 'New Tactical Kit';
+    var label = base, n = 1;
+    while (ADMIN_DRAFT.kits.some(function(k) { return k.label === label; })) { n++; label = base + ' ' + n; }
     var slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
     if (ADMIN_DRAFT.kits.some(function(k) { return k.slug === slug; })) slug += '-' + Date.now().toString(36);
-    ADMIN_DRAFT.kits.push({ slug: slug, sort: 1000, kit_type: 'tactical', label: label, components: [], active: true, id: null });
+    ADMIN_DRAFT.kits.push({ slug: slug, sort: 1000, kit_type: kitType, label: label, components: [], active: true, id: null });
     renderAdmin();
+    var idx = ADMIN_DRAFT.kits.length - 1;
+    setTimeout(function() {
+        var row = document.querySelector('#adminPanel input[data-f="label"][data-k="' + idx + '"]');
+        if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); row.focus(); row.select(); }
+    }, 30);
 }
 async function saveAdmin() {
     if (!IS_ADMIN) { alert('Your account is not flagged admin.'); return; }
@@ -2473,7 +2535,7 @@ async function deleteQuoteById(id, rowEl) {
     if (editingQuoteId === id) editingQuoteId = null;
 }
 
-// ── GLOBAL FALLBACK — works even if DOMContentLoaded misfires ───────────────────
+// ── GLOBAL FALLBACK - works even if DOMContentLoaded misfires ───────────────────
 function numDocksChanged(val) {
     var count = Math.max(0, Math.min(20, parseInt(val) || 0));
     buildDockRows(count, null);
@@ -2506,7 +2568,7 @@ function init() {
         });
     }
 
-    // Coverage hours — show/hide shifts field
+    // Coverage hours - show/hide shifts field
     var coverageHoursEl = el('coverageHours');
     if (coverageHoursEl) {
         coverageHoursEl.addEventListener('change', function() {
@@ -2549,7 +2611,7 @@ function init() {
         });
     }
 
-    // Add kit buttons handled via inline onclick — addEventListener removed to prevent double-firing
+    // Add kit buttons handled via inline onclick - addEventListener removed to prevent double-firing
 
     // Initial calculation
     calculate();
@@ -2590,7 +2652,7 @@ function exportClientPDF() {
         }
     });
 
-    // Other recurring (C2, data, cellular, regulatory, etc.) — rolled into "Program Services"
+    // Other recurring (C2, data, cellular, regulatory, etc.) - rolled into "Program Services"
     var otherRecurring = 0;
     var otherLines = [];
     q.recurringCosts.forEach(function(item) {
@@ -2603,7 +2665,7 @@ function exportClientPDF() {
     // ── FLEET HTML ─────────────────────────────────────────────────────────
     var fleetLines = '';
     (q.fleetList || []).forEach(function(f) { fleetLines += '<div class="fleet-row"><span>' + f.name + '</span><span>' + f.qty + '</span></div>'; });
-    if (!fleetLines) fleetLines = '<div class="fleet-row"><span style="color:#6a8a9a;font-style:italic;">No docks configured</span><span>—</span></div>';
+    if (!fleetLines) fleetLines = '<div class="fleet-row"><span style="color:#6a8a9a;font-style:italic;">No docks configured</span><span>-</span></div>';
 
     // ── HARDWARE SECTION ───────────────────────────────────────────────────
     var hwSection = q.payUpfront
@@ -2623,7 +2685,7 @@ function exportClientPDF() {
     var contractTotal   = q.contractTotal;
 
     var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
-        + '<title>Enhanced Patrol — Client Quote</title>'
+        + '<title>Enhanced Patrol - Client Quote</title>'
         + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">'
         + '<style>'
         + '@font-face{font-family:"Gotham Bold";font-weight:700;src:url("https://enhancedpatrol.com/wp-content/uploads/2024/09/GothamBold.woff2") format("woff2")}'
@@ -2680,13 +2742,13 @@ function exportClientPDF() {
         +   '<div class="cost-card"><div class="cost-card-title">Hardware &amp; Setup</div>' + hwSection + '</div>'
         +   '<div style="margin-top:8px;"></div>'
         +   '<div class="cost-card"><div class="cost-card-title">Annual Maintenance Program (' + maint_label + ')</div>'
-        +     '<div class="cost-row"><span>DFR Maintenance — ' + maint_label + ' Program</span><span>' + fmtN(maintenanceTotal) + '/yr</span></div>'
+        +     '<div class="cost-row"><span>DFR Maintenance - ' + maint_label + ' Program</span><span>' + fmtN(maintenanceTotal) + '/yr</span></div>'
         +   '</div>'
         +   '<div style="margin-top:8px;"></div>'
         +   '<div class="cost-card"><div class="cost-card-title">Annual Piloting Services (' + q.laborLabel + ')</div>'
         +     (pilotLine  ? '<div class="cost-row"><span>Remote Pilots &times; ' + q.pilots + '</span><span>' + fmtN(pilotLine.total) + '/yr</span></div>' : '')
         +     (supvLine   ? '<div class="cost-row"><span>Shift Supervisors &times; ' + q.supervisors + '</span><span>' + fmtN(supvLine.total) + '/yr</span></div>' : '')
-        +     (!pilotLine ? '<div class="cost-row"><span style="color:#6a8a9a;font-style:italic;">Configure flight minutes to calculate staffing</span><span>—</span></div>' : '')
+        +     (!pilotLine ? '<div class="cost-row"><span style="color:#6a8a9a;font-style:italic;">Configure flight minutes to calculate staffing</span><span>-</span></div>' : '')
         +   '</div>'
         +   (otherRows ? '<div style="margin-top:8px;"></div><div class="cost-card"><div class="cost-card-title">Program Services &amp; Technology</div>' + otherRows + '</div>' : '')
         + '</div>'
@@ -2703,7 +2765,7 @@ function exportClientPDF() {
         +   '<img class="logo" src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">'
         +   '<div class="footer-text">Enhanced Patrol LLC &nbsp;&bull;&nbsp; Christiana, TN<br>enhancedpatrol.com &nbsp;&bull;&nbsp; Drone-as-a-Service Security</div>'
         + '</div>'
-        + '<div class="confidential">Confidential — Prepared exclusively for recipient. Not for distribution.</div>'
+        + '<div class="confidential">Confidential - Prepared exclusively for recipient. Not for distribution.</div>'
         + '</div>'
         + '<script>window.onload=function(){window.print();}<\/script>'
         + '</body></html>';
@@ -2715,8 +2777,8 @@ function exportClientPDF() {
 
 
 
-// ── DEAD-SIMPLE STARTUP — runs regardless of event system ───────────────────
-// Called inline at parse time — DOM is ready since script is at bottom of body
+// ── DEAD-SIMPLE STARTUP - runs regardless of event system ───────────────────
+// Called inline at parse time - DOM is ready since script is at bottom of body
 (function() {
     try { init(); } catch(e) { console.error('EP Calculator init error:', e); }
     try { calculate(); } catch(e) { console.error('EP Calculator calculate error:', e); }
