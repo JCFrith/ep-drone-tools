@@ -1183,9 +1183,9 @@ const SECTIONS = [
     bindFields(body);
   },
   checks: [
-    { text: "Shielding continuity verified against the RTH path, not only the outbound route", sp: "Return-to-Home Containment (SP 18(d))" },
-    { text: "Classification cross-checked against the annotated site map", sp: "Site Selection Performance Procedures (SP 32)" },
-    { text: "Any segment that reclassifies to Non-Shielded Operations (SP 12) identified and documented", ev: "text", placeholder: "Segment description or N/A" }
+    { text: "Shielding continuity verified against the RTH path, not only the outbound route", sp: "Return-to-Home Containment (SP 18(d))", role: 'ground' },
+    { text: "Classification cross-checked against the annotated site map", sp: "Site Selection Performance Procedures (SP 32)", role: 'ground' },
+    { text: "Any segment that reclassifies to Non-Shielded Operations (SP 12) identified and documented", ev: "text", placeholder: "Segment description or N/A", role: 'ground' }
   ],
   notes: true, notesLabel: 'Classification rationale'
 },
@@ -1209,10 +1209,10 @@ const SECTIONS = [
     bindFields(body);
   },
   checks: [
-    { text: "Rotating component shielding fitted (prop guards or a system that prevents lacerations). Required on the Light Aircraft Overflight pathway", sp: "Light Aircraft Overflight, Rotating Component Shielding (SP 15(d))" },
-    { text: "Anti-collision lighting compliant with 107.29 fitted and operational at all times", sp: "Anti-Collision Lighting (SP 29)" },
-    { text: "PRS operational and compliant with ASTM F3322-18 as revised (PRS-Equipped Overflight pathway)", sp: "PRS-Equipped Overflight, PRS Operational Status (SP 14(e))" },
-    { text: "GCS configured per GCS Telemetry Display (SP 27(a)) to (d): displays altitude, position, direction of flight, ground speed, C2 signal strength, navigation signal condition, battery condition and distance from control station; alerts on degraded performance, geofence loss of containment, control link loss and intrusion; automated emergency profiles configured; installed collision/obstacle avoidance sensors operational", sp: "Ground Control Station Configuration (SP 27(a)(b)(c)(d))" }
+    { text: "Rotating component shielding fitted (prop guards or a system that prevents lacerations). Required on the Light Aircraft Overflight pathway", sp: "Light Aircraft Overflight, Rotating Component Shielding (SP 15(d))", role: 'ground' },
+    { text: "Anti-collision lighting compliant with 107.29 fitted and operational at all times", sp: "Anti-Collision Lighting (SP 29)", role: 'ground' },
+    { text: "PRS operational and compliant with ASTM F3322-18 as revised (PRS-Equipped Overflight pathway)", sp: "PRS-Equipped Overflight, PRS Operational Status (SP 14(e))", role: 'ground' },
+    { text: "GCS configured per GCS Telemetry Display (SP 27(a)) to (d): displays altitude, position, direction of flight, ground speed, C2 signal strength, navigation signal condition, battery condition and distance from control station; alerts on degraded performance, geofence loss of containment, control link loss and intrusion; automated emergency profiles configured; installed collision/obstacle avoidance sensors operational", sp: "Ground Control Station Configuration (SP 27(a)(b)(c)(d))", role: 'ground' }
   ],
   notes: true
 },
@@ -1240,7 +1240,7 @@ const SECTIONS = [
     { text: "Property boundaries confirmed by survey, plat or client record", ev: "photo", photoKey: "property_boundaries", role: "ground" },
     { text: "Controlled access verified (gates, fencing, security)", ev: "photo", photoKey: "access_control", role: "ground" },
     { text: "All persons authorized inside the operational area will be notified of UAS operations", sp: "Non-PRS Overflight, Notification of Authorized Persons (SP 13(b))", role: "ground" },
-    { text: "Signage plan for non-participant notification identified", role: "rpic" },
+    { text: "Signage plan for non-participant notification identified", role: "ground" },
     { text: "Direct participants identifiable visually (apparel, safety vests)", sp: "EP practice", role: "ground" },
     { text: "Client point of contact for property access and notifications identified", ev: "contact", role: "ground" },
     { text: "Adjacent property exposure assessed at boundaries", ev: "text", placeholder: "Describe exposure", role: "ground" },
@@ -1257,71 +1257,71 @@ const SECTIONS = [
     bindFields(body);
   },
   checks: [
-    { text: "Obstruction features identified and photographed", ev: "photo", photoKey: "shielding_features" },
-    { text: "Each obstruction qualifies: a physical object, natural or man-made, that would stop or impede the aircraft on contact", sp: "Shielded Operations, Obstruction Geometry (SP 11(b))" },
-    { text: "Obstruction heights measured or verified, not estimated" },
-    { text: "Computed maximum altitude for this site recorded and briefed", ev: "number", placeholder: "Max AGL (ft)", fieldKey: "shieldMaxAGL" },
-    { text: "Aircraft remains within 100 ft laterally of a qualifying obstruction wherever it relies on Shielded Operations above 200 ft AGL. Hard constraint, always flown under", sp: "Shielded Operations, Obstruction Geometry (SP 11(b))" },
-    { text: "Continuity confirmed along the entire route including climb, cruise and descent" },
-    { text: "Dynamic obstruction features flagged (railcars, vehicles, equipment, containers)", ev: "text", placeholder: "Describe dynamic features" },
-    { text: "UASFM grid height compared to the computed shielded altitude; altitude capped at the grid where lower, or site confirmed outside any grid. Hard constraint, always flown under", sp: "Shielded Operations, UASFM Grid Precedence (SP 11(c))" }
+    { text: "Obstruction features identified and photographed", ev: "photo", photoKey: "shielding_features", role: 'ground' },
+    { text: "Each obstruction qualifies: a physical object, natural or man-made, that would stop or impede the aircraft on contact", sp: "Shielded Operations, Obstruction Geometry (SP 11(b))", role: 'ground' },
+    { text: "Obstruction heights measured or verified, not estimated", role: 'ground' },
+    { text: "Computed maximum altitude for this site recorded and briefed", ev: "number", placeholder: "Max AGL (ft)", fieldKey: "shieldMaxAGL", role: 'ground' },
+    { text: "Aircraft remains within 100 ft laterally of a qualifying obstruction wherever it relies on Shielded Operations above 200 ft AGL. Hard constraint, always flown under", sp: "Shielded Operations, Obstruction Geometry (SP 11(b))", role: 'ground' },
+    { text: "Continuity confirmed along the entire route including climb, cruise and descent", role: 'ground' },
+    { text: "Dynamic obstruction features flagged (railcars, vehicles, equipment, containers)", ev: "text", placeholder: "Describe dynamic features", role: 'ground' },
+    { text: "UASFM grid height compared to the computed shielded altitude; altitude capped at the grid where lower, or site confirmed outside any grid. Hard constraint, always flown under", sp: "Shielded Operations, UASFM Grid Precedence (SP 11(c))", role: 'ground' }
   ],
   notes: true, notesLabel: 'Shielding findings'
 },
 {
   id: 'ground', num: '6', title: 'Ground Risk, Operations Over People & Vehicles',
   checks: [
-    { text: "Launch and recovery areas pre-designated", sp: "Launch and Recovery Area Monitoring (SP 18(e))", ev: "photo", photoKey: "launch_zone" },
-    { text: "Launch and recovery areas will be monitored to keep non-participants out before, during and immediately after flight", sp: "Launch and Recovery Area Monitoring (SP 18(e))" },
-    { text: "Dock pad condition assessed (dock-based operations)", ev: "photo", photoKey: "dock_pad" },
-    { text: "Dock evaluated under 107.15 and 107.49: RPIC can determine the aircraft is safe for flight, clear the immediate flight area, and assess weather at the dock from the remote location", sp: "Docking Station Evaluation (SP 25(b)(iv))" },
-    { text: "Line of sight from launch point to the first route segment confirmed" },
-    { text: "Emergency landing zones identified within containment", ev: "photo", photoKey: "emergency_lz" },
-    { text: "Alternate recovery options identified if the primary is unavailable", ev: "photo", photoKey: "recovery_options" },
-    { text: "No overhead hazards at launch or landing (power lines, cranes, lifts)" },
-    { text: "Pedestrian traffic in the immediate vicinity documented for business hours and off hours", sp: "EP practice" },
-    { text: "Vehicular traffic in the immediate vicinity documented", sp: "EP practice", ev: "photo", photoKey: "vehicle_areas" },
-    { text: "Industrial equipment and construction activity assessed" },
-    { text: "Ground slope, debris, drainage and FOD hazards evaluated" },
-    { text: "Flight paths and routes designed to avoid overflight of human beings and traffic areas; any overflight transitory only", sp: "Overflight, Route Design to Avoid People and Traffic (SP 13(e)), Overflight, Route Design to Avoid People and Traffic (SP 14(c))" },
-    { text: "Ground risk mitigations identified", ev: "text", placeholder: "Altitude, time of day, corridor avoidance" },
-    { text: "Seasonal variation considered" }
+    { text: "Launch and recovery areas pre-designated", sp: "Launch and Recovery Area Monitoring (SP 18(e))", ev: "photo", photoKey: "launch_zone", role: 'ground' },
+    { text: "Launch and recovery areas will be monitored to keep non-participants out before, during and immediately after flight", sp: "Launch and Recovery Area Monitoring (SP 18(e))", role: 'ground' },
+    { text: "Dock pad condition assessed (dock-based operations)", ev: "photo", photoKey: "dock_pad", role: 'ground' },
+    { text: "Dock evaluated under 107.15 and 107.49: RPIC can determine the aircraft is safe for flight, clear the immediate flight area, and assess weather at the dock from the remote location", sp: "Docking Station Evaluation (SP 25(b)(iv))", role: 'ground' },
+    { text: "Line of sight from launch point to the first route segment confirmed", role: 'ground' },
+    { text: "Emergency landing zones identified within containment", ev: "photo", photoKey: "emergency_lz", role: 'ground' },
+    { text: "Alternate recovery options identified if the primary is unavailable", ev: "photo", photoKey: "recovery_options", role: 'ground' },
+    { text: "No overhead hazards at launch or landing (power lines, cranes, lifts)", role: 'ground' },
+    { text: "Pedestrian traffic in the immediate vicinity documented for business hours and off hours", sp: "EP practice", role: 'ground' },
+    { text: "Vehicular traffic in the immediate vicinity documented", sp: "EP practice", ev: "photo", photoKey: "vehicle_areas", role: 'ground' },
+    { text: "Industrial equipment and construction activity assessed", role: 'ground' },
+    { text: "Ground slope, debris, drainage and FOD hazards evaluated", role: 'ground' },
+    { text: "Flight paths and routes designed to avoid overflight of human beings and traffic areas; any overflight transitory only", sp: "Overflight, Route Design to Avoid People and Traffic (SP 13(e)), Overflight, Route Design to Avoid People and Traffic (SP 14(c))", role: 'ground' },
+    { text: "Ground risk mitigations identified", ev: "text", placeholder: "Altitude, time of day, corridor avoidance", role: 'ground' },
+    { text: "Seasonal variation considered", role: 'ground' }
   ],
   notes: true
 },
 {
   id: 'rf', num: '7', title: 'RF, C2 Environment & Crew Communications',
   checks: [
-    { text: "C2 signal strength validated as sufficient for control through the entire route", sp: "Site Survey, C2 Signal Validation (SP 18(a)(ii))" },
-    { text: "Hardwired ethernet available or assessable at the site (primary for dock C2)" },
-    { text: "Cellular coverage adequate at launch and along the entire route" },
-    { text: "Starlink available or assessable" },
-    { text: "Dock network and sensor connectivity verified (dock-based operations)" },
-    { text: "Cellular voice crew link tested end to end at this site: continuous full-duplex and hands-free for the RPIC", sp: "Non-Shielded Operations (SP 12(e)(i)(ii))" },
-    { text: "Backup crew communication method tested at this site", sp: "Non-Shielded Operations (SP 12(e)(iii))" },
-    { text: "Direct voice communication confirmed with every VO", sp: "Non-Shielded Operations, VO Positioning and Communication (SP 12(d))" },
-    { text: "Crew briefed that operations cease if full-duplex voice with any VO is lost", sp: "Cease Operations on Loss of VO Communication (SP 21(c))" },
-    { text: "RPIC will operate from a location within the continental United States", sp: "RPIC Location Within the Continental United States (SP 10)" },
-    { text: "RPIC to State mission coordination channel confirmed" },
-    { text: "RF interference sources identified", ev: "photo", photoKey: "rf_interference" },
-    { text: "Metallic structures causing RF shadowing or multipath evaluated", ev: "photo", photoKey: "rf_shadowing" },
-    { text: "ADS-B In reception confirmed adequate at this site", sp: "ADS-B In/Out Requirements (SP 26)" },
-    { text: "DAA system described in the waiver application active and under observation by the RPIC or Electronic Observer during all non-shielded operations", sp: "Non-Shielded Operations, DAA Requirement (SP 12(b))" }
+    { text: "C2 signal strength validated as sufficient for control through the entire route", sp: "Site Survey, C2 Signal Validation (SP 18(a)(ii))", role: 'ground' },
+    { text: "Hardwired ethernet available or assessable at the site (primary for dock C2)", role: 'ground' },
+    { text: "Cellular coverage adequate at launch and along the entire route", role: 'ground' },
+    { text: "Starlink available or assessable", role: 'ground' },
+    { text: "Dock network and sensor connectivity verified (dock-based operations)", role: 'ground' },
+    { text: "Cellular voice crew link tested end to end at this site: continuous full-duplex and hands-free for the RPIC", sp: "Non-Shielded Operations (SP 12(e)(i)(ii))", role: 'ground' },
+    { text: "Backup crew communication method tested at this site", sp: "Non-Shielded Operations (SP 12(e)(iii))", role: 'ground' },
+    { text: "Direct voice communication confirmed with every VO", sp: "Non-Shielded Operations, VO Positioning and Communication (SP 12(d))", role: 'ground' },
+    { text: "Crew briefed that operations cease if full-duplex voice with any VO is lost", sp: "Cease Operations on Loss of VO Communication (SP 21(c))", role: 'ground' },
+    { text: "RPIC will operate from a location within the continental United States", sp: "RPIC Location Within the Continental United States (SP 10)", role: 'ground' },
+    { text: "RPIC to State mission coordination channel confirmed", role: 'ground' },
+    { text: "RF interference sources identified", ev: "photo", photoKey: "rf_interference", role: 'ground' },
+    { text: "Metallic structures causing RF shadowing or multipath evaluated", ev: "photo", photoKey: "rf_shadowing", role: 'ground' },
+    { text: "ADS-B In reception confirmed adequate at this site", sp: "ADS-B In/Out Requirements (SP 26)", role: 'ground' },
+    { text: "DAA system described in the waiver application active and under observation by the RPIC or Electronic Observer during all non-shielded operations", sp: "Non-Shielded Operations, DAA Requirement (SP 12(b))", role: 'ground' }
   ],
   notes: true, custom: 'c2validation'
 },
 {
   id: 'obstacle', num: '8', title: 'Obstacle & Terrain Survey',
   checks: [
-    { text: "Flight operational area obstacles and boundaries identified to avoid collision with or damage to property", sp: "Site Survey, Obstacles and Boundaries (SP 18(a)(i))", ev: "photo", photoKey: "obstacles_route" },
-    { text: "Highest obstacle or obstruction between the takeoff location and anywhere along the planned route recorded for RTH planning", sp: "EP practice", ev: "number", placeholder: "Height (ft AGL)", fieldKey: "highestObstacle" },
-    { text: "Terrain variation documented", ev: "photo", photoKey: "terrain" },
-    { text: "Rooftop structures identified (HVAC, vents, antennas)", ev: "photo", photoKey: "rooftop" },
-    { text: "Temporary structures checked (cranes, lifts, scaffolding)", ev: "photo", photoKey: "temp_structures" },
-    { text: "Trees and vegetation evaluated for height and proximity", ev: "tree" },
-    { text: "Wires and cables evaluated (power, communications, trolley)", ev: "photo", photoKey: "wires" },
-    { text: "Dynamic obstacles assessed (delivery vehicles, work crews, lifts)", ev: "photo", photoKey: "dynamic_obs" },
-    { text: "Geospatial and imagery currency verified" }
+    { text: "Flight operational area obstacles and boundaries identified to avoid collision with or damage to property", sp: "Site Survey, Obstacles and Boundaries (SP 18(a)(i))", ev: "photo", photoKey: "obstacles_route", role: 'ground' },
+    { text: "Highest obstacle or obstruction between the takeoff location and anywhere along the planned route recorded for RTH planning", sp: "EP practice", ev: "number", placeholder: "Height (ft AGL)", fieldKey: "highestObstacle", role: 'ground' },
+    { text: "Terrain variation documented", ev: "photo", photoKey: "terrain", role: 'ground' },
+    { text: "Rooftop structures identified (HVAC, vents, antennas)", ev: "photo", photoKey: "rooftop", role: 'ground' },
+    { text: "Temporary structures checked (cranes, lifts, scaffolding)", ev: "photo", photoKey: "temp_structures", role: 'ground' },
+    { text: "Trees and vegetation evaluated for height and proximity", ev: "tree", role: 'ground' },
+    { text: "Wires and cables evaluated (power, communications, trolley)", ev: "photo", photoKey: "wires", role: 'ground' },
+    { text: "Dynamic obstacles assessed (delivery vehicles, work crews, lifts)", ev: "photo", photoKey: "dynamic_obs", role: 'ground' },
+    { text: "Geospatial and imagery currency verified", role: 'ground' }
   ],
   notes: true
 },
@@ -1393,7 +1393,7 @@ function render() {
 
 function groundCrewItems() {
   const out = [];
-  ['airspace', 'property', 'geofence', 'flightpath', 'docs', 'risk'].forEach(secId => {
+  ['class', 'equip', 'airspace', 'property', 'shield', 'ground', 'rf', 'obstacle', 'geofence', 'flightpath', 'docs', 'risk'].forEach(secId => {
     const sec = SECTIONS.find(s => s.id === secId);
     if (!sec) return;
     (sec.checks || []).forEach((c, idx) => { if (c.role === 'ground' && !c.regularOnly) out.push({ sec, c, idx }); });
@@ -1433,25 +1433,38 @@ function renderHastyForm() {
     '<div class="map-addr-row"><div class="field-group" style="margin-bottom:0;"><label for="mapAddress">Address</label><input id="mapAddress" type="text" data-field="mapAddress" value="' + esc(S.fields.mapAddress) + '" placeholder="Type an address, then Find"></div>' +
     (EXTERNAL_OK ? '<button class="btn-lookup no-print" onclick="lookupAddress()">Find</button>' : '<span></span>') + '</div>' +
     '<div class="map-hint">Type an address and press Find, or enter coordinates and press Show. Drag the pin to adjust. Geolocation requires HTTPS.</div></div>' +
-    '<div class="section-divider"></div>' +
-    '<div class="field-row">' + fSel('shieldContinuity', 'Obstruction continuity along the entire route', [['continuous', 'Continuous for the entire route'], ['gaps', 'Present with gaps'], ['none', 'No usable obstruction']], 'Continuous makes this a Shielded Operations (SP 11) site; anything else is Non-Shielded Operations (SP 12).') +
-    fNum('plannedAlt', 'Planned altitude (ft AGL)') + '</div>' +
-    '<div class="field-row">' + fSel('openAirAssembly', 'Open-air assembly of persons present', YN, 'Overflight of an assembly is prohibited on every pathway. If yes, do not overfly it.') +
-    fSel('hastyWiresPresent', 'Overhead wires or power lines in the operational area', YN) + '</div>' +
+    '<div class="field-row">' + fNum('plannedAlt', 'Planned altitude (ft AGL)') + '<span></span></div>' +
     '<div class="fg-label" style="margin-top:6px;">Site photos</div><div class="photo-upload-area" id="photos-hasty_hazard"></div>';
   bindFields(body);
   const addrEl = body.querySelector('#mapAddress');
   if (addrEl) addrEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lookupAddress(); } });
   if (EXTERNAL_OK) setTimeout(initMap, 120);
   setTimeout(() => renderPhotos('hasty_hazard'), 10);
+
+  // Section 1 and Section 2 are entirely ground-crew work: reuse their real fields() renderers
+  // directly, so the hasty form has the exact same inputs as the full assessment, not a copy.
+  ['class', 'equip'].forEach(secId => {
+    const sec = SECTIONS.find(s => s.id === secId);
+    if (!sec || !sec.fields) return;
+    const h = document.createElement('div'); h.className = 'role-heading role-ground';
+    h.style.marginTop = '16px';
+    h.innerHTML = '<span class="role-badge">GROUND CREW</span> ' + esc(sec.title);
+    body.appendChild(h);
+    const fw = document.createElement('div');
+    body.appendChild(fw);
+    sec.fields(fw);
+  });
+
   const items = groundCrewItems();
   let lastSecId = null;
   items.forEach(({ sec, c, idx }) => {
     if (sec.id !== lastSecId) {
-      const h = document.createElement('div'); h.className = 'role-heading role-ground';
-      h.style.marginTop = '16px';
-      h.innerHTML = '<span class="role-badge">GROUND CREW</span> ' + esc(sec.title);
-      body.appendChild(h);
+      if (sec.id !== 'class' && sec.id !== 'equip') {
+        const h = document.createElement('div'); h.className = 'role-heading role-ground';
+        h.style.marginTop = '16px';
+        h.innerHTML = '<span class="role-badge">GROUND CREW</span> ' + esc(sec.title);
+        body.appendChild(h);
+      }
       lastSecId = sec.id;
     }
     renderCheckItem(body, sec, c, idx);
