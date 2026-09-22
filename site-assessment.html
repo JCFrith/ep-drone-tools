@@ -1155,7 +1155,7 @@ const SECTIONS = [
         fSel('siteType', 'Site character (descriptive)', [['general', 'General commercial or industrial'], ['ci', 'Critical infrastructure'], ['linear', 'Linear infrastructure right of way']], 'Recorded for the site file only. 107W-2026-01762 has a single shielded profile; site character no longer changes the governing provision.') +
       '</div>' +
       '<div class="field-row">' +
-        fNum('obstHeight', 'Controlling obstruction height (ft)', 'Lowest obstruction along the route') +
+        fNum('obstHeight', 'Obstruction or shielding height (ft)', 'Height of the tallest qualifying obstruction relied on for shielding') +
         fText('obstDesc', 'Obstruction description', 'Warehouse line, mature canopy, berm') +
       '</div>' +
       '<div class="section-divider"></div>' +
@@ -1191,7 +1191,8 @@ const SECTIONS = [
 },
 {
   id: 'equip', num: '2', title: 'Aircraft & Equipment Verification',
-  fields(body) {
+  fields(body, opts) {
+    const hasty = opts && opts.hasty;
     body.innerHTML =
       '<div class="field-row">' +
         fText('acAsset', 'Asset designation', 'e.g. Alpha 1 (Parrot ANAFI UKR GOV)') +
@@ -1201,11 +1202,13 @@ const SECTIONS = [
         fNum('mtow', 'Maximum takeoff weight, all attachments (lb)', 'Pathway caps: 0.88 / 8.8 / 10 lb') +
         fSel('prsEquipped', 'PRS equipped, ASTM F3322-18 as revised', YN) +
       '</div>' +
+      (hasty ? '' :
       '<div class="field-row">' +
         fNum('prsMinAlt', 'PRS minimum deployment height (ft AGL)', 'From PRS operator manual') +
         fNum('acCount', 'Aircraft operating simultaneously', '1') +
-      '</div>' +
-      '<div class="hint">No blanket MTOW ceiling in this certificate. Weight caps apply only to overflight of non-participants: 0.88 lb (SP 15), 8.8 lb non-PRS on a restricted site (SP 13), 10 lb PRS-equipped (SP 14). PRS is a pathway, not a general equipment requirement. SP 17 permits up to 6 aircraft on the Flight Management System named in the waiver application.</div>';
+      '</div>') +
+      (hasty ? '<div class="hint">PRS minimum deployment height and aircraft count are completed by the RPIC.</div>' :
+      '<div class="hint">No blanket MTOW ceiling in this certificate. Weight caps apply only to overflight of non-participants: 0.88 lb (SP 15), 8.8 lb non-PRS on a restricted site (SP 13), 10 lb PRS-equipped (SP 14). PRS is a pathway, not a general equipment requirement. SP 17 permits up to 6 aircraft on the Flight Management System named in the waiver application.</div>');
     bindFields(body);
   },
   checks: [
@@ -1220,7 +1223,7 @@ const SECTIONS = [
   checks: [
     { text: "Airspace classification confirmed", ev: 'dropdown', options: ['Class G', 'Class E surface', 'Class D', 'Class C', 'Class B'], role: 'ground' },
     { text: "Airspace authorization basis confirmed: Class G none required; controlled airspace at or below the UASFM grid authorized by UASFM Grid Operations / NOTAM Requirement (SP 16); above the grid a separate ATC authorization (LAANC may not be used for waivered operations)", sp: "UASFM Grid Operations / NOTAM Requirement (SP 16), 14 CFR 107.41", role: "rpic" },
-    { text: "UASFM grid height at this site recorded (controls shielded altitude and caps UASFM Grid Operations / NOTAM Requirement (SP 16) operations)", sp: "Shielded Operations, UASFM Grid Precedence (SP 11(c)), UASFM Grid Operations / NOTAM Requirement (SP 16)", ev: "number", placeholder: "Grid height (ft AGL)", fieldKey: "laancCeiling", role: "ground" },
+    { text: "UASFM grid height at this site recorded (controls shielded altitude and caps UASFM Grid Operations / NOTAM Requirement (SP 16) operations)", sp: "Shielded Operations, UASFM Grid Precedence (SP 11(c)), UASFM Grid Operations / NOTAM Requirement (SP 16)", ev: "number", placeholder: "Grid height (ft AGL)", fieldKey: "laancCeiling", role: "rpic" },
     { text: "Every airport, heliport, known agricultural aerial application operation and aerial military installation within a 3 mile radius identified", sp: "Facility Notification Within 3 Miles (SP 19(d))", role: "rpic" },
     { text: "Documented notification sent to each facility within the 3 mile radius", sp: "Facility Notification Within 3 Miles (SP 19(d))", ev: "text", placeholder: "Facilities notified and date", role: "rpic" },
     { text: "Low-level helicopter and airplane operations within 1 statute mile identified (helipads, grass airstrips, airports, MOAs below 500 ft AGL, tour operators, agricultural airstrips)", sp: "EP practice", ev: "text", placeholder: "Operations identified", role: "rpic" },
@@ -1259,7 +1262,7 @@ const SECTIONS = [
     { text: "Obstruction features identified and photographed", ev: "photo", photoKey: "shielding_features", role: 'ground' },
     { text: "Each obstruction qualifies: a physical object, natural or man-made, that would stop or impede the aircraft on contact", sp: "Shielded Operations, Obstruction Geometry (SP 11(b))", role: 'ground' },
     { text: "Obstruction heights measured or verified, not estimated", role: 'ground' },
-    { text: "Computed maximum altitude for this site recorded and briefed", ev: "number", placeholder: "Max AGL (ft)", fieldKey: "shieldMaxAGL", role: 'ground' },
+    { text: "Computed maximum altitude for this site recorded and briefed", ev: "number", placeholder: "Max AGL (ft)", fieldKey: "shieldMaxAGL", role: 'rpic' },
     { text: "Aircraft remains within 100 ft laterally of a qualifying obstruction wherever it relies on Shielded Operations above 200 ft AGL. Hard constraint, always flown under", sp: "Shielded Operations, Obstruction Geometry (SP 11(b))", role: 'rpic' },
     { text: "Continuity confirmed along the entire route including climb, cruise and descent", role: 'rpic' },
     { text: "Dynamic obstruction features flagged (railcars, vehicles, equipment, containers)", ev: "text", placeholder: "Describe dynamic features", role: 'ground' },
@@ -1284,7 +1287,7 @@ const SECTIONS = [
     { text: "Ground slope, debris, drainage and FOD hazards evaluated", role: 'ground' },
     { text: "Flight paths and routes designed to avoid overflight of human beings and traffic areas; any overflight transitory only", sp: "Overflight, Route Design to Avoid People and Traffic (SP 13(e)), Overflight, Route Design to Avoid People and Traffic (SP 14(c))", role: 'rpic' },
     { text: "Ground risk mitigations identified", ev: "text", placeholder: "Altitude, time of day, corridor avoidance", role: 'ground' },
-    { text: "Seasonal variation considered", role: 'ground' }
+    { text: "Seasonal variation considered", role: 'ground', regularOnly: true }
   ],
   notes: true
 },
@@ -1295,7 +1298,7 @@ const SECTIONS = [
     { text: "Hardwired ethernet available or assessable at the site (primary for dock C2)", role: 'ground', regularOnly: true },
     { text: "Cellular coverage adequate at launch and along the entire route", role: 'ground' },
     { text: "Starlink available or assessable", role: 'ground' },
-    { text: "Dock network and sensor connectivity verified (dock-based operations)", role: 'ground' },
+    { text: "Dock network and sensor connectivity verified (dock-based operations)", role: 'ground', regularOnly: true },
     { text: "Cellular voice crew link tested end to end at this site: continuous full-duplex and hands-free for the RPIC", sp: "Non-Shielded Operations (SP 12(e)(i)(ii))", role: 'ground' },
     { text: "Backup crew communication method tested at this site", sp: "Non-Shielded Operations (SP 12(e)(iii))", role: 'ground' },
     { text: "Direct voice communication confirmed with every VO", sp: "Non-Shielded Operations, VO Positioning and Communication (SP 12(d))", role: 'ground' },
@@ -1448,7 +1451,7 @@ function renderHastyForm() {
     body.appendChild(h);
     const fw = document.createElement('div');
     body.appendChild(fw);
-    sec.fields(fw);
+    sec.fields(fw, { hasty: true });
   });
 
   const items = groundCrewItems();
