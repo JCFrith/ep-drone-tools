@@ -67,3 +67,18 @@ Two test types added to the rule engine (site-assessment.html and ep-rules-loade
 ## Deploy
 
 Upload the five changed files to the ep-drone-tools repo root. The live page picks up coa-waiver-rules.json at load and reports "loaded from server" if it differs from the embedded copy; upload site-assessment.html and coa-waiver-rules.json together so they do not disagree.
+
+# Pricing calculator v3.0: editable catalog and markups (21 SEP 2026)
+
+Every price now comes from Supabase, edited in the tool by admin accounts. Nothing is hardcoded.
+
+- Tables: pricing_catalog (30 items: docks, aircraft, kit components, software, services), pricing_kits (5 templates), pricing_settings (one row: hardware markup, labor markup, markup definition, financing uplift, hours per year, default billing rates). pricing_authorized_users gained is_admin; both of Chase's accounts are flagged. Read for any authorized user; write for admins only, enforced by RLS.
+- Item fields: cost, pricing (cost plus markup, or fixed price), optional per-item markup override, basis (one-time, per dock one-time, per program per year, per dock per year, per aircraft per year, per tactical kit per year), trigger (fleet = chosen in the dock builder, kit = used inside kits, auto = applies whenever its quantity is above zero, toggle = checkbox in the quote), default on, applies-to tag (a service that only applies to aircraft carrying that tag, e.g. cellular), capacity and bundled aircraft for docks, active flag.
+- Markup definition is a setting: markup on cost (cost x (1 + pct)) or margin on price (cost / (1 - pct)). Labor internal rate follows the same setting. Each quote can override hardware and labor markup percentages.
+- Quotes snapshot the full catalog and settings at save. A reopened quote is priced with its snapshot and shows what changed in the live catalog since, with a Reprice button. Nothing reprices silently. Quotes saved before this version are flagged legacy and priced at the current catalog until re-saved.
+- Legacy dock, aircraft, kit and option keys are mapped to catalog slugs on load, so the existing saved quotes open.
+- Seed costs were derived from the prior hardcoded prices at 35 percent markup and verified to reproduce them exactly. Software and services are fixed price with no markup, matching prior behavior.
+- If the live catalog cannot load, the tool falls back to an embedded copy of the seed and says so in a banner; do not send quotes in that state.
+- Client PDF fleet list and the fleet summary are now generated from the catalog names.
+
+Adding a new item (for example a Vantage beeper): Catalog & Pricing Settings, Add catalog item, set cost and category. For a kit part, trigger kit and add it to the kit template. For an optional line on quotes, trigger toggle and choose the basis. For a new dock or aircraft, category dock or aircraft with trigger fleet; docks need capacity, and a bundled aircraft if it ships with one.

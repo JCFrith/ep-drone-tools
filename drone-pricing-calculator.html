@@ -881,7 +881,16 @@
             font-size: 1.1rem; cursor: pointer; padding: 4px 8px; line-height: 1;
         }
         .load-quote-delete:hover { color: #ff6b6b; }
-    </style>
+    .admin-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
+.admin-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 16px;}
+.admin-table-wrap{overflow-x:auto;margin:8px 0 12px;}
+.admin-table{width:100%;border-collapse:collapse;font-size:0.78rem;}
+.admin-table th,.admin-table td{padding:5px 6px;border-bottom:1px solid rgba(255,255,255,0.08);text-align:left;vertical-align:top;white-space:nowrap;}
+.admin-table input,.admin-table select{font-size:0.78rem;padding:4px 6px;}
+.admin-table select{min-width:96px;}
+#adminPanel h3{margin:18px 0 8px;font-size:0.95rem;color:var(--ep-gold);}
+#adminPanel h3 .kit-contents{display:block;font-weight:normal;color:var(--ep-gray);margin-top:4px;}
+</style>
 </head>
 <body>
 
@@ -1022,6 +1031,15 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Markups for this quote (blank = catalog default) <span class="print-value" id="markupPrint"></span></label>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <input type="number" step="any" id="hwMarkupPct" placeholder="hardware %">
+                    <input type="number" step="any" id="laborMarkupPct" placeholder="labor %">
+                </div>
+                <div class="kit-contents" id="markupModeNote"></div>
+            </div>
+
             <div class="divider"></div>
 
             <div class="form-group">
@@ -1087,19 +1105,7 @@
 
             <div class="divider"></div>
 
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="includeCellular5G" onchange="calculate()">
-                    <label for="includeCellular5G">Include Cellular 5G — Dock</label>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="includeDataStorage" onchange="calculate()">
-                    <label for="includeDataStorage">Include Data Storage &amp; Mgmt (AWS S3)</label>
-                </div>
-            </div>
+            <div id="optionToggles"></div>
 
             <div class="divider"></div>
 
@@ -1127,29 +1133,10 @@
                 </div>
             </div>
 
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="includeDFRSetupFee" onchange="calculate()">
-                    <label for="includeDFRSetupFee">Include DFR Setup Fee ($10,000 / dock)</label>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="largeContractRegulatory" onchange="calculate()">
-                    <label for="largeContractRegulatory">Regulatory &amp; Compliance Mgmt (Large Contract)</label>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="tacticalSupport" onchange="calculate()">
-                    <label for="tacticalSupport">Tactical Program Support</label>
-                </div>
-            </div>
-
             <div class="divider"></div>
 
+            <button class="action-btn" onclick="newQuote()">New Quote</button>
+            <button class="action-btn" id="adminBtn" style="display:none;" onclick="openAdminPanel()">Catalog &amp; Pricing Settings</button>
             <button class="action-btn" id="btnSave" onclick="saveQuote()">Save Quote</button>
             <button class="action-btn" id="btnLoad" onclick="loadQuote()">Load Saved Quote</button>
         </div>
@@ -1159,14 +1146,11 @@
             <p class="panel-title">Quote Summary</p>
 
             <div id="warningBox"></div>
+            <div id="pricingBanner"></div>
 
             <div class="summary-box">
                 <p class="summary-box-title">Fleet Summary</p>
-                <div class="summary-row" id="rowTotalDocks"><span>Total Docks</span><span id="statTotalDocks">0</span></div>
-                <div class="summary-row" id="rowTotalDrones"><span>Total Drones</span><span id="statTotalDrones">0</span></div>
-                <div class="summary-row" id="rowParrot"><span>Parrot UKR</span><span id="statParrot">0</span></div>
-                <div class="summary-row" id="rowMavic"><span>DJI Mavic 3T</span><span id="statMavic">0</span></div>
-                <div class="summary-row" id="rowMatrice"><span>DJI Matrice 4TD (bundled)</span><span id="statMatrice">0</span></div>
+                <div id="fleetRows"></div>
             </div>
 
             <div class="summary-box">
@@ -1213,6 +1197,7 @@
         </div>
 
     </div>
+    <div class="panel no-print" id="adminPanel" style="display:none;margin-top:24px;"></div>
 </main>
 
 <!-- FOOTER -->
@@ -1341,6 +1326,10 @@ function showApp() {
     el('notAuthorizedOverlay').style.display = 'none';
     el('appRoot').style.display = 'block';
     if (!window._epInitDone) init();
+    Promise.all([loadLivePricing(), loadAdminFlag()]).then(function() {
+        var ab = el('adminBtn'); if (ab) ab.style.display = IS_ADMIN ? '' : 'none';
+        if (ACTIVE_PRICING.source !== 'snapshot') { ACTIVE_PRICING = LIVE_PRICING; refreshCatalogUI(); } else { calculate(); }
+    });
 }
 
 async function checkAuthAndAuthorization() {
@@ -1422,33 +1411,115 @@ var quoteState = {
 };
 
 // ── PRICING ──────────────────────────────────────────────────────────────────
-var PRICING = {
-    omniDockStandard:  25110,   // $18,600 cost × 1.35
-    omniDockMini:      22410,   // $16,600 cost × 1.35
-    djiDock3:          31765.50,// Dock $21,451.50 + Matrice 4TD $10,314 (both at 35% markup)
-    parrotUKR:         27810,   // $20,600 cost × 1.35
-    djiMavic3T:         9672.75,// $7,165 cost × 1.35
-    setupFee:          10000,
-    c2Software:         7500,   // $7,500 per drone/yr
-    dataStorage:        2000,
-    cellular5GDock:     1500,
-    cellular5GDrone:    1500,   // UKR only
-    hoursPerYear: 8750,
-    largeContractRegulatory: 150000,
-    tacticalSupport:   50000,
-    tacticalSoftware:   1500,
-};
+// ── PRICING CATALOG ──────────────────────────────────────────────────────────
+// Every price in this tool comes from the catalog: hardware and components are cost plus markup,
+// software and services are fixed price. The catalog, kits and settings live in Supabase
+// (pricing_catalog, pricing_kits, pricing_settings) and are edited in the Catalog & Pricing panel
+// by admins. Quotes snapshot the catalog they were priced with and never reprice silently.
+var CALC_VER = '3.0';
+var PRICING_SEED = {"settings":{"hardware_markup_pct":35,"labor_markup_pct":75,"markup_mode":"markup","financing_uplift_pct":35,"hours_per_year":8750,"default_pilot_rate":50,"default_supv_rate":60},"catalog":[{"slug":"omnidock-standard","sort":10,"category":"dock","name":"OmniDock Standard","unit_cost":18600,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"fleet","default_on":false,"applies_to_tag":null,"attributes":{"capacity":2},"note":null,"active":true},{"slug":"omnidock-mini","sort":20,"category":"dock","name":"OmniDock Mini","unit_cost":16600,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"fleet","default_on":false,"applies_to_tag":null,"attributes":{"capacity":1},"note":null,"active":true},{"slug":"dji-dock-3","sort":30,"category":"dock","name":"DJI Dock 3","unit_cost":15890,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"fleet","default_on":false,"applies_to_tag":null,"attributes":{"capacity":1,"bundled_aircraft":"dji-matrice-4td"},"note":"Bundled with Matrice 4TD; aircraft price is added to the dock line.","active":true},{"slug":"parrot-ukr","sort":40,"category":"aircraft","name":"Parrot ANAFI UKR","unit_cost":20600,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"fleet","default_on":false,"applies_to_tag":null,"attributes":{"tags":["cellular"]},"note":null,"active":true},{"slug":"dji-mavic-3t","sort":50,"category":"aircraft","name":"DJI Mavic 3T","unit_cost":7165,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"fleet","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"dji-matrice-4td","sort":60,"category":"aircraft","name":"DJI Matrice 4TD","unit_cost":7640,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"fleet","default_on":false,"applies_to_tag":null,"attributes":{"bundle_only":true},"note":null,"active":true},{"slug":"mavic-props","sort":100,"category":"component","name":"Mavic 3T Props (pair)","unit_cost":19,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"mavic-battery","sort":101,"category":"component","name":"Mavic 3T Battery","unit_cost":159,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"charger-mavic","sort":102,"category":"component","name":"Colorado Drone Charger (Mavic)","unit_cost":895,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"mavic-speaker-spotlight","sort":103,"category":"component","name":"Speaker/Spotlight Combo","unit_cost":1199,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"parrot-ukr-xlr","sort":110,"category":"component","name":"Parrot UKR w/ XLR","unit_cost":20600,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"parrot-props","sort":111,"category":"component","name":"Parrot UKR Props (pair)","unit_cost":200,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"parrot-xlr-battery","sort":112,"category":"component","name":"Parrot XLR Battery","unit_cost":1160,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"charger-parrot","sort":113,"category":"component","name":"Colorado Drone Charger (Parrot)","unit_cost":1500,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"parrot-light","sort":114,"category":"component","name":"Parrot Light","unit_cost":400,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"parachute-mavic","sort":120,"category":"component","name":"Parachute (Mavic)","unit_cost":2800,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"drtk3-relay","sort":121,"category":"component","name":"D-RTK 3 Relay","unit_cost":3500,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"matrice-props","sort":130,"category":"component","name":"Matrice 4TD Props (pair)","unit_cost":48,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"matrice-battery","sort":131,"category":"component","name":"Matrice 4TD Battery","unit_cost":495,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"matrice-spotlight","sort":132,"category":"component","name":"Matrice Spotlight","unit_cost":450,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"matrice-speaker","sort":133,"category":"component","name":"Matrice Speaker","unit_cost":300,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"parachute-matrice","sort":134,"category":"component","name":"Parachute (Matrice)","unit_cost":2700,"price_mode":"cost_plus","markup_override_pct":null,"basis":"one_time","trigger":"kit","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"dfr-setup-fee","sort":200,"category":"service","name":"DFR Setup Fee","unit_cost":10000,"price_mode":"fixed","markup_override_pct":null,"basis":"per_dock_one_time","trigger":"toggle","default_on":true,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"c2-software","sort":210,"category":"software","name":"C2 Software","unit_cost":7500,"price_mode":"fixed","markup_override_pct":null,"basis":"per_aircraft_year","trigger":"auto","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"data-storage","sort":220,"category":"software","name":"Data Storage & Mgmt (AWS S3, 30-day)","unit_cost":2000,"price_mode":"fixed","markup_override_pct":null,"basis":"per_dock_year","trigger":"toggle","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"cellular-5g-dock","sort":230,"category":"service","name":"Cellular 5G, Dock","unit_cost":1500,"price_mode":"fixed","markup_override_pct":null,"basis":"per_dock_year","trigger":"toggle","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"cellular-5g-drone","sort":240,"category":"service","name":"Cellular 5G, Aircraft","unit_cost":1500,"price_mode":"fixed","markup_override_pct":null,"basis":"per_aircraft_year","trigger":"auto","default_on":false,"applies_to_tag":"cellular","attributes":{},"note":"Applies only to aircraft tagged cellular.","active":true},{"slug":"regulatory-compliance","sort":250,"category":"service","name":"Regulatory & Compliance Management (Large Contract)","unit_cost":150000,"price_mode":"fixed","markup_override_pct":null,"basis":"per_program_year","trigger":"toggle","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"tactical-support","sort":260,"category":"service","name":"Tactical Program Support","unit_cost":50000,"price_mode":"fixed","markup_override_pct":null,"basis":"per_program_year","trigger":"toggle","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true},{"slug":"tactical-software","sort":270,"category":"software","name":"Tactical Flight Control Software","unit_cost":1500,"price_mode":"fixed","markup_override_pct":null,"basis":"per_tactical_kit_year","trigger":"auto","default_on":false,"applies_to_tag":null,"attributes":{},"note":null,"active":true}],"kits":[{"slug":"tactical-mavic-3t","sort":10,"kit_type":"tactical","label":"Mavic 3T Tactical Kit","active":true,"components":[{"item_slug":"dji-mavic-3t","default_qty":1},{"item_slug":"mavic-props","default_qty":2},{"item_slug":"mavic-battery","default_qty":3},{"item_slug":"charger-mavic","default_qty":1},{"item_slug":"mavic-speaker-spotlight","default_qty":1}]},{"slug":"tactical-parrot-ukr","sort":20,"kit_type":"tactical","label":"Parrot UKR Tactical Kit","active":true,"components":[{"item_slug":"parrot-ukr-xlr","default_qty":1},{"item_slug":"parrot-props","default_qty":2},{"item_slug":"parrot-xlr-battery","default_qty":3},{"item_slug":"charger-parrot","default_qty":1},{"item_slug":"parrot-light","default_qty":1}]},{"slug":"maint-mavic-3t","sort":30,"kit_type":"maintenance","label":"Mavic 3T Maintenance Supply Kit","active":true,"components":[{"item_slug":"dji-mavic-3t","default_qty":2},{"item_slug":"mavic-props","default_qty":10},{"item_slug":"mavic-battery","default_qty":10},{"item_slug":"charger-mavic","default_qty":0},{"item_slug":"parachute-mavic","default_qty":1},{"item_slug":"drtk3-relay","default_qty":1}]},{"slug":"maint-parrot-ukr","sort":40,"kit_type":"maintenance","label":"Parrot UKR Maintenance Supply Kit","active":true,"components":[{"item_slug":"parrot-ukr-xlr","default_qty":2},{"item_slug":"parrot-props","default_qty":10},{"item_slug":"parrot-xlr-battery","default_qty":10},{"item_slug":"charger-parrot","default_qty":0},{"item_slug":"drtk3-relay","default_qty":1}]},{"slug":"maint-matrice-4td","sort":50,"kit_type":"maintenance","label":"Matrice 4TD Maintenance Supply Kit","active":true,"components":[{"item_slug":"dji-matrice-4td","default_qty":2},{"item_slug":"matrice-props","default_qty":10},{"item_slug":"matrice-battery","default_qty":10},{"item_slug":"matrice-spotlight","default_qty":1},{"item_slug":"matrice-speaker","default_qty":1},{"item_slug":"parachute-matrice","default_qty":1},{"item_slug":"drtk3-relay","default_qty":1}]}],"legacy":{"docks":{"standard":"omnidock-standard","mini":"omnidock-mini","dji3":"dji-dock-3"},"drones":{"parrot":"parrot-ukr","mavic":"dji-mavic-3t"},"kits":{"tactical":{"mavic":"tactical-mavic-3t","parrot":"tactical-parrot-ukr"},"maintenance":{"mavic":"maint-mavic-3t","parrot":"maint-parrot-ukr","matrice":"maint-matrice-4td"}},"options":{"includeDFRSetupFee":"dfr-setup-fee","includeDataStorage":"data-storage","includeCellular5G":"cellular-5g-dock","largeContractRegulatory":"regulatory-compliance","tacticalSupport":"tactical-support"}}};
 
-var DOCK_TYPES = {
-    standard: { label: 'OmniDock Standard',         price: PRICING.omniDockStandard, drones: 2, bundled: false },
-    mini:     { label: 'OmniDock Mini',              price: PRICING.omniDockMini,     drones: 1, bundled: false },
-    dji3:     { label: 'DJI Dock 3 w/ Matrice 4TD', price: PRICING.djiDock3,         drones: 1, bundled: true  },
-};
+function normalizePricing(settings, items, kits, source) {
+    var byslug = {};
+    (items || []).forEach(function(it) {
+        byslug[it.slug] = {
+            slug: it.slug, sort: it.sort == null ? 1000 : it.sort, category: it.category, name: it.name,
+            unit_cost: parseFloat(it.unit_cost) || 0, price_mode: it.price_mode || 'cost_plus',
+            markup_override_pct: (it.markup_override_pct === null || it.markup_override_pct === undefined || it.markup_override_pct === '') ? null : parseFloat(it.markup_override_pct),
+            basis: it.basis || 'one_time', trigger: it.trigger || 'fleet', default_on: !!it.default_on,
+            applies_to_tag: it.applies_to_tag || null, attributes: it.attributes || {}, note: it.note || null,
+            active: it.active !== false, id: it.id || null, updated_at: it.updated_at || null
+        };
+    });
+    var kmap = {};
+    (kits || []).forEach(function(k) {
+        kmap[k.slug] = { slug: k.slug, sort: k.sort == null ? 1000 : k.sort, kit_type: k.kit_type, label: k.label,
+            components: (k.components || []).map(function(c) { return { item_slug: c.item_slug, default_qty: parseInt(c.default_qty) || 0 }; }),
+            active: k.active !== false, id: k.id || null };
+    });
+    var s = settings || {};
+    return {
+        source: source || 'live',
+        settings: {
+            hardware_markup_pct: num(s.hardware_markup_pct, 35), labor_markup_pct: num(s.labor_markup_pct, 75),
+            markup_mode: s.markup_mode === 'margin' ? 'margin' : 'markup', financing_uplift_pct: num(s.financing_uplift_pct, 35),
+            hours_per_year: num(s.hours_per_year, 8750), default_pilot_rate: num(s.default_pilot_rate, 50), default_supv_rate: num(s.default_supv_rate, 60),
+            updated_at: s.updated_at || null
+        },
+        items: byslug, kits: kmap,
+        catalog_updated_at: (items || []).concat(kits || []).reduce(function(m, r) { return (r.updated_at && r.updated_at > m) ? r.updated_at : m; }, s.updated_at || '')
+    };
+}
+function num(v, d) { var n = parseFloat(v); return isNaN(n) ? d : n; }
 
-var DRONE_OPTIONS = [
-    { value: 'parrot', label: 'Parrot UKR',   price: PRICING.parrotUKR  },
-    { value: 'mavic',  label: 'DJI Mavic 3T', price: PRICING.djiMavic3T },
-];
+var LIVE_PRICING   = normalizePricing(PRICING_SEED.settings, PRICING_SEED.catalog, PRICING_SEED.kits, 'seed');
+var ACTIVE_PRICING = LIVE_PRICING;   // what calculate() prices against
+var PRICING_STATUS = 'Embedded seed catalog. Sign in to load the live catalog.';
+var IS_ADMIN = false;
+
+async function loadLivePricing() {
+    try {
+        var s = await sb.from('pricing_settings').select('*').eq('id', 1).maybeSingle();
+        var c = await sb.from('pricing_catalog').select('*').order('sort');
+        var k = await sb.from('pricing_kits').select('*').order('sort');
+        if (s.error || c.error || k.error) throw (s.error || c.error || k.error);
+        if (!c.data || !c.data.length) { PRICING_STATUS = 'Catalog tables are empty. Run the pricing catalog migration. Using embedded seed.'; return false; }
+        LIVE_PRICING = normalizePricing(s.data || {}, c.data, k.data, 'live');
+        if (ACTIVE_PRICING.source === 'seed') ACTIVE_PRICING = LIVE_PRICING;
+        PRICING_STATUS = 'Live catalog, ' + Object.keys(LIVE_PRICING.items).length + ' items, ' + Object.keys(LIVE_PRICING.kits).length + ' kits' +
+            (LIVE_PRICING.catalog_updated_at ? ', last change ' + String(LIVE_PRICING.catalog_updated_at).slice(0, 10) : '') + '.';
+        return true;
+    } catch (e) {
+        PRICING_STATUS = 'Could not load the live catalog (' + (e.message || e) + '). Using embedded seed; do not send quotes until this clears.';
+        return false;
+    }
+}
+async function loadAdminFlag() {
+    try {
+        var r = await sb.from('pricing_authorized_users').select('is_admin').eq('email', currentUser.email).maybeSingle();
+        IS_ADMIN = !!(r.data && r.data.is_admin);
+    } catch (e) { IS_ADMIN = false; }
+}
+
+// Markup math. mode 'markup': price = cost x (1 + pct/100). mode 'margin': price = cost / (1 - pct/100).
+function applyMarkup(cost, pct, mode) {
+    pct = num(pct, 0);
+    if (mode === 'margin') return pct >= 100 ? cost : cost / (1 - pct / 100);
+    return cost * (1 + pct / 100);
+}
+function internalFromBilled(billed, pct, mode) {
+    pct = num(pct, 0);
+    if (mode === 'margin') return billed * (1 - pct / 100);
+    return billed / (1 + pct / 100);
+}
+function quoteMarkups() {
+    var s = ACTIVE_PRICING.settings;
+    var hw = el('hwMarkupPct'), lb = el('laborMarkupPct');
+    var hwv = hw && hw.value !== '' ? parseFloat(hw.value) : NaN;
+    var lbv = lb && lb.value !== '' ? parseFloat(lb.value) : NaN;
+    return { hardware: isNaN(hwv) ? s.hardware_markup_pct : hwv, labor: isNaN(lbv) ? s.labor_markup_pct : lbv, mode: s.markup_mode };
+}
+function itemPrice(it) {
+    if (!it) return 0;
+    if (it.price_mode === 'fixed') return it.unit_cost;
+    var m = quoteMarkups();
+    var pct = it.markup_override_pct !== null ? it.markup_override_pct : m.hardware;
+    return Math.round(applyMarkup(it.unit_cost, pct, m.mode) * 100) / 100;
+}
+function getItem(slug) { return ACTIVE_PRICING.items[slug] || null; }
+function itemsBy(pred) {
+    return Object.keys(ACTIVE_PRICING.items).map(function(k) { return ACTIVE_PRICING.items[k]; })
+        .filter(pred).sort(function(a, b) { return a.sort - b.sort || a.name.localeCompare(b.name); });
+}
+function activeDocks()      { return itemsBy(function(i) { return i.active && i.category === 'dock'; }); }
+function activeAircraft()   { return itemsBy(function(i) { return i.active && i.category === 'aircraft' && !(i.attributes && i.attributes.bundle_only); }); }
+function toggleItems()      { return itemsBy(function(i) { return i.active && i.trigger === 'toggle'; }); }
+function autoItems()        { return itemsBy(function(i) { return i.active && i.trigger === 'auto'; }); }
+function kitsOfType(t)      { return Object.keys(ACTIVE_PRICING.kits).map(function(k) { return ACTIVE_PRICING.kits[k]; }).filter(function(k) { return k.active && k.kit_type === t; }).sort(function(a, b) { return a.sort - b.sort; }); }
+function basisLabel(b) {
+    return { one_time: 'one-time', per_dock_one_time: 'per dock', per_program_year: 'per program / yr', per_dock_year: 'per dock / yr',
+             per_aircraft_year: 'per aircraft / yr', per_tactical_kit_year: 'per tactical kit / yr' }[b] || b;
+}
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function fmt(val) {
@@ -1484,133 +1555,112 @@ document.addEventListener('DOMContentLoaded', function () {
     init();
 });
 
-// ── DOCK BUILDER ──────────────────────────────────────────────────────────────
+// ── DOCK BUILDER ─────────────────────────────────────────────────────────────
 function buildDockRows(count, savedDocks) {
     var builder = el('dockBuilder');
     if (!builder) return;
-
-    // Remove existing dock rows only
+    var current = savedDocks || readDockConfigsRaw();
     builder.querySelectorAll('.dock-row').forEach(function(row) { row.remove(); });
-
+    var docks = activeDocks();
     for (var i = 1; i <= count; i++) {
-        var saved    = savedDocks && savedDocks[i - 1];
+        var saved    = current && current[i - 1];
         var dockType = (saved && saved.type) || '';
-
         var row = document.createElement('div');
         row.className  = 'dock-row';
         row.dataset.index = i;
-
-        // Header row
         var hdr = document.createElement('div');
         hdr.className = 'dock-row-header';
-
         var lbl = document.createElement('span');
         lbl.className   = 'dock-label';
         lbl.textContent = 'Dock ' + i;
         hdr.appendChild(lbl);
-
         var dockSel = document.createElement('select');
         dockSel.className        = 'dock-type-select';
         dockSel.dataset.dockIndex = i;
-        // Blank placeholder
-        var dockPlaceholder = document.createElement('option');
-        dockPlaceholder.value       = '';
-        dockPlaceholder.textContent = '— Select Dock Type —';
-        dockPlaceholder.disabled    = false;
-        dockSel.appendChild(dockPlaceholder);
-        Object.keys(DOCK_TYPES).forEach(function(val) {
+        var ph = document.createElement('option');
+        ph.value = ''; ph.textContent = '-- Select Dock Type --';
+        dockSel.appendChild(ph);
+        docks.forEach(function(d) {
             var opt = document.createElement('option');
-            opt.value       = val;
-            opt.textContent = DOCK_TYPES[val].label;
-            // Only pre-select if this is a restored saved config
-            if (saved && saved.type && val === saved.type) opt.selected = true;
+            opt.value = d.slug; opt.textContent = d.name + '  (' + fmt(itemPrice(d)) + ')';
+            if (dockType === d.slug) opt.selected = true;
             dockSel.appendChild(opt);
         });
-        // If nothing is selected (new row), select the placeholder
-        if (!saved || !saved.type) dockSel.value = '';
+        if (dockType && !ACTIVE_PRICING.items[dockType]) {
+            var gone = document.createElement('option');
+            gone.value = dockType; gone.textContent = dockType + ' (not in catalog)'; gone.selected = true;
+            dockSel.appendChild(gone);
+        }
+        if (!dockType) dockSel.value = '';
         hdr.appendChild(dockSel);
         row.appendChild(hdr);
-
-        // Drone slots container
         var slotsDiv = document.createElement('div');
         slotsDiv.className = 'drone-slots';
         slotsDiv.id        = 'droneSlots_' + i;
         row.appendChild(slotsDiv);
-
-        // Append row to DOM first, then render slots
         builder.appendChild(row);
         if (dockType) renderDroneSlots(i, dockType, saved ? saved.drones : null);
-
-        // Dock type change
-        dockSel.addEventListener('change', function() {
-            var slotsDiv = el('droneSlots_' + i);
-            if (!this.value) {
-                if (slotsDiv) slotsDiv.innerHTML = ''; // clear slots for blank selection
-            } else {
-                renderDroneSlots(i, this.value, null);
-            }
-            calculate();
-        });
+        (function(idx) {
+            dockSel.addEventListener('change', function() {
+                var sd = el('droneSlots_' + idx);
+                if (!this.value) { if (sd) sd.innerHTML = ''; }
+                else renderDroneSlots(idx, this.value, null);
+                calculate();
+            });
+        })(i);
     }
 }
 
-function renderDroneSlots(dockIndex, dockType, savedDrones) {
+function renderDroneSlots(dockIndex, dockSlug, savedDrones) {
     var slotsDiv = el('droneSlots_' + dockIndex);
     if (!slotsDiv) return;
     slotsDiv.innerHTML = '';
-
-    var info = DOCK_TYPES[dockType];
-    if (!info) return;
-
-    if (info.bundled) {
+    var dock = getItem(dockSlug);
+    if (!dock) return;
+    var attrs = dock.attributes || {};
+    if (attrs.bundled_aircraft) {
+        var bundled = getItem(attrs.bundled_aircraft);
         var badge = document.createElement('div');
         badge.className   = 'dock-included-badge';
-        badge.textContent = '✓ Matrice 4TD drone included in bundle';
+        badge.textContent = (bundled ? bundled.name : attrs.bundled_aircraft) + ' included in bundle';
         slotsDiv.appendChild(badge);
         return;
     }
-
-    for (var d = 1; d <= info.drones; d++) {
+    var capacity = parseInt(attrs.capacity) || 1;
+    var aircraft = activeAircraft();
+    for (var d = 1; d <= capacity; d++) {
         var savedDroneType = savedDrones && savedDrones[d - 1];
-
         var slot = document.createElement('div');
         slot.className = 'drone-slot';
-
         var slotLbl = document.createElement('span');
         slotLbl.className   = 'drone-slot-label';
-        slotLbl.textContent = 'Drone ' + d;
+        slotLbl.textContent = 'Aircraft ' + d;
         slot.appendChild(slotLbl);
-
         var droneSel = document.createElement('select');
         droneSel.className          = 'drone-type-select';
         droneSel.dataset.dockIndex  = dockIndex;
         droneSel.dataset.droneSlot  = d;
-        // Blank placeholder
-        var dronePlaceholder = document.createElement('option');
-        dronePlaceholder.value       = '';
-        dronePlaceholder.textContent = '— Select Drone —';
-        droneSel.appendChild(dronePlaceholder);
-        DRONE_OPTIONS.forEach(function(opt) {
+        var ph = document.createElement('option');
+        ph.value = ''; ph.textContent = '-- Select Aircraft --';
+        droneSel.appendChild(ph);
+        aircraft.forEach(function(a) {
             var o = document.createElement('option');
-            o.value       = opt.value;
-            o.textContent = opt.label;
-            if (savedDroneType && opt.value === savedDroneType) o.selected = true;
+            o.value = a.slug; o.textContent = a.name + '  (' + fmt(itemPrice(a)) + ')';
+            if (savedDroneType === a.slug) o.selected = true;
             droneSel.appendChild(o);
         });
-        // If nothing saved, leave placeholder selected
+        if (savedDroneType && !ACTIVE_PRICING.items[savedDroneType]) {
+            var gone = document.createElement('option');
+            gone.value = savedDroneType; gone.textContent = savedDroneType + ' (not in catalog)'; gone.selected = true;
+            droneSel.appendChild(gone);
+        }
         if (!savedDroneType) droneSel.value = '';
         droneSel.addEventListener('change', function() {
-            // If this is drone slot 1 on a Standard dock (2 slots), auto-match drone 2
             if (parseInt(this.dataset.droneSlot) === 1 && this.value) {
-                var slotsDiv = el('droneSlots_' + this.dataset.dockIndex);
-                if (slotsDiv) {
-                    var allSelects = slotsDiv.querySelectorAll('.drone-type-select');
-                    if (allSelects.length >= 2) {
-                        var drone2 = allSelects[1];
-                        if (!drone2.value) {   // only if drone 2 is still unselected
-                            drone2.value = this.value;
-                        }
-                    }
+                var sd = el('droneSlots_' + this.dataset.dockIndex);
+                if (sd) {
+                    var all = sd.querySelectorAll('.drone-type-select');
+                    for (var j = 1; j < all.length; j++) if (!all[j].value) all[j].value = this.value;
                 }
             }
             calculate();
@@ -1620,110 +1670,110 @@ function renderDroneSlots(dockIndex, dockType, savedDrones) {
     }
 }
 
-// ── READ DOCK CONFIGS ─────────────────────────────────────────────────────────
-function readDockConfigs() {
+function readDockConfigsRaw() {
     var configs = [];
     var builder = el('dockBuilder');
     if (!builder) return configs;
     builder.querySelectorAll('.dock-row').forEach(function(row) {
         var dockSel  = row.querySelector('.dock-type-select');
-        var dockType = dockSel ? dockSel.value : '';
-        if (!dockType) return; // skip unselected docks — don't include in pricing
         var drones = [];
-        row.querySelectorAll('.drone-type-select').forEach(function(sel) {
-            if (sel.value) drones.push(sel.value); // skip unselected drones
-        });
-        configs.push({ type: dockType, drones: drones });
+        row.querySelectorAll('.drone-type-select').forEach(function(sel) { drones.push(sel.value || ''); });
+        configs.push({ type: dockSel ? dockSel.value : '', drones: drones });
     });
     return configs;
 }
+function readDockConfigs() {
+    return readDockConfigsRaw().filter(function(c) { return !!c.type; })
+        .map(function(c) { return { type: c.type, drones: c.drones.filter(function(d) { return !!d; }) }; });
+}
 
-// ── CALCULATE ─────────────────────────────────────────────────────────────────
+// ── OPTION TOGGLES (catalog trigger = toggle) ─────────────────────────────────
+function renderOptionToggles(savedOptions) {
+    var wrap = el('optionToggles');
+    if (!wrap) return;
+    var current = savedOptions || readOptions();
+    wrap.innerHTML = '';
+    toggleItems().forEach(function(it) {
+        var on = current.hasOwnProperty(it.slug) ? !!current[it.slug] : !!it.default_on;
+        var g = document.createElement('div');
+        g.className = 'form-group';
+        var price = fmt(itemPrice(it)) + ' ' + basisLabel(it.basis);
+        g.innerHTML = '<div class="checkbox-group"><input type="checkbox" id="opt_' + it.slug + '" data-opt="' + it.slug + '"' + (on ? ' checked' : '') + '>' +
+            '<label for="opt_' + it.slug + '">' + escHtml(it.name) + ' <span style="color:var(--ep-gray);font-size:0.8em;">(' + price + ')</span></label></div>';
+        g.querySelector('input').addEventListener('change', calculate);
+        wrap.appendChild(g);
+    });
+}
+function readOptions() {
+    var o = {};
+    document.querySelectorAll('#optionToggles input[data-opt]').forEach(function(cb) { o[cb.dataset.opt] = cb.checked; });
+    return o;
+}
+function escHtml(v) { return String(v === undefined || v === null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+// ── CALCULATE ────────────────────────────────────────────────────────────────
 function calculate() {
-    var dockConfigs  = readDockConfigs();
-    var totalDocks   = dockConfigs.length;
+    var dockConfigs = readDockConfigs();
+    var totalDocks  = dockConfigs.length;
+    var S = ACTIVE_PRICING.settings;
+    var M = quoteMarkups();
 
-    var maintEl    = el('maintenanceLevel');
-    var minsEl     = el('minsPerHourPerDock');
-    var termEl     = el('termYears');
-    var upfrontEl  = el('payUpfront');
-    var regEl      = el('largeContractRegulatory');
-    var tactEl     = el('tacticalSupport');
-    var supvEl     = el('includeSupervisor');
-    var hoursEl    = el('coverageHours');
-    var shiftsEl   = el('numShifts');
-    var cell5GEl       = el('includeCellular5G');
-    var dataStEl       = el('includeDataStorage');
-    var pilotRateEl    = el('pilotBillingRate');
-    var supvRateEl     = el('supvBillingRate');
-
+    var maintEl = el('maintenanceLevel'), minsEl = el('minsPerHourPerDock'), termEl = el('termYears'), upfrontEl = el('payUpfront');
+    var supvEl = el('includeSupervisor'), hoursEl = el('coverageHours'), shiftsEl = el('numShifts');
+    var pilotRateEl = el('pilotBillingRate'), supvRateEl = el('supvBillingRate');
     if (!maintEl || !minsEl || !termEl || !upfrontEl) return;
 
-    var maintenanceLevel   = parseInt(maintEl.value)   || 40000;
-    var minsPerHourPerDock = parseInt(minsEl.value)    || 0;
-    var termYears          = parseInt(termEl.value)    || 3;
+    var maintenanceLevel   = parseInt(maintEl.value) || 40000;
+    var minsPerHourPerDock = parseInt(minsEl.value)  || 0;
+    var termYears          = parseInt(termEl.value)  || 3;
     var payUpfront         = upfrontEl.checked;
-    var largeContractRegulatory = regEl    ? regEl.checked    : false;
-    var tacticalSupport         = tactEl   ? tactEl.checked   : false;
-    var includeSupervisor       = supvEl   ? supvEl.checked   : false;
-    var coverageHours           = hoursEl  ? (hoursEl.value || '24') : '24';
-    var numShifts               = shiftsEl ? parseInt(shiftsEl.value) || 1  : 1;
-    var includeCellular5G       = cell5GEl ? cell5GEl.checked : false;
-    var includeDataStorage      = dataStEl ? dataStEl.checked : false;
+    var includeSupervisor  = supvEl ? supvEl.checked : false;
+    var coverageHours      = hoursEl ? (hoursEl.value || '24') : '24';
+    var numShifts          = shiftsEl ? parseInt(shiftsEl.value) || 1 : 1;
+    var options            = readOptions();
 
-    // Labor rate multiplier: 24h = 1.0, 12h = 0.5, 8h = (1/3) * numShifts
     var laborMultiplier = 1.0;
     if      (coverageHours === '12')     laborMultiplier = 0.5;
     else if (coverageHours === '8')      laborMultiplier = (1/3) * numShifts;
-    else if (coverageHours === 'hybrid') laborMultiplier = 108 / 168; // (5×12 + 2×24) / (7×24)
+    else if (coverageHours === 'hybrid') laborMultiplier = 108 / 168;
 
-    // Billing rates (client-facing $/hr)
-    var pilotBillingRate = parseFloat(pilotRateEl ? pilotRateEl.value : 50) || 50;
-    var supvBillingRate  = parseFloat(supvRateEl  ? supvRateEl.value  : 60) || 60;
-
-    // Internal cost = billing rate / 1.75 (75% markup)
-    var pilotInternalRate = Math.round((pilotBillingRate / 1.75) * 100) / 100;
-    var supvInternalRate  = Math.round((supvBillingRate  / 1.75) * 100) / 100;
-
-    // Annual hours based on coverage selection
-    var annualHours = PRICING.hoursPerYear * laborMultiplier;
-
-    // Annual billed amounts
+    var pilotBillingRate = parseFloat(pilotRateEl ? pilotRateEl.value : S.default_pilot_rate) || S.default_pilot_rate;
+    var supvBillingRate  = parseFloat(supvRateEl  ? supvRateEl.value  : S.default_supv_rate)  || S.default_supv_rate;
+    var pilotInternalRate = Math.round(internalFromBilled(pilotBillingRate, M.labor, M.mode) * 100) / 100;
+    var supvInternalRate  = Math.round(internalFromBilled(supvBillingRate,  M.labor, M.mode) * 100) / 100;
+    var annualHours = S.hours_per_year * laborMultiplier;
     var pilotAnnualBilled = pilotBillingRate * annualHours;
     var supvAnnualBilled  = supvBillingRate  * annualHours;
 
-    // Print values
     setText('pilotRatePrint', ': $' + pilotBillingRate + '/hr');
     setText('supvRatePrint',  ': $' + supvBillingRate  + '/hr');
 
-    // Fleet tally
-    var numParrot = 0, numMavic = 0, numMatrice = 0;
-    var numOmniStandard = 0, numOmniMini = 0, numDJIDock3 = 0;
-
+    // Fleet tally by catalog slug
+    var dockCount = {}, acCount = {}, fleetList = [];
     dockConfigs.forEach(function(dock) {
-        if      (dock.type === 'standard') { numOmniStandard++; }
-        else if (dock.type === 'mini')     { numOmniMini++;     }
-        else if (dock.type === 'dji3')     { numDJIDock3++; numMatrice++; }
-        dock.drones.forEach(function(droneType) {
-            if      (droneType === 'parrot') numParrot++;
-            else if (droneType === 'mavic')  numMavic++;
-        });
+        dockCount[dock.type] = (dockCount[dock.type] || 0) + 1;
+        var d = getItem(dock.type);
+        var bundled = d && d.attributes && d.attributes.bundled_aircraft;
+        if (bundled) acCount[bundled] = (acCount[bundled] || 0) + 1;
+        else dock.drones.forEach(function(a) { acCount[a] = (acCount[a] || 0) + 1; });
     });
-
-    var totalDrones = numParrot + numMavic + numMatrice;
-    var ukrDrones   = numParrot;
-
-    // Fleet summary — hide rows with zero value
-    function statRow(rowId, valId, val) {
-        setText(valId, val);
-        var row = el(rowId);
-        if (row) row.style.display = val === 0 ? 'none' : '';
+    var totalDrones = Object.keys(acCount).reduce(function(s, k) { return s + acCount[k]; }, 0);
+    function aircraftWithTag(tag) {
+        return Object.keys(acCount).reduce(function(s, k) {
+            var it = getItem(k); var tags = (it && it.attributes && it.attributes.tags) || [];
+            return s + (tags.indexOf(tag) >= 0 ? acCount[k] : 0);
+        }, 0);
     }
-    statRow('rowTotalDocks',  'statTotalDocks',  totalDocks);
-    statRow('rowTotalDrones', 'statTotalDrones', totalDrones);
-    statRow('rowParrot',      'statParrot',       numParrot);
-    statRow('rowMavic',       'statMavic',        numMavic);
-    statRow('rowMatrice',     'statMatrice',      numMatrice);
+    Object.keys(dockCount).forEach(function(k) { var it = getItem(k); fleetList.push({ name: it ? it.name : k, qty: dockCount[k], kind: 'dock' }); });
+    Object.keys(acCount).forEach(function(k) { var it = getItem(k); fleetList.push({ name: (it ? it.name : k) + (it && it.attributes && it.attributes.bundle_only ? ' (bundled)' : ''), qty: acCount[k], kind: 'aircraft' }); });
+
+    var fr = el('fleetRows');
+    if (fr) {
+        var fh = '<div class="summary-row"><span>Total Docks</span><span>' + totalDocks + '</span></div>' +
+                 '<div class="summary-row"><span>Total Aircraft</span><span>' + totalDrones + '</span></div>';
+        fleetList.forEach(function(f) { fh += '<div class="summary-row"><span>' + escHtml(f.name) + '</span><span>' + f.qty + '</span></div>'; });
+        fr.innerHTML = fh;
+    }
     setText('dockCountPrint',  ': ' + totalDocks);
     setText('maintenancePrint','$' + maintenanceLevel.toLocaleString() + '/yr');
     setText('minsPrint',       ': ' + minsPerHourPerDock);
@@ -1734,202 +1784,119 @@ function calculate() {
     var maxMins       = totalDrones * 60;
     var effectiveMins = Math.min(requiredMins, maxMins);
     var pilots = 0, supervisors = 0;
-    if (totalDocks > 0 && minsPerHourPerDock > 0) {
-        pilots      = Math.ceil(requiredMins / 360);
-        supervisors = Math.ceil(pilots / 6);
-    }
-
+    if (totalDocks > 0 && minsPerHourPerDock > 0) { pilots = Math.ceil(requiredMins / 360); supervisors = Math.ceil(pilots / 6); }
     var wb = el('warningBox');
-    if (wb) {
-        wb.innerHTML = (requiredMins > maxMins && totalDocks > 0)
-            ? '<div class="warning-banner">Requested flight minutes exceed fleet capacity. Output capped by available drones.</div>'
-            : '';
-    }
-
-    setText('requiredMinutes',  requiredMins);
-    setText('maxMinutes',       maxMins);
-    setText('effectiveMinutes', effectiveMins);
-    setText('pilots',      pilots);
-    setText('supervisors', supervisors);
+    if (wb) wb.innerHTML = (requiredMins > maxMins && totalDocks > 0) ? '<div class="warning-banner">Requested flight minutes exceed fleet capacity. Output capped by available aircraft.</div>' : '';
+    setText('requiredMinutes', requiredMins); setText('maxMinutes', maxMins); setText('effectiveMinutes', effectiveMins);
+    setText('pilots', pilots); setText('supervisors', supervisors);
     setText('pilotRateDisplay', '$' + pilotBillingRate + '/hr billed  |  $' + pilotInternalRate.toFixed(2) + '/hr cost');
     setText('supvRateDisplay',  '$' + supvBillingRate  + '/hr billed  |  $' + supvInternalRate.toFixed(2)  + '/hr cost');
-    // Show/hide supervisor summary rows based on toggle
-    var supvRow = el('supvSummaryRow');
-    var supvRateRow = el('supvRateSummaryRow');
+    var supvRow = el('supvSummaryRow'), supvRateRow = el('supvRateSummaryRow');
     if (supvRow)     supvRow.style.display     = includeSupervisor ? '' : 'none';
-    if (supvRateRow) supvRateRow.style.display  = includeSupervisor ? '' : 'none';
+    if (supvRateRow) supvRateRow.style.display = includeSupervisor ? '' : 'none';
 
-    // ── BUILD COST ARRAYS ─────────────────────────────────────────────────────
-    var setupCosts     = [];
-    var recurringCosts = [];
-
-    // Setup fee per dock
-    var includeDFRSetupFee = el('includeDFRSetupFee') ? el('includeDFRSetupFee').checked : true;
-    if (totalDocks > 0 && includeDFRSetupFee)
-        setupCosts.push({ name: 'DFR Setup Fee', basis: 'per dock', qty: totalDocks,
-            unitCost: PRICING.setupFee, total: totalDocks * PRICING.setupFee });
-
-    if (numOmniStandard > 0)
-        setupCosts.push({ name: 'OmniDock Standard', basis: 'per dock', qty: numOmniStandard,
-            unitCost: PRICING.omniDockStandard, total: numOmniStandard * PRICING.omniDockStandard });
-    if (numOmniMini > 0)
-        setupCosts.push({ name: 'OmniDock Mini', basis: 'per dock', qty: numOmniMini,
-            unitCost: PRICING.omniDockMini, total: numOmniMini * PRICING.omniDockMini });
-    if (numDJIDock3 > 0)
-        setupCosts.push({ name: 'DJI Dock 3 w/ Matrice 4TD', basis: 'per dock', qty: numDJIDock3,
-            unitCost: PRICING.djiDock3, total: numDJIDock3 * PRICING.djiDock3, note: 'Drone included in bundle' });
-    if (numParrot > 0)
-        setupCosts.push({ name: 'Parrot UKR', basis: 'per drone', qty: numParrot,
-            unitCost: PRICING.parrotUKR, total: numParrot * PRICING.parrotUKR });
-    if (numMavic > 0)
-        setupCosts.push({ name: 'DJI Mavic 3T', basis: 'per drone', qty: numMavic,
-            unitCost: PRICING.djiMavic3T, total: numMavic * PRICING.djiMavic3T });
-    // Tactical kits — itemized from builder
-    readKitConfigs('tacticalKitCards').forEach(function(kit) {
-        var total = kit.components.reduce(function(s, c) { return s + c.qty * c.unitPrice; }, 0);
-        setupCosts.push({ name: kit.label, basis: 'per kit', qty: 1, unitCost: total, total: total,
-            subItems: kit.components });
+    // ── COST ARRAYS ──
+    var setupCosts = [], recurringCosts = [];
+    var tacticalKits = readKitConfigs('tacticalKitCards');
+    var maintKits    = readKitConfigs('maintenanceKitCards');
+    function qtyFor(it) {
+        switch (it.basis) {
+            case 'per_dock_one_time': case 'per_dock_year': return totalDocks;
+            case 'per_aircraft_year': return it.applies_to_tag ? aircraftWithTag(it.applies_to_tag) : totalDrones;
+            case 'per_tactical_kit_year': return tacticalKits.length;
+            default: return 1;
+        }
+    }
+    function isEnabled(it) {
+        if (it.trigger === 'auto') return true;
+        if (it.trigger === 'toggle') return options.hasOwnProperty(it.slug) ? !!options[it.slug] : !!it.default_on;
+        return false;
+    }
+    var recurringBases = { per_program_year: 1, per_dock_year: 1, per_aircraft_year: 1, per_tactical_kit_year: 1 };
+    var oneTimeServices = [];
+    itemsBy(function(i) { return i.active && (i.trigger === 'auto' || i.trigger === 'toggle'); }).forEach(function(it) {
+        if (!isEnabled(it)) return;
+        var q = qtyFor(it); if (q <= 0) return;
+        var up = itemPrice(it);
+        var line = { slug: it.slug, name: it.name, basis: basisLabel(it.basis), qty: q, unitCost: up, total: q * up };
+        if (recurringBases[it.basis]) recurringCosts.push(line); else oneTimeServices.push(line);
     });
-    // Maintenance kits — itemized from builder
-    readKitConfigs('maintenanceKitCards').forEach(function(kit) {
-        var total = kit.components.reduce(function(s, c) { return s + c.qty * c.unitPrice; }, 0);
-        setupCosts.push({ name: kit.label, basis: 'per kit', qty: 1, unitCost: total, total: total,
-            subItems: kit.components });
+    // One-time services that come before hardware (setup fee first, as before)
+    oneTimeServices.forEach(function(l) { setupCosts.push(l); });
+    // Docks
+    Object.keys(dockCount).forEach(function(slug) {
+        var it = getItem(slug); var up = it ? itemPrice(it) : 0; var note = '';
+        if (it && it.attributes && it.attributes.bundled_aircraft) {
+            var b = getItem(it.attributes.bundled_aircraft);
+            if (b) { up += itemPrice(b); note = (b.name) + ' included in bundle'; }
+        }
+        setupCosts.push({ slug: slug, name: it ? it.name : slug + ' (not in catalog)', basis: 'per dock', qty: dockCount[slug], unitCost: up, total: dockCount[slug] * up, note: note || undefined });
     });
-
-    if (totalDocks > 0)
-        recurringCosts.push({ name: 'Autonomous DFR Maintenance', basis: 'per program', qty: 1,
-            unitCost: maintenanceLevel, total: maintenanceLevel });
-    if (totalDrones > 0)
-        recurringCosts.push({ name: 'C2 Software', basis: 'per drone', qty: totalDrones,
-            unitCost: PRICING.c2Software, total: totalDrones * PRICING.c2Software });
-    if (totalDocks > 0 && includeDataStorage)
-        recurringCosts.push({ name: 'Data Storage & Mgmt (AWS S3, 30-day)', basis: 'per dock', qty: totalDocks,
-            unitCost: PRICING.dataStorage, total: totalDocks * PRICING.dataStorage });
-    if (totalDocks > 0 && includeCellular5G)
-        recurringCosts.push({ name: 'Cellular 5G — Dock', basis: 'per dock', qty: totalDocks,
-            unitCost: PRICING.cellular5GDock, total: totalDocks * PRICING.cellular5GDock });
-    if (ukrDrones > 0)
-        recurringCosts.push({ name: 'Cellular 5G — Drone (UKR)', basis: 'per drone', qty: ukrDrones,
-            unitCost: PRICING.cellular5GDrone, total: ukrDrones * PRICING.cellular5GDrone });
-    var laborLabel = coverageHours === '24'     ? '24/7'
-                   : coverageHours === '12'     ? '12hr/day'
-                   : coverageHours === 'hybrid' ? 'Hybrid (12hr wkday / 24hr wkend)'
-                   : numShifts + ' Shift' + (numShifts > 1 ? 's' : '') + '/day';
+    // Aircraft (not bundled)
+    Object.keys(acCount).forEach(function(slug) {
+        var it = getItem(slug);
+        if (it && it.attributes && it.attributes.bundle_only) return;
+        var up = it ? itemPrice(it) : 0;
+        setupCosts.push({ slug: slug, name: it ? it.name : slug + ' (not in catalog)', basis: 'per aircraft', qty: acCount[slug], unitCost: up, total: acCount[slug] * up });
+    });
+    // Kits
+    tacticalKits.concat(maintKits).forEach(function(kit) {
+        var total = kit.components.reduce(function(s, c) { return s + c.qty * c.unitPrice; }, 0);
+        setupCosts.push({ name: kit.label, basis: 'per kit', qty: 1, unitCost: total, total: total, subItems: kit.components });
+    });
+    // Recurring: maintenance level first, then labor
+    if (totalDocks > 0) recurringCosts.unshift({ name: 'Autonomous DFR Maintenance', basis: 'per program / yr', qty: 1, unitCost: maintenanceLevel, total: maintenanceLevel });
+    var laborLabel = coverageHours === '24' ? '24/7' : coverageHours === '12' ? '12hr/day' : coverageHours === 'hybrid' ? 'Hybrid (12hr wkday / 24hr wkend)' : numShifts + ' Shift' + (numShifts > 1 ? 's' : '') + '/day';
     if (pilots > 0)
-        recurringCosts.push({
-            name:       'TOC Labor — Remote Pilot (' + laborLabel + ')',
-            basis:      'per pilot',
-            qty:        pilots,
-            unitCost:   Math.round(pilotAnnualBilled),
-            total:      Math.round(pilots * pilotAnnualBilled),
-            billingRate: pilotBillingRate,
-            payRate:     pilotInternalRate,
-            isLabor:    true
-        });
+        recurringCosts.push({ name: 'TOC Labor, Remote Pilot (' + laborLabel + ')', basis: 'per pilot', qty: pilots, unitCost: Math.round(pilotAnnualBilled), total: Math.round(pilots * pilotAnnualBilled), billingRate: pilotBillingRate, payRate: pilotInternalRate, isLabor: true });
     if (supervisors > 0 && includeSupervisor)
-        recurringCosts.push({
-            name:       'Shift Operations Supervisor (' + laborLabel + ')',
-            basis:      'per supervisor',
-            qty:        supervisors,
-            unitCost:   Math.round(supvAnnualBilled),
-            total:      Math.round(supervisors * supvAnnualBilled),
-            billingRate: supvBillingRate,
-            payRate:     supvInternalRate,
-            isLabor:    true
-        });
-    if (largeContractRegulatory)
-        recurringCosts.push({ name: 'Regulatory & Compliance Management', basis: 'per program', qty: 1,
-            unitCost: PRICING.largeContractRegulatory, total: PRICING.largeContractRegulatory });
-    if (tacticalSupport)
-        recurringCosts.push({ name: 'Tactical Program Support', basis: 'per program', qty: 1,
-            unitCost: PRICING.tacticalSupport, total: PRICING.tacticalSupport });
-    var totalTacticalKits = readKitConfigs('tacticalKitCards').length;
-    if (totalTacticalKits > 0)
-        recurringCosts.push({ name: 'Tactical Flight Control Software', basis: 'per kit', qty: totalTacticalKits,
-            unitCost: PRICING.tacticalSoftware, total: totalTacticalKits * PRICING.tacticalSoftware });
+        recurringCosts.push({ name: 'Shift Operations Supervisor (' + laborLabel + ')', basis: 'per supervisor', qty: supervisors, unitCost: Math.round(supvAnnualBilled), total: Math.round(supervisors * supvAnnualBilled), billingRate: supvBillingRate, payRate: supvInternalRate, isLabor: true });
 
-    // ── TOTALS ────────────────────────────────────────────────────────────────
+    // ── TOTALS ──
     var initialTotal = setupCosts.reduce(function(s, i) { return s + i.total; }, 0);
     var annualTotal  = recurringCosts.reduce(function(s, i) { return s + i.total; }, 0);
-    var hwFinanced   = payUpfront ? initialTotal : initialTotal * 1.35;
-
-    var paymentHTML = '', contractTotal = 0, initialSetupHTML = '';
-    var annPrice = 0, monthlyPrice = 0;
+    var uplift       = S.financing_uplift_pct;
+    var hwFinanced   = payUpfront ? initialTotal : initialTotal * (1 + uplift / 100);
+    var paymentHTML = '', contractTotal = 0, initialSetupHTML = '', annPrice = 0, monthlyPrice = 0;
     if (payUpfront) {
-        // Hardware paid once up front; recurring is services only
-        contractTotal    = (annualTotal * termYears) + initialTotal;
-        annPrice         = annualTotal;
-        monthlyPrice     = annualTotal / 12;
+        contractTotal = (annualTotal * termYears) + initialTotal; annPrice = annualTotal; monthlyPrice = annualTotal / 12;
         initialSetupHTML = '<div class="summary-row"><span>Initial Setup (One-Time)</span><span>' + fmt(initialTotal) + '</span></div>';
-        paymentHTML      = '<div class="summary-row"><span>Annual Recurring (services)</span><span>' + fmt(annualTotal) + '</span></div>' +
-                           '<div class="summary-row"><span>Monthly Recurring</span><span>' + fmt(monthlyPrice) + '</span></div>';
+        paymentHTML = '<div class="summary-row"><span>Annual Recurring (services)</span><span>' + fmt(annualTotal) + '</span></div>' +
+                      '<div class="summary-row"><span>Monthly Recurring</span><span>' + fmt(monthlyPrice) + '</span></div>';
     } else {
-        // Hardware cost amortized into annual/monthly price
-        var totalProg  = hwFinanced + (annualTotal * termYears);
-        var hwPerYear  = hwFinanced / termYears;
-        annPrice         = totalProg / termYears;
-        monthlyPrice     = annPrice / 12;
-        contractTotal    = totalProg;
-        initialSetupHTML = '';
-        paymentHTML      = '<div class="summary-row"><span>Hardware Cost (financed +35%)</span><span>' + fmt(hwFinanced) + '</span></div>' +
-                           '<div class="summary-row"><span>Annual Recurring (services)</span><span>' + fmt(annualTotal) + '</span></div>' +
-                           '<div class="summary-row"><span>Hardware Amortized / Year</span><span>' + fmt(hwPerYear) + '</span></div>' +
-                           '<div class="summary-row" style="border-top:1px solid rgba(252,192,14,0.3);padding-top:10px;margin-top:4px;"><span>Annual Price (total)</span><span style="color:var(--ep-gold);font-weight:700;">' + fmt(annPrice) + '</span></div>' +
-                           '<div class="summary-row"><span>Monthly Price (total)</span><span>' + fmt(monthlyPrice) + '</span></div>';
+        var totalProg = hwFinanced + (annualTotal * termYears); var hwPerYear = hwFinanced / termYears;
+        annPrice = totalProg / termYears; monthlyPrice = annPrice / 12; contractTotal = totalProg;
+        paymentHTML = '<div class="summary-row"><span>Hardware Cost (financed +' + uplift + '%)</span><span>' + fmt(hwFinanced) + '</span></div>' +
+                      '<div class="summary-row"><span>Annual Recurring (services)</span><span>' + fmt(annualTotal) + '</span></div>' +
+                      '<div class="summary-row"><span>Hardware Amortized / Year</span><span>' + fmt(hwPerYear) + '</span></div>' +
+                      '<div class="summary-row" style="border-top:1px solid rgba(252,192,14,0.3);padding-top:10px;margin-top:4px;"><span>Annual Price (total)</span><span style="color:var(--ep-gold);font-weight:700;">' + fmt(annPrice) + '</span></div>' +
+                      '<div class="summary-row"><span>Monthly Price (total)</span><span>' + fmt(monthlyPrice) + '</span></div>';
     }
 
-    // Store computed state for client PDF export
-    quoteState.setupCosts     = setupCosts;
-    quoteState.recurringCosts = recurringCosts;
-    quoteState.initialTotal   = initialTotal;
-    quoteState.annualTotal    = annualTotal;
-    quoteState.contractTotal  = contractTotal;
-    quoteState.annPrice       = annPrice;
-    quoteState.monthlyPrice   = monthlyPrice;
-    quoteState.hwFinanced     = hwFinanced;
-    quoteState.payUpfront     = payUpfront;
-    quoteState.termYears      = termYears;
-    quoteState.totalDocks     = totalDocks;
-    quoteState.totalDrones    = totalDrones;
-    quoteState.pilots         = pilots;
-    quoteState.supervisors    = supervisors;
-    quoteState.laborLabel     = laborLabel;
-    quoteState.maintenanceLevel = maintenanceLevel;
-    quoteState.annualHours    = Math.round(annualHours);
-    quoteState.pilotBillingRate = pilotBillingRate;
-    quoteState.supvBillingRate  = supvBillingRate;
-    quoteState.includeSupervisor = includeSupervisor;
-    quoteState.fleet = { numOmniStandard: numOmniStandard, numOmniMini: numOmniMini, numDJIDock3: numDJIDock3, numParrot: numParrot, numMavic: numMavic, numMatrice: numMatrice };
+    quoteState = { setupCosts: setupCosts, recurringCosts: recurringCosts, initialTotal: initialTotal, annualTotal: annualTotal, contractTotal: contractTotal,
+        annPrice: annPrice, monthlyPrice: monthlyPrice, hwFinanced: hwFinanced, payUpfront: payUpfront, termYears: termYears, totalDocks: totalDocks, totalDrones: totalDrones,
+        pilots: pilots, supervisors: supervisors, laborLabel: laborLabel, maintenanceLevel: maintenanceLevel, annualHours: Math.round(annualHours),
+        pilotBillingRate: pilotBillingRate, supvBillingRate: supvBillingRate, includeSupervisor: includeSupervisor, fleetList: fleetList,
+        markups: M, pricingSource: ACTIVE_PRICING.source };
 
     setHTML('initialSetupRow', initialSetupHTML);
     setHTML('paymentDetails',  paymentHTML);
     setText('contractTotal',   fmt(contractTotal));
+    renderPricingBanner();
 
-    // ── ITEMIZED TABLE ────────────────────────────────────────────────────────
+    // ── ITEMIZED TABLE ──
     var tbl = '<tr class="section-header"><td colspan="5">INITIAL SETUP COSTS (ONE-TIME)</td></tr>';
     setupCosts.forEach(function(item) {
         var d = '';
-        if (item.note)
-            d += '<div class="kit-contents">' + item.note + '</div>';
-        if (item.subItems) {
-            item.subItems.forEach(function(c) {
-                if (c.qty > 0)
-                    d += '<div class="kit-contents">(x' + c.qty + ') ' + c.name + ' &mdash; ' + fmt(c.qty * c.unitPrice) + '</div>';
-            });
-        }
-        tbl += '<tr><td>' + item.name + d + '</td><td>' + item.basis + '</td><td>' + item.qty + '</td><td>' + fmt(item.unitCost) + '</td><td>' + fmt(item.total) + '</td></tr>';
+        if (item.note) d += '<div class="kit-contents">' + escHtml(item.note) + '</div>';
+        if (item.subItems) item.subItems.forEach(function(c) { if (c.qty > 0) d += '<div class="kit-contents">(x' + c.qty + ') ' + escHtml(c.name) + ' &mdash; ' + fmt(c.qty * c.unitPrice) + '</div>'; });
+        tbl += '<tr><td>' + escHtml(item.name) + d + '</td><td>' + item.basis + '</td><td>' + item.qty + '</td><td>' + fmt(item.unitCost) + '</td><td>' + fmt(item.total) + '</td></tr>';
     });
     tbl += '<tr class="subtotal"><td colspan="4">Setup Subtotal</td><td>' + fmt(initialTotal) + '</td></tr>';
     tbl += '<tr class="section-header"><td colspan="5">ANNUAL RECURRING PROGRAM COSTS</td></tr>';
     recurringCosts.forEach(function(item) {
-        var detail = '';
-        if (item.isLabor) {
-            detail = '<div class="kit-contents">'
-                + '$' + item.billingRate + '/hr billed &nbsp;&bull;&nbsp; $' + item.payRate + '/hr internal cost'
-                + '</div>';
-        }
-        tbl += '<tr><td>' + item.name + detail + '</td><td>' + item.basis + '</td><td>' + item.qty + '</td><td>' + fmt(item.unitCost) + '</td><td>' + fmt(item.total) + '</td></tr>';
+        var detail = item.isLabor ? '<div class="kit-contents">$' + item.billingRate + '/hr billed &nbsp;&bull;&nbsp; $' + item.payRate + '/hr internal cost (' + M.labor + '% ' + M.mode + ')</div>' : '';
+        tbl += '<tr><td>' + escHtml(item.name) + detail + '</td><td>' + item.basis + '</td><td>' + item.qty + '</td><td>' + fmt(item.unitCost) + '</td><td>' + fmt(item.total) + '</td></tr>';
     });
     tbl += '<tr class="subtotal"><td colspan="4">Annual Recurring Subtotal</td><td>' + fmt(annualTotal) + '</td></tr>';
     tbl += '<tr class="grand-total-sub"><td colspan="4">Annual Price (Total)</td><td>' + fmt(annPrice) + '</td></tr>';
@@ -1938,277 +1905,197 @@ function calculate() {
     setHTML('costTableBody', tbl);
 }
 
-
-// ── KIT CONFIGS ───────────────────────────────────────────────────────────────
-var KIT_CONFIGS = {
-    tactical: {
-        mavic: {
-            label: 'Mavic 3T Tactical Kit',
-            components: [
-                { name: 'Mavic 3T',                defaultQty: 1,  unitPrice: 9672.75 },
-                { name: 'Props',                   defaultQty: 2,  unitPrice: 25.65   },
-                { name: 'Battery',                 defaultQty: 3,  unitPrice: 214.65  },
-                { name: 'Colorodo Drone Charger',  defaultQty: 1,  unitPrice: 1208.25 },
-                { name: 'Speaker/Spotlight Combo', defaultQty: 1,  unitPrice: 1618.65 },
-            ]
-        },
-        parrot: {
-            label: 'Parrot UKR Tactical Kit',
-            components: [
-                { name: 'Parrot UKR w/ XLR',       defaultQty: 1,  unitPrice: 27810   },
-                { name: 'Props',                   defaultQty: 2,  unitPrice: 270     },
-                { name: 'XLR Battery',             defaultQty: 3,  unitPrice: 1566    },
-                { name: 'Colorodo Drone Charger',  defaultQty: 1,  unitPrice: 2025    },
-                { name: 'Light',                   defaultQty: 1,  unitPrice: 540     },
-            ]
-        }
-    },
-    maintenance: {
-        mavic: {
-            label: 'Mavic 3T Maintenance Supply Kit',
-            components: [
-                { name: 'Mavic 3T',                defaultQty: 2,  unitPrice: 9672.75 },
-                { name: 'Props',                   defaultQty: 10, unitPrice: 25.65   },
-                { name: 'Battery',                 defaultQty: 10, unitPrice: 214.65  },
-                { name: 'Colorodo Drone Charger',  defaultQty: 0,  unitPrice: 1208.25 },
-                { name: 'Parachute',               defaultQty: 1,  unitPrice: 3780    },
-                { name: 'D-RTK 3 Relay',           defaultQty: 1,  unitPrice: 4725    },
-            ]
-        },
-        parrot: {
-            label: 'Parrot UKR Maintenance Supply Kit',
-            components: [
-                { name: 'Parrot UKR w/ XLR',       defaultQty: 2,  unitPrice: 27810   },
-                { name: 'Props',                   defaultQty: 10, unitPrice: 270     },
-                { name: 'XLR Battery',             defaultQty: 10, unitPrice: 1566    },
-                { name: 'Colorodo Drone Charger',  defaultQty: 0,  unitPrice: 2025    },
-                { name: 'D-RTK 3 Relay',           defaultQty: 1,  unitPrice: 4725    },
-            ]
-        },
-        matrice: {
-            label: 'Matrice 4TD Maintenance Supply Kit',
-            components: [
-                { name: 'Matrice 4TD',             defaultQty: 2,  unitPrice: 10314   },
-                { name: 'Props',                   defaultQty: 10, unitPrice: 64.80   },
-                { name: 'Battery',                 defaultQty: 10, unitPrice: 668.25  },
-                { name: 'Spotlight',               defaultQty: 1,  unitPrice: 607.50  },
-                { name: 'Speaker',                 defaultQty: 1,  unitPrice: 405     },
-                { name: 'Parachute',               defaultQty: 1,  unitPrice: 3645    },
-                { name: 'D-RTK 3 Relay',           defaultQty: 1,  unitPrice: 4725    },
-            ]
-        }
+// ── PRICING BANNER (frozen quotes, catalog drift) ─────────────────────────────
+var LOADED_QUOTE_META = null;   // { legacy: bool, savedAt: string }
+function pricingDiff(a, b) {
+    var out = [];
+    if (!a || !b) return out;
+    ['hardware_markup_pct', 'labor_markup_pct', 'markup_mode', 'financing_uplift_pct', 'hours_per_year'].forEach(function(k) {
+        if (String(a.settings[k]) !== String(b.settings[k])) out.push(k.replace(/_/g, ' ') + ': ' + a.settings[k] + ' to ' + b.settings[k]);
+    });
+    Object.keys(b.items).forEach(function(s) {
+        var x = a.items[s], y = b.items[s];
+        if (!x) { out.push('added ' + y.name); return; }
+        if (x.unit_cost !== y.unit_cost || x.price_mode !== y.price_mode || x.markup_override_pct !== y.markup_override_pct || x.active !== y.active)
+            out.push(y.name + ': cost ' + x.unit_cost + ' to ' + y.unit_cost + (x.active !== y.active ? (y.active ? ', reactivated' : ', retired') : ''));
+    });
+    Object.keys(a.items).forEach(function(s) { if (!b.items[s]) out.push('removed ' + a.items[s].name); });
+    return out;
+}
+function renderPricingBanner() {
+    var b = el('pricingBanner');
+    if (!b) return;
+    var html = '';
+    if (ACTIVE_PRICING.source === 'snapshot') {
+        var diff = pricingDiff(ACTIVE_PRICING, LIVE_PRICING);
+        html = '<div class="warning-banner" style="background:rgba(0,162,233,0.12);border-color:#00A2E9;color:#cfe9f7;">Priced with the catalog saved on ' +
+            escHtml((LOADED_QUOTE_META && LOADED_QUOTE_META.savedAt) || 'unknown date') + '. ' +
+            (diff.length ? diff.length + ' catalog change' + (diff.length > 1 ? 's' : '') + ' since then. <button class="kit-add-btn" style="margin-left:8px;" onclick="repriceToLive()">Reprice with current catalog</button>' +
+                '<div class="kit-contents" style="margin-top:6px;">' + diff.slice(0, 8).map(escHtml).join('<br>') + (diff.length > 8 ? '<br>...' : '') + '</div>'
+                : 'Catalog unchanged since then.') + '</div>';
+    } else if (LOADED_QUOTE_META && LOADED_QUOTE_META.legacy) {
+        html = '<div class="warning-banner">This quote was saved before price snapshots existed. It is priced at the current catalog, which may differ from what the client received. Saving it now freezes current prices.</div>';
+    } else if (ACTIVE_PRICING.source === 'seed') {
+        html = '<div class="warning-banner">' + escHtml(PRICING_STATUS) + '</div>';
     }
-};
+    b.innerHTML = html;
+}
+function repriceToLive() {
+    var docks = readDockConfigsRaw(), opts = readOptions();
+    ACTIVE_PRICING = LIVE_PRICING;
+    LOADED_QUOTE_META = LOADED_QUOTE_META ? { legacy: false, savedAt: LOADED_QUOTE_META.savedAt, repriced: true } : null;
+    refreshCatalogUI(docks, opts);
+}
+function refreshCatalogUI(docks, opts) {
+    var d = docks || readDockConfigsRaw(), o = opts || readOptions();
+    var tac = readKitConfigs('tacticalKitCards'), mnt = readKitConfigs('maintenanceKitCards');
+    buildDockRows(d.length, d);
+    renderOptionToggles(o);
+    var tc = el('tacticalKitCards'), mc = el('maintenanceKitCards');
+    if (tc) tc.innerHTML = ''; if (mc) mc.innerHTML = '';
+    kitCardCounters.tactical = 0; kitCardCounters.maintenance = 0;
+    restoreKitConfigs('tacticalKitCards', 'tactical', tac);
+    restoreKitConfigs('maintenanceKitCards', 'maintenance', mnt);
+    var hw = el('hwMarkupPct'), lb = el('laborMarkupPct');
+    if (hw) hw.placeholder = 'default ' + ACTIVE_PRICING.settings.hardware_markup_pct;
+    if (lb) lb.placeholder = 'default ' + ACTIVE_PRICING.settings.labor_markup_pct;
+    setText('markupModeNote', ACTIVE_PRICING.settings.markup_mode === 'margin' ? 'Margin on price: cost / (1 - pct).' : 'Markup on cost: cost x (1 + pct).');
+    calculate();
+}
 
+// ── KITS (templates from catalog) ─────────────────────────────────────────────
 var kitCardCounters = { tactical: 0, maintenance: 0 };
-
+function kitTemplate(kitType, slug) {
+    var k = ACTIVE_PRICING.kits[slug];
+    if (!k || k.kit_type !== kitType) return null;
+    return { label: k.label, components: k.components.map(function(c) {
+        var it = getItem(c.item_slug);
+        return { slug: c.item_slug, name: it ? it.name : c.item_slug + ' (not in catalog)', defaultQty: c.default_qty, unitPrice: it ? itemPrice(it) : 0 };
+    }) };
+}
 function addKitCard(containerId, kitType, savedConfig) {
     var container = el(containerId);
     if (!container) return;
-
     var cardId = containerId + '_card_' + (++kitCardCounters[kitType]);
-    var card = document.createElement('div');
-    card.className = 'kit-card';
-    card.id = cardId;
-
-    // Header: label + type select + remove button
-    var hdr = document.createElement('div');
-    hdr.className = 'kit-card-header';
-
-    var lbl = document.createElement('span');
-    lbl.className = 'kit-card-label';
-    lbl.textContent = 'Kit';
-    hdr.appendChild(lbl);
-
-    var typeSel = document.createElement('select');
-    typeSel.className = 'kit-type-select';
-    // Placeholder
-    var ph = document.createElement('option');
-    ph.value = ''; ph.textContent = '— Select Kit Type —';
-    typeSel.appendChild(ph);
-    Object.keys(KIT_CONFIGS[kitType]).forEach(function(key) {
-        var o = document.createElement('option');
-        o.value = key;
-        o.textContent = KIT_CONFIGS[kitType][key].label;
-        if (savedConfig && savedConfig.typeKey === key) o.selected = true;
+    var card = document.createElement('div'); card.className = 'kit-card'; card.id = cardId;
+    var hdr = document.createElement('div'); hdr.className = 'kit-card-header';
+    var lbl = document.createElement('span'); lbl.className = 'kit-card-label'; lbl.textContent = 'Kit'; hdr.appendChild(lbl);
+    var typeSel = document.createElement('select'); typeSel.className = 'kit-type-select';
+    var ph = document.createElement('option'); ph.value = ''; ph.textContent = '-- Select Kit Type --'; typeSel.appendChild(ph);
+    kitsOfType(kitType).forEach(function(k) {
+        var o = document.createElement('option'); o.value = k.slug; o.textContent = k.label;
+        if (savedConfig && savedConfig.typeKey === k.slug) o.selected = true;
         typeSel.appendChild(o);
     });
+    if (savedConfig && savedConfig.typeKey && !ACTIVE_PRICING.kits[savedConfig.typeKey]) {
+        var gone = document.createElement('option'); gone.value = savedConfig.typeKey; gone.textContent = savedConfig.typeKey + ' (not in catalog)'; gone.selected = true; typeSel.appendChild(gone);
+    }
     if (!savedConfig) typeSel.value = '';
     hdr.appendChild(typeSel);
-
-    var removeBtn = document.createElement('button');
-    removeBtn.className = 'kit-remove-btn';
-    removeBtn.textContent = '×';
-    removeBtn.title = 'Remove kit';
-    removeBtn.addEventListener('click', function() {
-        card.remove();
-        calculate();
-    });
+    var removeBtn = document.createElement('button'); removeBtn.className = 'kit-remove-btn'; removeBtn.textContent = 'x'; removeBtn.title = 'Remove kit';
+    removeBtn.addEventListener('click', function() { card.remove(); calculate(); });
     hdr.appendChild(removeBtn);
     card.appendChild(hdr);
-
-    // Components area
-    var compsDiv = document.createElement('div');
-    compsDiv.className = 'kit-components';
-    compsDiv.id = cardId + '_comps';
-    card.appendChild(compsDiv);
-
-    // Subtotal bar
-    var subtotalDiv = document.createElement('div');
-    subtotalDiv.className = 'kit-subtotal';
-    subtotalDiv.id = cardId + '_subtotal';
-    subtotalDiv.innerHTML = '<span>Kit Subtotal</span><span>$0</span>';
-    card.appendChild(subtotalDiv);
-
+    var compsDiv = document.createElement('div'); compsDiv.className = 'kit-components'; compsDiv.id = cardId + '_comps'; card.appendChild(compsDiv);
+    var subtotalDiv = document.createElement('div'); subtotalDiv.className = 'kit-subtotal'; subtotalDiv.id = cardId + '_subtotal';
+    subtotalDiv.innerHTML = '<span>Kit Subtotal</span><span>$0</span>'; card.appendChild(subtotalDiv);
     container.appendChild(card);
-
-    // Render components if type already selected
-    if (savedConfig && savedConfig.typeKey) {
-        renderKitComponents(cardId, kitType, savedConfig.typeKey, savedConfig.quantities);
-    }
-
-    // Type change
+    if (savedConfig && savedConfig.typeKey) renderKitComponents(cardId, kitType, savedConfig.typeKey, savedConfig.quantities);
     typeSel.addEventListener('change', function() {
-        if (this.value) {
-            renderKitComponents(cardId, kitType, this.value, null);
-        } else {
-            el(cardId + '_comps').innerHTML = '';
-            el(cardId + '_subtotal').innerHTML = '<span>Kit Subtotal</span><span>$0</span>';
-        }
+        if (this.value) renderKitComponents(cardId, kitType, this.value, null);
+        else { el(cardId + '_comps').innerHTML = ''; el(cardId + '_subtotal').innerHTML = '<span>Kit Subtotal</span><span>$0</span>'; }
         calculate();
     });
 }
-
 function renderKitComponents(cardId, kitType, typeKey, savedQtys) {
     var compsDiv = el(cardId + '_comps');
     if (!compsDiv) return;
     compsDiv.innerHTML = '';
-
-    var config = KIT_CONFIGS[kitType][typeKey];
+    var config = kitTemplate(kitType, typeKey);
     if (!config) return;
-
-    // Column headers
-    var hdrRow = document.createElement('div');
-    hdrRow.className = 'kit-comp-header';
-    ['Component', 'Qty', '$/Unit', 'Total'].forEach(function(h) {
-        var s = document.createElement('span');
-        s.textContent = h;
-        hdrRow.appendChild(s);
-    });
+    var hdrRow = document.createElement('div'); hdrRow.className = 'kit-comp-header';
+    ['Component', 'Qty', '$/Unit', 'Total'].forEach(function(h) { var s = document.createElement('span'); s.textContent = h; hdrRow.appendChild(s); });
     compsDiv.appendChild(hdrRow);
-
     config.components.forEach(function(comp, idx) {
         var qty = (savedQtys && savedQtys[idx] !== undefined) ? savedQtys[idx] : comp.defaultQty;
-
-        var row = document.createElement('div');
-        row.className = 'kit-component-row';
-
-        var nameEl = document.createElement('span');
-        nameEl.className = 'kit-comp-name';
-        nameEl.textContent = comp.name;
-        row.appendChild(nameEl);
-
-        var qtyInput = document.createElement('input');
-        qtyInput.type = 'number';
-        qtyInput.className = 'kit-comp-qty';
-        qtyInput.min = '0';
-        qtyInput.value = qty;
-        qtyInput.dataset.unitPrice = comp.unitPrice;
-        qtyInput.dataset.cardId = cardId;
-
-        var unitEl = document.createElement('span');
-        unitEl.className = 'kit-comp-unit';
-        unitEl.textContent = fmt(comp.unitPrice);
-
-        var totalEl = document.createElement('span');
-        totalEl.className = 'kit-comp-total';
-        totalEl.textContent = fmt(qty * comp.unitPrice);
-
-        qtyInput.addEventListener('input', function() {
-            var q = parseInt(this.value) || 0;
-            totalEl.textContent = fmt(q * comp.unitPrice);
-            updateKitSubtotal(cardId);
-            calculate();
-        });
-
-        row.appendChild(qtyInput);
-        row.appendChild(unitEl);
-        row.appendChild(totalEl);
+        var row = document.createElement('div'); row.className = 'kit-component-row';
+        var nameEl = document.createElement('span'); nameEl.className = 'kit-comp-name'; nameEl.textContent = comp.name; row.appendChild(nameEl);
+        var qtyInput = document.createElement('input'); qtyInput.type = 'number'; qtyInput.className = 'kit-comp-qty'; qtyInput.min = '0'; qtyInput.value = qty;
+        qtyInput.dataset.unitPrice = comp.unitPrice; qtyInput.dataset.slug = comp.slug; qtyInput.dataset.name = comp.name;
+        var unitEl = document.createElement('span'); unitEl.className = 'kit-comp-unit'; unitEl.textContent = fmt(comp.unitPrice);
+        var totalEl = document.createElement('span'); totalEl.className = 'kit-comp-total'; totalEl.textContent = fmt(qty * comp.unitPrice);
+        qtyInput.addEventListener('input', function() { var q = parseInt(this.value) || 0; totalEl.textContent = fmt(q * comp.unitPrice); updateKitSubtotal(cardId); calculate(); });
+        row.appendChild(qtyInput); row.appendChild(unitEl); row.appendChild(totalEl);
         compsDiv.appendChild(row);
     });
-
     updateKitSubtotal(cardId);
 }
-
 function updateKitSubtotal(cardId) {
-    var compsDiv = el(cardId + '_comps');
-    var subtotalDiv = el(cardId + '_subtotal');
+    var compsDiv = el(cardId + '_comps'), subtotalDiv = el(cardId + '_subtotal');
     if (!compsDiv || !subtotalDiv) return;
     var total = 0;
-    compsDiv.querySelectorAll('.kit-comp-qty').forEach(function(input) {
-        total += (parseInt(input.value) || 0) * (parseFloat(input.dataset.unitPrice) || 0);
-    });
+    compsDiv.querySelectorAll('.kit-comp-qty').forEach(function(input) { total += (parseInt(input.value) || 0) * (parseFloat(input.dataset.unitPrice) || 0); });
     subtotalDiv.innerHTML = '<span>Kit Subtotal</span><span>' + fmt(total) + '</span>';
 }
-
 function readKitConfigs(containerId) {
     var container = el(containerId);
     if (!container) return [];
     var kits = [];
+    var kitType = containerId.indexOf('tactical') >= 0 ? 'tactical' : 'maintenance';
     container.querySelectorAll('.kit-card').forEach(function(card) {
         var typeSel = card.querySelector('.kit-type-select');
         if (!typeSel || !typeSel.value) return;
-        var typeKey = typeSel.value;
-        var kitType = containerId.indexOf('tactical') >= 0 ? 'tactical' : 'maintenance';
-        var config = KIT_CONFIGS[kitType][typeKey];
-        if (!config) return;
+        var k = ACTIVE_PRICING.kits[typeSel.value];
         var components = [];
-        card.querySelectorAll('.kit-comp-qty').forEach(function(input, idx) {
-            components.push({
-                name:      config.components[idx] ? config.components[idx].name : '',
-                qty:       parseInt(input.value) || 0,
-                unitPrice: parseFloat(input.dataset.unitPrice) || 0,
-            });
+        card.querySelectorAll('.kit-comp-qty').forEach(function(input) {
+            components.push({ slug: input.dataset.slug, name: input.dataset.name, qty: parseInt(input.value) || 0, unitPrice: parseFloat(input.dataset.unitPrice) || 0 });
         });
-        kits.push({ label: config.label, typeKey: typeKey, components: components });
+        kits.push({ label: k ? k.label : typeSel.value, typeKey: typeSel.value, kitType: kitType, components: components });
     });
     return kits;
 }
-
 function restoreKitConfigs(containerId, kitType, savedKits) {
     if (!savedKits || !savedKits.length) return;
     savedKits.forEach(function(kit) {
+        var key = kit.typeKey;
+        if (key && !ACTIVE_PRICING.kits[key] && PRICING_SEED.legacy.kits[kitType][key]) key = PRICING_SEED.legacy.kits[kitType][key];
         var qtys = kit.components ? kit.components.map(function(c) { return c.qty; }) : null;
-        addKitCard(containerId, kitType, { typeKey: kit.typeKey, quantities: qtys });
+        addKitCard(containerId, kitType, { typeKey: key, quantities: qtys });
     });
 }
 
-// ── GLOBAL INLINE HANDLER FUNCTIONS ─────────────────────────────────────────────
-
+// ── GLOBAL INLINE HANDLER FUNCTIONS ───────────────────────────────────────────
 function coverageHoursChanged(val) {
     var sg = el('shiftsGroup');
     if (sg) sg.style.display = val === '8' ? '' : 'none';
     calculate();
 }
-
 function toggleKitSection(checkbox, areaId) {
     var area = el(areaId);
     if (area) area.style.display = checkbox.checked ? '' : 'none';
     if (!checkbox.checked) {
         var containerId = areaId === 'tacticalKitArea' ? 'tacticalKitCards' : 'maintenanceKitCards';
         var kitType     = areaId === 'tacticalKitArea' ? 'tactical' : 'maintenance';
-        var c = el(containerId);
-        if (c) c.innerHTML = '';
+        var c = el(containerId); if (c) c.innerHTML = '';
         kitCardCounters[kitType] = 0;
     }
     calculate();
 }
 
-// ── QUOTE DATA GATHER / APPLY ────────────────────────────────────────────────
+// ── QUOTE DATA GATHER / APPLY ─────────────────────────────────────────────────
+function snapshotPricing() {
+    var P = ACTIVE_PRICING;
+    return { settings: P.settings, items: P.items, kits: P.kits, catalog_updated_at: P.catalog_updated_at, snapshot_at: new Date().toISOString(), calc_version: CALC_VER };
+}
 function buildQuoteData() {
+    var hw = el('hwMarkupPct'), lb = el('laborMarkupPct');
     return {
+        format:                'ep-pricing-v3',
         numDocks:              el('numDocks') ? el('numDocks').value : 0,
         dockConfigs:           readDockConfigs(),
+        options:               readOptions(),
+        hwMarkupPct:           hw && hw.value !== '' ? hw.value : null,
+        laborMarkupPct:        lb && lb.value !== '' ? lb.value : null,
         maintenanceLevel:      el('maintenanceLevel') ? el('maintenanceLevel').value : 10000,
         minsPerHourPerDock:    el('minsPerHourPerDock') ? el('minsPerHourPerDock').value : 0,
         coverageHours:         el('coverageHours') ? el('coverageHours').value : '24',
@@ -2218,20 +2105,25 @@ function buildQuoteData() {
         pilotBillingRate:      el('pilotBillingRate') ? el('pilotBillingRate').value : 50,
         supvBillingRate:       el('supvBillingRate') ? el('supvBillingRate').value : 60,
         includeSupervisor:     el('includeSupervisor') ? el('includeSupervisor').checked : false,
-        includeCellular5G:     el('includeCellular5G') ? el('includeCellular5G').checked : false,
-        includeDataStorage:    el('includeDataStorage') ? el('includeDataStorage').checked : false,
-        includeDFRSetupFee:    el('includeDFRSetupFee') ? el('includeDFRSetupFee').checked : false,
-        largeContractRegulatory: el('largeContractRegulatory') ? el('largeContractRegulatory').checked : false,
-        tacticalSupport:       el('tacticalSupport') ? el('tacticalSupport').checked : false,
         includeTacticalKits:   el('includeTacticalKits') ? el('includeTacticalKits').checked : false,
         includeMaintenanceKits: el('includeMaintenanceKits') ? el('includeMaintenanceKits').checked : false,
         tacticalKits:          readKitConfigs('tacticalKitCards'),
         maintenanceKitsQty:    readKitConfigs('maintenanceKitCards'),
-        detailsVisible:        detailsVisible
+        detailsVisible:        detailsVisible,
+        pricing:               snapshotPricing(),
+        computed:              { initialTotal: quoteState.initialTotal, annualTotal: quoteState.annualTotal, contractTotal: quoteState.contractTotal, annPrice: quoteState.annPrice, monthlyPrice: quoteState.monthlyPrice }
     };
 }
+function applyQuoteData(data, savedAt) {
+    var legacy = !data.pricing;
+    if (data.pricing && data.pricing.items) {
+        ACTIVE_PRICING = { source: 'snapshot', settings: normalizePricing(data.pricing.settings, [], [], 'snapshot').settings,
+            items: data.pricing.items, kits: data.pricing.kits || {}, catalog_updated_at: data.pricing.catalog_updated_at || null };
+    } else {
+        ACTIVE_PRICING = LIVE_PRICING;
+    }
+    LOADED_QUOTE_META = { legacy: legacy, savedAt: (savedAt || (data.pricing && data.pricing.snapshot_at) || '').slice(0, 10) };
 
-function applyQuoteData(data) {
     if (el('numDocks'))           el('numDocks').value              = data.numDocks || 0;
     if (el('maintenanceLevel'))   el('maintenanceLevel').value      = data.maintenanceLevel || 10000;
     if (el('minsPerHourPerDock')) el('minsPerHourPerDock').value    = data.minsPerHourPerDock || 0;
@@ -2239,45 +2131,210 @@ function applyQuoteData(data) {
     if (el('numShifts'))          el('numShifts').value             = data.numShifts || '1';
     if (el('termYears'))          el('termYears').value             = data.termYears || 3;
     if (el('payUpfront'))         el('payUpfront').checked          = data.payUpfront || false;
-    if (el('pilotBillingRate'))   el('pilotBillingRate').value      = data.pilotBillingRate || 50;
-    if (el('supvBillingRate'))    el('supvBillingRate').value       = data.supvBillingRate || 60;
+    if (el('pilotBillingRate'))   el('pilotBillingRate').value      = data.pilotBillingRate || ACTIVE_PRICING.settings.default_pilot_rate;
+    if (el('supvBillingRate'))    el('supvBillingRate').value       = data.supvBillingRate || ACTIVE_PRICING.settings.default_supv_rate;
     if (el('includeSupervisor'))  el('includeSupervisor').checked   = data.includeSupervisor || false;
-    if (el('includeCellular5G'))  el('includeCellular5G').checked   = data.includeCellular5G || false;
-    if (el('includeDataStorage')) el('includeDataStorage').checked  = data.includeDataStorage || false;
-    if (el('includeDFRSetupFee')) el('includeDFRSetupFee').checked  = data.includeDFRSetupFee || false;
-    if (el('largeContractRegulatory')) el('largeContractRegulatory').checked = data.largeContractRegulatory || false;
-    if (el('tacticalSupport'))    el('tacticalSupport').checked     = data.tacticalSupport || false;
+    if (el('hwMarkupPct'))        el('hwMarkupPct').value           = data.hwMarkupPct == null ? '' : data.hwMarkupPct;
+    if (el('laborMarkupPct'))     el('laborMarkupPct').value        = data.laborMarkupPct == null ? '' : data.laborMarkupPct;
+    var sg = el('shiftsGroup'); if (sg) sg.style.display = data.coverageHours === '8' ? '' : 'none';
 
-    if (data.coverageHours === '8') { var sg = el('shiftsGroup'); if (sg) sg.style.display = ''; }
-    else { var sg2 = el('shiftsGroup'); if (sg2) sg2.style.display = 'none'; }
+    // Options: v3 map, or legacy booleans mapped to slugs
+    var opts = data.options || {};
+    if (legacy) { Object.keys(PRICING_SEED.legacy.options).forEach(function(k) { if (data.hasOwnProperty(k)) opts[PRICING_SEED.legacy.options[k]] = !!data[k]; }); }
+    renderOptionToggles(opts);
 
-    var tacCards = el('tacticalKitCards');
-    var mntCards = el('maintenanceKitCards');
-    if (tacCards) tacCards.innerHTML = '';
-    if (mntCards) mntCards.innerHTML = '';
-    kitCardCounters.tactical = 0;
-    kitCardCounters.maintenance = 0;
+    // Docks: legacy keys mapped to slugs
+    var docks = (data.dockConfigs || []).map(function(c) {
+        var t = c.type; if (t && !ACTIVE_PRICING.items[t] && PRICING_SEED.legacy.docks[t]) t = PRICING_SEED.legacy.docks[t];
+        var ds = (c.drones || []).map(function(d) { return (d && !ACTIVE_PRICING.items[d] && PRICING_SEED.legacy.drones[d]) ? PRICING_SEED.legacy.drones[d] : d; });
+        return { type: t, drones: ds };
+    });
+    buildDockRows(parseInt(data.numDocks) || 0, docks);
 
+    var tacCards = el('tacticalKitCards'), mntCards = el('maintenanceKitCards');
+    if (tacCards) tacCards.innerHTML = ''; if (mntCards) mntCards.innerHTML = '';
+    kitCardCounters.tactical = 0; kitCardCounters.maintenance = 0;
     if (el('includeTacticalKits'))    el('includeTacticalKits').checked    = data.includeTacticalKits || false;
     if (el('includeMaintenanceKits')) el('includeMaintenanceKits').checked = data.includeMaintenanceKits || false;
     if (el('tacticalKitArea'))        el('tacticalKitArea').style.display    = data.includeTacticalKits ? '' : 'none';
     if (el('maintenanceKitArea'))     el('maintenanceKitArea').style.display = data.includeMaintenanceKits ? '' : 'none';
-
-    if (data.includeTacticalKits && data.tacticalKits)
-        restoreKitConfigs('tacticalKitCards', 'tactical', data.tacticalKits);
-    if (data.includeMaintenanceKits && data.maintenanceKitsQty)
-        restoreKitConfigs('maintenanceKitCards', 'maintenance', data.maintenanceKitsQty);
-
-    buildDockRows(parseInt(data.numDocks) || 0, data.dockConfigs || []);
+    if (data.includeTacticalKits && data.tacticalKits)        restoreKitConfigs('tacticalKitCards', 'tactical', data.tacticalKits);
+    if (data.includeMaintenanceKits && data.maintenanceKitsQty) restoreKitConfigs('maintenanceKitCards', 'maintenance', data.maintenanceKitsQty);
 
     if (data.detailsVisible) {
         detailsVisible = true;
-        var sec = el('detailSection');
-        if (sec) sec.style.display = 'block';
-        var btn = el('toggleDetailsBtn');
-        if (btn) btn.textContent = 'Hide Detailed Breakdown';
+        var sec = el('detailSection'); if (sec) sec.style.display = 'block';
+        var btn = el('toggleDetailsBtn'); if (btn) btn.textContent = 'Hide Detailed Breakdown';
     }
-    calculate();
+    refreshCatalogUI(readDockConfigsRaw(), opts);
+}
+function newQuote() {
+    editingQuoteId = null; LOADED_QUOTE_META = null; ACTIVE_PRICING = LIVE_PRICING;
+    if (el('numDocks')) el('numDocks').value = 0;
+    if (el('hwMarkupPct')) el('hwMarkupPct').value = '';
+    if (el('laborMarkupPct')) el('laborMarkupPct').value = '';
+    if (el('saveClientName')) el('saveClientName').value = '';
+    var tc = el('tacticalKitCards'), mc = el('maintenanceKitCards');
+    if (tc) tc.innerHTML = ''; if (mc) mc.innerHTML = '';
+    if (el('includeTacticalKits')) el('includeTacticalKits').checked = false;
+    if (el('includeMaintenanceKits')) el('includeMaintenanceKits').checked = false;
+    if (el('tacticalKitArea')) el('tacticalKitArea').style.display = 'none';
+    if (el('maintenanceKitArea')) el('maintenanceKitArea').style.display = 'none';
+    buildDockRows(0, []);
+    renderOptionToggles({});
+    refreshCatalogUI([], {});
+}
+
+// ── ADMIN: CATALOG & PRICING PANEL ────────────────────────────────────────────
+var ADMIN_DRAFT = null;   // { settings, items:[], kits:[] } editable copy of LIVE
+function openAdminPanel() {
+    var p = el('adminPanel'); if (!p) return;
+    ADMIN_DRAFT = JSON.parse(JSON.stringify({ settings: LIVE_PRICING.settings,
+        items: Object.keys(LIVE_PRICING.items).map(function(k) { return LIVE_PRICING.items[k]; }).sort(function(a, b) { return a.sort - b.sort; }),
+        kits: Object.keys(LIVE_PRICING.kits).map(function(k) { return LIVE_PRICING.kits[k]; }).sort(function(a, b) { return a.sort - b.sort; }) }));
+    p.style.display = '';
+    renderAdmin();
+    p.scrollIntoView({ behavior: 'smooth' });
+}
+function closeAdminPanel() { var p = el('adminPanel'); if (p) p.style.display = 'none'; }
+var CATEGORIES = ['dock', 'aircraft', 'component', 'software', 'service'];
+var BASES = ['one_time', 'per_dock_one_time', 'per_program_year', 'per_dock_year', 'per_aircraft_year', 'per_tactical_kit_year'];
+var TRIGGERS = ['fleet', 'kit', 'auto', 'toggle'];
+function selHtml(opts, val, attrs, labelFn) {
+    return '<select ' + attrs + '>' + opts.map(function(o) { return '<option value="' + o + '"' + (o === val ? ' selected' : '') + '>' + (labelFn ? labelFn(o) : o) + '</option>'; }).join('') + '</select>';
+}
+function renderAdmin() {
+    var D = ADMIN_DRAFT, S = D.settings;
+    var h = '<div class="admin-head"><p class="panel-title" style="margin:0;">Catalog &amp; Pricing Settings</p>' +
+        '<div><button class="kit-add-btn" onclick="saveAdmin()">Save all changes</button> <button class="kit-add-btn" style="opacity:0.7" onclick="closeAdminPanel()">Close</button></div></div>' +
+        '<div class="kit-contents" id="adminStatus">' + escHtml(PRICING_STATUS) + '</div>';
+    // Settings
+    h += '<h3>Settings</h3><div class="admin-grid">' +
+        fld('Hardware markup %', 'number', S.hardware_markup_pct, 'set:hardware_markup_pct') +
+        fld('Labor markup %', 'number', S.labor_markup_pct, 'set:labor_markup_pct') +
+        '<div class="form-group"><label>Markup definition</label>' + selHtml(['markup', 'margin'], S.markup_mode, 'data-set="markup_mode" onchange="adminSet(this)"', function(o) { return o === 'markup' ? 'Markup on cost: cost x (1 + pct)' : 'Margin on price: cost / (1 - pct)'; }) + '</div>' +
+        fld('Financing uplift % (hardware not paid up front)', 'number', S.financing_uplift_pct, 'set:financing_uplift_pct') +
+        fld('Labor hours per year (24/7 basis)', 'number', S.hours_per_year, 'set:hours_per_year') +
+        fld('Default pilot billing rate $/hr', 'number', S.default_pilot_rate, 'set:default_pilot_rate') +
+        fld('Default supervisor billing rate $/hr', 'number', S.default_supv_rate, 'set:default_supv_rate') +
+        '</div>';
+    // Catalog
+    h += '<h3>Catalog <span class="kit-contents">Cost is what EP pays. Price = cost plus markup for cost_plus items, or the cost figure itself for fixed items. Retire an item rather than deleting it; old quotes keep their snapshot.</span></h3>' +
+        '<div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Sort</th><th>Name</th><th>Category</th><th>Cost $</th><th>Pricing</th><th>Override %</th><th>Basis</th><th>Trigger</th><th>Default on</th><th>Tag</th><th>Capacity</th><th>Bundled aircraft</th><th>Price</th><th>Active</th></tr></thead><tbody>';
+    var aircraftSlugs = D.items.filter(function(i) { return i.category === 'aircraft'; }).map(function(i) { return i.slug; });
+    D.items.forEach(function(it, idx) {
+        var price = it.price_mode === 'fixed' ? it.unit_cost : applyMarkup(it.unit_cost, it.markup_override_pct !== null ? it.markup_override_pct : S.hardware_markup_pct, S.markup_mode);
+        var a = it.attributes || {};
+        var ix = 'data-i="' + idx + '" onchange="adminItem(this)" oninput="adminItem(this)"';
+        h += '<tr' + (it.active ? '' : ' style="opacity:0.5"') + '>' +
+            '<td><input type="number" style="width:60px" value="' + it.sort + '" data-f="sort" ' + ix + '></td>' +
+            '<td><input type="text" style="min-width:180px" value="' + escHtml(it.name) + '" data-f="name" ' + ix + '><div class="kit-contents">' + escHtml(it.slug) + '</div></td>' +
+            '<td>' + selHtml(CATEGORIES, it.category, 'data-f="category" ' + ix) + '</td>' +
+            '<td><input type="number" step="0.01" style="width:100px" value="' + it.unit_cost + '" data-f="unit_cost" ' + ix + '></td>' +
+            '<td>' + selHtml(['cost_plus', 'fixed'], it.price_mode, 'data-f="price_mode" ' + ix) + '</td>' +
+            '<td><input type="number" step="0.1" style="width:70px" value="' + (it.markup_override_pct === null ? '' : it.markup_override_pct) + '" placeholder="global" data-f="markup_override_pct" ' + ix + '></td>' +
+            '<td>' + selHtml(BASES, it.basis, 'data-f="basis" ' + ix, basisLabel) + '</td>' +
+            '<td>' + selHtml(TRIGGERS, it.trigger, 'data-f="trigger" ' + ix) + '</td>' +
+            '<td><input type="checkbox"' + (it.default_on ? ' checked' : '') + ' data-f="default_on" ' + ix + '></td>' +
+            '<td><input type="text" style="width:80px" value="' + escHtml(it.applies_to_tag || (a.tags || []).join(',')) + '" data-f="tag" ' + ix + ' title="For services: applies_to_tag. For aircraft: tags, comma separated."></td>' +
+            '<td><input type="number" style="width:55px" value="' + (a.capacity || '') + '" data-f="capacity" ' + ix + '></td>' +
+            '<td>' + selHtml([''].concat(aircraftSlugs), a.bundled_aircraft || '', 'data-f="bundled_aircraft" ' + ix, function(o) { return o || 'none'; }) + '</td>' +
+            '<td style="white-space:nowrap">' + fmt(price) + '</td>' +
+            '<td><input type="checkbox"' + (it.active ? ' checked' : '') + ' data-f="active" ' + ix + '></td></tr>';
+    });
+    h += '</tbody></table></div><button class="kit-add-btn" onclick="adminAddItem()">+ Add catalog item</button>';
+    // Kits
+    h += '<h3>Kit templates <span class="kit-contents">Components reference catalog items; their prices follow the catalog.</span></h3>';
+    D.kits.forEach(function(k, ki) {
+        var kx = 'data-k="' + ki + '" onchange="adminKit(this)" oninput="adminKit(this)"';
+        h += '<div class="kit-card"><div class="kit-card-header"><input type="text" value="' + escHtml(k.label) + '" data-f="label" ' + kx + ' style="flex:1;min-width:200px">' +
+            selHtml(['tactical', 'maintenance'], k.kit_type, 'data-f="kit_type" ' + kx) +
+            '<input type="number" style="width:60px" value="' + k.sort + '" data-f="sort" ' + kx + ' title="Sort">' +
+            '<label class="kit-contents"><input type="checkbox"' + (k.active ? ' checked' : '') + ' data-f="active" ' + kx + '> active</label></div>' +
+            '<div class="kit-components">';
+        k.components.forEach(function(c, ci) {
+            var cx = 'data-k="' + ki + '" data-c="' + ci + '" onchange="adminKitComp(this)" oninput="adminKitComp(this)"';
+            h += '<div class="kit-component-row" style="grid-template-columns:1fr 70px 30px;">' +
+                selHtml(D.items.filter(function(i) { return i.category === 'component' || i.category === 'aircraft'; }).map(function(i) { return i.slug; }), c.item_slug, 'data-f="item_slug" ' + cx, function(o) { var it = D.items.filter(function(i) { return i.slug === o; })[0]; return it ? it.name : o; }) +
+                '<input type="number" min="0" value="' + c.default_qty + '" data-f="default_qty" ' + cx + '>' +
+                '<button class="kit-remove-btn" onclick="adminKitCompRemove(' + ki + ',' + ci + ')">x</button></div>';
+        });
+        h += '</div><button class="kit-add-btn" onclick="adminKitCompAdd(' + ki + ')">+ Add component</button></div>';
+    });
+    h += '<button class="kit-add-btn" onclick="adminAddKit()">+ Add kit template</button>';
+    h += '<div class="admin-head" style="margin-top:14px;"><span></span><button class="kit-add-btn" onclick="saveAdmin()">Save all changes</button></div>';
+    setHTML('adminPanel', h);
+}
+function fld(label, type, val, key) {
+    return '<div class="form-group"><label>' + label + '</label><input type="' + type + '" step="any" value="' + val + '" data-set="' + key.split(':')[1] + '" oninput="adminSet(this)"></div>';
+}
+function adminSet(inp) { var k = inp.dataset.set; ADMIN_DRAFT.settings[k] = inp.type === 'number' ? parseFloat(inp.value) || 0 : inp.value; }
+function adminItem(inp) {
+    var it = ADMIN_DRAFT.items[parseInt(inp.dataset.i)], f = inp.dataset.f;
+    if (!it) return;
+    it.attributes = it.attributes || {};
+    if (f === 'sort') it.sort = parseInt(inp.value) || 0;
+    else if (f === 'unit_cost') it.unit_cost = parseFloat(inp.value) || 0;
+    else if (f === 'markup_override_pct') it.markup_override_pct = inp.value === '' ? null : parseFloat(inp.value);
+    else if (f === 'default_on' || f === 'active') it[f] = inp.checked;
+    else if (f === 'tag') { if (it.category === 'aircraft') { it.attributes.tags = inp.value.split(',').map(function(s) { return s.trim(); }).filter(Boolean); it.applies_to_tag = null; } else { it.applies_to_tag = inp.value.trim() || null; } }
+    else if (f === 'capacity') { if (inp.value === '') delete it.attributes.capacity; else it.attributes.capacity = parseInt(inp.value) || 1; }
+    else if (f === 'bundled_aircraft') { if (inp.value) it.attributes.bundled_aircraft = inp.value; else delete it.attributes.bundled_aircraft; }
+    else it[f] = inp.value;
+    if (inp.tagName === 'SELECT' || inp.type === 'checkbox') renderAdmin();
+}
+function adminAddItem() {
+    var name = prompt('Item name (e.g. Vantage beeper)'); if (!name) return;
+    var slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (ADMIN_DRAFT.items.some(function(i) { return i.slug === slug; })) slug += '-' + Date.now().toString(36);
+    ADMIN_DRAFT.items.push({ slug: slug, sort: 1000, category: 'component', name: name, unit_cost: 0, price_mode: 'cost_plus', markup_override_pct: null, basis: 'one_time', trigger: 'kit', default_on: false, applies_to_tag: null, attributes: {}, note: null, active: true, id: null });
+    renderAdmin();
+}
+function adminKit(inp) {
+    var k = ADMIN_DRAFT.kits[parseInt(inp.dataset.k)], f = inp.dataset.f; if (!k) return;
+    if (f === 'sort') k.sort = parseInt(inp.value) || 0; else if (f === 'active') k.active = inp.checked; else k[f] = inp.value;
+    if (inp.tagName === 'SELECT' || inp.type === 'checkbox') renderAdmin();
+}
+function adminKitComp(inp) {
+    var k = ADMIN_DRAFT.kits[parseInt(inp.dataset.k)]; if (!k) return;
+    var c = k.components[parseInt(inp.dataset.c)]; if (!c) return;
+    if (inp.dataset.f === 'default_qty') c.default_qty = parseInt(inp.value) || 0; else c.item_slug = inp.value;
+}
+function adminKitCompAdd(ki) { var first = ADMIN_DRAFT.items.filter(function(i) { return i.category === 'component'; })[0]; ADMIN_DRAFT.kits[ki].components.push({ item_slug: first ? first.slug : '', default_qty: 1 }); renderAdmin(); }
+function adminKitCompRemove(ki, ci) { ADMIN_DRAFT.kits[ki].components.splice(ci, 1); renderAdmin(); }
+function adminAddKit() {
+    var label = prompt('Kit label'); if (!label) return;
+    var slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    if (ADMIN_DRAFT.kits.some(function(k) { return k.slug === slug; })) slug += '-' + Date.now().toString(36);
+    ADMIN_DRAFT.kits.push({ slug: slug, sort: 1000, kit_type: 'tactical', label: label, components: [], active: true, id: null });
+    renderAdmin();
+}
+async function saveAdmin() {
+    if (!IS_ADMIN) { alert('Your account is not flagged admin.'); return; }
+    var st = el('adminStatus'); if (st) st.textContent = 'Saving...';
+    var who = currentUser ? currentUser.email : null, now = new Date().toISOString();
+    try {
+        var S = ADMIN_DRAFT.settings;
+        var r1 = await sb.from('pricing_settings').upsert({ id: 1, hardware_markup_pct: S.hardware_markup_pct, labor_markup_pct: S.labor_markup_pct, markup_mode: S.markup_mode,
+            financing_uplift_pct: S.financing_uplift_pct, hours_per_year: Math.round(S.hours_per_year), default_pilot_rate: S.default_pilot_rate, default_supv_rate: S.default_supv_rate, updated_at: now, updated_by: who });
+        if (r1.error) throw r1.error;
+        var rows = ADMIN_DRAFT.items.map(function(it) {
+            var row = { slug: it.slug, sort: it.sort, category: it.category, name: it.name, unit_cost: it.unit_cost, price_mode: it.price_mode, markup_override_pct: it.markup_override_pct,
+                basis: it.basis, trigger: it.trigger, default_on: it.default_on, applies_to_tag: it.applies_to_tag, attributes: it.attributes || {}, note: it.note, active: it.active, updated_at: now, updated_by: who };
+            if (it.id) row.id = it.id; return row;
+        });
+        var r2 = await sb.from('pricing_catalog').upsert(rows, { onConflict: 'slug' }); if (r2.error) throw r2.error;
+        var krows = ADMIN_DRAFT.kits.map(function(k) { var row = { slug: k.slug, sort: k.sort, kit_type: k.kit_type, label: k.label, components: k.components, active: k.active, updated_at: now, updated_by: who }; if (k.id) row.id = k.id; return row; });
+        var r3 = await sb.from('pricing_kits').upsert(krows, { onConflict: 'slug' }); if (r3.error) throw r3.error;
+        var wasLive = ACTIVE_PRICING.source !== 'snapshot';
+        await loadLivePricing();
+        if (wasLive) { ACTIVE_PRICING = LIVE_PRICING; refreshCatalogUI(); } else { calculate(); }
+        openAdminPanel();
+        if (el('adminStatus')) el('adminStatus').textContent = 'Saved ' + now.slice(0, 19).replace('T', ' ') + ' UTC. ' + PRICING_STATUS;
+    } catch (e) {
+        if (el('adminStatus')) el('adminStatus').textContent = 'Save failed: ' + (e.message || e);
+        alert('Save failed: ' + (e.message || e));
+    }
 }
 
 // ── CLOUD SAVE ────────────────────────────────────────────────────────────────
@@ -2398,7 +2455,7 @@ async function loadQuoteById(id) {
         alert('Failed to load quote: ' + (result.error ? result.error.message : 'not found'));
         return;
     }
-    applyQuoteData(result.data.quote_data || {});
+    applyQuoteData(result.data.quote_data || {}, result.data.updated_at || result.data.created_at);
     editingQuoteId = result.data.id;
     var nameInput = el('saveClientName');
     var dateInput = el('saveQuoteDate');
@@ -2461,8 +2518,7 @@ function init() {
 
     // Static field listeners
     ['maintenanceLevel','minsPerHourPerDock','termYears','coverageHours','numShifts',
-     'pilotBillingRate','supvBillingRate','includeDFRSetupFee','payUpfront','largeContractRegulatory','includeSupervisor','tacticalSupport',
-     'includeCellular5G','includeDataStorage'
+     'pilotBillingRate','supvBillingRate','payUpfront','includeSupervisor','hwMarkupPct','laborMarkupPct'
     ].forEach(function(id) {
         var node = el(id);
         if (node) {
@@ -2546,12 +2602,7 @@ function exportClientPDF() {
 
     // ── FLEET HTML ─────────────────────────────────────────────────────────
     var fleetLines = '';
-    if (f.numOmniStandard > 0) fleetLines += '<div class="fleet-row"><span>OmniDock Standard</span><span>' + f.numOmniStandard + '</span></div>';
-    if (f.numOmniMini     > 0) fleetLines += '<div class="fleet-row"><span>OmniDock Mini</span><span>' + f.numOmniMini + '</span></div>';
-    if (f.numDJIDock3     > 0) fleetLines += '<div class="fleet-row"><span>DJI Dock 3 w/ Matrice 4TD</span><span>' + f.numDJIDock3 + '</span></div>';
-    if (f.numParrot       > 0) fleetLines += '<div class="fleet-row"><span>Parrot UKR</span><span>' + f.numParrot + '</span></div>';
-    if (f.numMavic        > 0) fleetLines += '<div class="fleet-row"><span>DJI Mavic 3T</span><span>' + f.numMavic + '</span></div>';
-    if (f.numMatrice      > 0) fleetLines += '<div class="fleet-row"><span>Matrice 4TD (bundled)</span><span>' + f.numMatrice + '</span></div>';
+    (q.fleetList || []).forEach(function(f) { fleetLines += '<div class="fleet-row"><span>' + f.name + '</span><span>' + f.qty + '</span></div>'; });
     if (!fleetLines) fleetLines = '<div class="fleet-row"><span style="color:#6a8a9a;font-style:italic;">No docks configured</span><span>—</span></div>';
 
     // ── HARDWARE SECTION ───────────────────────────────────────────────────
