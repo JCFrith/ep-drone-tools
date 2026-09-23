@@ -1755,13 +1755,36 @@ function buildApproval(body) {
   body.appendChild(panel);
   setTimeout(renderApproval, 10);
 
-  if (!S.fields.reassessDate) S.fields.reassessDate = sixMonths(S.fields.assessDate);
+  if (!S.fields.reassessDate) {
+    // Hasty missions (SAR, crash documentation) are one-time; nothing to revisit later. Fixed
+    // sites default to a real 6-month date. Either can be overridden by the RPIC either way.
+    S.fields.reassessDate = S.fields.assessmentType === 'hasty' ? 'N/A' : sixMonths(S.fields.assessDate);
+    if (S.fields.reassessDate === 'N/A' && !S.fields.reassessTriggers) S.fields.reassessTriggers = 'N/A';
+  }
+  const reassessNA = S.fields.reassessDate === 'N/A';
   const reassess = document.createElement('div');
   reassess.innerHTML =
-    '<div class="field-row"><div class="field-group"><label>Reassessment date</label><input type="date" data-field="reassessDate" value="' + esc(S.fields.reassessDate) + '"></div>' +
-    '<div class="field-group"><label>Conditions requiring reassessment</label><input type="text" data-field="reassessTriggers" value="' + esc(S.fields.reassessTriggers) + '" placeholder="Infrastructure, staging, C2, construction, seasonal"></div></div>';
+    '<div class="checkbox-group" style="margin-bottom:8px;"><input type="checkbox" id="reassessNA"' + (reassessNA ? ' checked' : '') + '>' +
+    '<label for="reassessNA">N/A, no reassessment needed (one-time or hasty mission)</label></div>' +
+    '<div class="field-row" id="reassessFields" style="display:' + (reassessNA ? 'none' : '') + ';">' +
+    '<div class="field-group"><label>Reassessment date</label><input type="date" data-field="reassessDate" value="' + esc(reassessNA ? sixMonths(S.fields.assessDate) : S.fields.reassessDate) + '"></div>' +
+    '<div class="field-group"><label>Conditions requiring reassessment</label><input type="text" data-field="reassessTriggers" value="' + esc(reassessNA ? '' : S.fields.reassessTriggers) + '" placeholder="Infrastructure, staging, C2, construction, seasonal"></div></div>';
   body.appendChild(reassess);
   bindFields(reassess);
+  reassess.querySelector('#reassessNA').addEventListener('change', function () {
+    const fieldsWrap = reassess.querySelector('#reassessFields');
+    if (this.checked) {
+      S.fields.reassessDate = 'N/A'; S.fields.reassessTriggers = 'N/A';
+      fieldsWrap.style.display = 'none';
+    } else {
+      S.fields.reassessDate = sixMonths(S.fields.assessDate); S.fields.reassessTriggers = '';
+      fieldsWrap.querySelector('[data-field=reassessDate]').value = S.fields.reassessDate;
+      fieldsWrap.querySelector('[data-field=reassessTriggers]').value = '';
+      fieldsWrap.style.display = '';
+    }
+    save(); renderDetermination();
+    clearTimeout(window._apprTO); window._apprTO = setTimeout(renderApproval, 180);
+  });
 
   const gate = document.createElement('div');
   gate.id = 'rpicGate';
