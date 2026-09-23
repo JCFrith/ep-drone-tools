@@ -1676,10 +1676,6 @@ function renderEv(c, key, visible) {
   if (c.ev === 'tree') return open + '<div class="fg-label">Photos</div><div class="photo-upload-area" id="photos-trees"></div>' +
     '<div class="field-row" style="margin-top:8px;"><div><div class="fg-label">Max height (ft)</div><input type="number" step="any" data-field="treeMaxHeight" value="' + esc(S.fields.treeMaxHeight) + '"></div>' +
     '<div><div class="fg-label">Proximity to route (ft)</div><input type="number" step="any" data-field="treeProximity" value="' + esc(S.fields.treeProximity) + '"></div></div></div>';
-  if (c.ev === 'autodate') {
-    if (!S.fields.reassessDate) { S.fields.reassessDate = sixMonths(S.fields.assessDate); save(); }
-    return open + '<div class="fg-label">Reassessment date (default 6 months)</div><input type="date" data-field="reassessDate" value="' + esc(S.fields.reassessDate) + '"></div>';
-  }
   return '';
 }
 
@@ -2115,7 +2111,7 @@ function localToRow(rec) {
     max_agl: rec.remoteAgl || null,
     blocking_count: rec.remoteBlocking || 0,
     review_count: rec.remoteReview || 0,
-    reassess_date: f.reassessDate || null,
+    reassess_date: (f.reassessDate && f.reassessDate !== 'N/A') ? f.reassessDate : null,
     tool_version: TOOL_VER,
     rules_version: (RULES && RULES.version) || null,
     cow_ref: COW_REF,
