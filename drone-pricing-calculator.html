@@ -12,22 +12,20 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drone Security Program - Pricing Calculator | Enhanced Patrol</title>
-    <style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
+<style>
         @font-face {
-            font-family: 'Gotham Bold';
+            font-family: 'Gotham Bold'; font-display: swap;
             font-weight: 700;
             src: url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Bold.ttf') format('truetype');
         }
         @font-face {
-            font-family: 'Gotham Book';
+            font-family: 'Gotham Book'; font-display: swap;
             font-weight: 400;
             src: url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Book.ttf') format('truetype');
         }
-        @font-face {
-            font-family: 'Bebas Neue';
-            src: url('https://enhancedpatrol.com/wp-content/uploads/elementor/google-fonts/fonts/bebasneue-97dafd13.woff2') format('woff2');
-        }
-
         :root {
             --ep-navy:      #0B1923;
             --ep-navy-card: #0f2233;
@@ -42,7 +40,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Gotham Book', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--ep-navy);
             color: var(--ep-white);
             line-height: 1.6;
@@ -81,7 +79,7 @@
             display: block;
             padding: 28px 18px;
             color: var(--ep-white);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.9rem;
             font-weight: 600;
             letter-spacing: 1px;
@@ -105,7 +103,7 @@
             display: block;
             padding: 11px 22px;
             color: var(--ep-white);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.83rem;
             border-bottom: 1px solid rgba(255,255,255,0.04);
             transition: color 0.2s, background 0.2s;
@@ -119,7 +117,7 @@
             padding: 13px 24px;
             border: 1px solid var(--ep-gold);
             color: var(--ep-white);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.8rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -145,7 +143,7 @@
             display: block;
             padding: 13px 30px;
             color: var(--ep-white);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.88rem;
             border-bottom: 1px solid rgba(255,255,255,0.05);
         }
@@ -159,7 +157,7 @@
             border-bottom: 1px solid rgba(252,192,14,0.15);
         }
         .breadcrumb {
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.82rem;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -180,7 +178,7 @@
             margin-bottom: 10px;
         }
         .page-hero-sub {
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             color: var(--ep-gray);
             font-size: 0.88rem;
             letter-spacing: 1px;
@@ -209,7 +207,7 @@
         }
 
         .panel-title {
-            font-family: 'Gotham Bold', sans-serif;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.72rem;
             font-weight: 700;
             text-transform: uppercase;
@@ -225,7 +223,7 @@
 
         label {
             display: block;
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.72rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -240,7 +238,7 @@
             background: var(--ep-navy-deep);
             border: 1px solid rgba(255,255,255,0.12);
             color: var(--ep-white);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.92rem;
             border-radius: 0;
             -webkit-appearance: none;
@@ -281,7 +279,7 @@
             padding: 11px 14px;
             color: #ff7b89;
             font-size: 0.78rem;
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-weight: 600;
             margin-bottom: 14px;
             line-height: 1.5;
@@ -300,7 +298,7 @@
             display: block; width: 100%; padding: 13px; margin-top: 10px;
             background: transparent; color: var(--ep-gray);
             border: 1px solid rgba(255,255,255,0.12);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.72rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 1.5px;
             cursor: pointer; transition: border-color 0.25s, color 0.25s;
@@ -310,7 +308,7 @@
         .export-btn {
             display: block; width: 100%; padding: 16px; margin-top: 28px;
             background: var(--ep-gold); color: var(--ep-navy); border: none;
-            font-family: 'Gotham Bold', sans-serif;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.82rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 2px;
             cursor: pointer; transition: opacity 0.25s;
@@ -325,7 +323,7 @@
             margin-bottom: 20px;
         }
         .summary-box-title {
-            font-family: 'Gotham Bold', sans-serif;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.65rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 3px;
             color: var(--ep-gold); margin-bottom: 14px;
@@ -336,14 +334,14 @@
         }
         .summary-row:last-child { border-bottom: none; }
         .summary-row span:first-child { color: var(--ep-gray); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
-        .summary-row span:last-child { color: var(--ep-white); font-family: 'Gotham Bold', sans-serif; font-weight: 700; }
+        .summary-row span:last-child { color: var(--ep-white); font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700; }
         .summary-row.total { margin-top: 14px; padding-top: 18px; border-top: 2px solid var(--ep-gold); border-bottom: none; }
-        .summary-row.total span:first-child { color: var(--ep-white); font-family: 'Gotham Bold', sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
+        .summary-row.total span:first-child { color: var(--ep-white); font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1px; }
         .summary-row.total span:last-child { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--ep-gold); letter-spacing: 2px; }
 
         .toggle-details {
             display: inline-block; cursor: pointer; color: var(--ep-gold);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.72rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 1.5px;
             margin: 8px 0 20px;
@@ -353,7 +351,7 @@
         .toggle-details:hover { opacity: 0.75; }
 
         #detailSection h3 {
-            font-family: 'Gotham Bold', sans-serif;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.65rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 3px;
             color: var(--ep-gold); margin: 28px 0 14px;
@@ -365,7 +363,7 @@
         th {
             background: var(--ep-navy-deep); color: var(--ep-gray);
             padding: 11px 13px; text-align: left;
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.68rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 1.5px;
             border-bottom: 2px solid var(--ep-gold);
@@ -376,7 +374,7 @@
 
         tr.section-header td {
             background: rgba(252,192,14,0.07); color: var(--ep-gold);
-            font-family: 'Gotham Bold', sans-serif;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.65rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 2.5px;
             padding: 9px 13px;
@@ -384,18 +382,18 @@
             border-bottom: 1px solid rgba(252,192,14,0.15);
         }
         tr.subtotal td {
-            color: var(--ep-gold); font-family: 'Gotham Bold', sans-serif; font-weight: 700;
+            color: var(--ep-gold); font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700;
             background: rgba(252,192,14,0.04);
             border-bottom: 1px solid rgba(252,192,14,0.15);
         }
         tr.grand-total td {
             background: var(--ep-gold); color: var(--ep-navy);
-            font-family: 'Gotham Bold', sans-serif; font-weight: 700;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700;
             font-size: 0.88rem; padding: 14px 13px;
         }
         tr.grand-total-sub td {
             background: #c49a2e; color: var(--ep-navy);
-            font-family: 'Gotham Bold', sans-serif; font-weight: 700;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700;
             font-size: 0.8rem; padding: 11px 13px;
             border-bottom: 1px solid rgba(0,0,0,0.08);
         }
@@ -428,7 +426,7 @@
         .footer-badge img { width: 52px; height: auto; }
 
         .footer-col h4 {
-            font-family: 'Gotham Bold', sans-serif; font-size: 0.82rem; font-weight: 700;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 700;
             color: var(--ep-white); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;
         }
         .footer-col ul { list-style: none; }
@@ -444,14 +442,14 @@
         .footer-newsletter input[type="email"] {
             width: 100%; padding: 10px 13px;
             background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.1);
-            color: var(--ep-white); font-family: 'Gotham Book', sans-serif;
+            color: var(--ep-white); font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.84rem; margin-bottom: 10px; border-radius: 0;
         }
         .footer-newsletter input[type="text"]:focus,
         .footer-newsletter input[type="email"]:focus { outline: none; border-color: var(--ep-gold); }
         .footer-newsletter input[type="submit"] {
             width: 100%; padding: 12px; background: var(--ep-gold); color: var(--ep-navy);
-            border: none; font-family: 'Gotham Bold', sans-serif;
+            border: none; font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.78rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: opacity 0.25s;
         }
@@ -490,7 +488,7 @@
         }
 
         .dock-label {
-            font-family: 'Gotham Bold', sans-serif;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.65rem;
             font-weight: 700;
             text-transform: uppercase;
@@ -520,7 +518,7 @@
         }
 
         .drone-slot-label {
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.66rem;
             text-transform: uppercase;
             letter-spacing: 0.8px;
@@ -536,7 +534,7 @@
         }
 
         .dock-included-badge {
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.7rem;
             color: var(--ep-blue);
             padding: 6px 14px 10px;
@@ -557,7 +555,7 @@
         }
 
         .dock-builder-empty {
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.78rem;
             color: var(--ep-gray);
             padding: 12px 0 6px;
@@ -591,7 +589,7 @@
         }
 
         .kit-card-label {
-            font-family: 'Gotham Bold', sans-serif;
+            font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.65rem; font-weight: 700;
             text-transform: uppercase; letter-spacing: 2px;
             color: var(--ep-gold); white-space: nowrap;
@@ -628,7 +626,7 @@
             background: var(--ep-navy);
             border: 1px solid rgba(255,255,255,0.1);
             color: var(--ep-white);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.85rem; text-align: center;
             border-radius: 0;
         }
@@ -636,7 +634,7 @@
 
         .kit-comp-unit { color: var(--ep-gray); font-size: 0.72rem; text-align: right; }
         .kit-comp-total { color: var(--ep-white); font-size: 0.78rem; text-align: right;
-                          font-family: 'Gotham Bold', sans-serif; font-weight: 700; }
+                          font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700; }
 
         .kit-subtotal {
             display: flex; justify-content: space-between;
@@ -646,14 +644,14 @@
             font-size: 0.75rem;
         }
         .kit-subtotal span:first-child { color: var(--ep-gray); text-transform: uppercase; letter-spacing: 1px; }
-        .kit-subtotal span:last-child { color: var(--ep-gold); font-family: 'Gotham Bold', sans-serif; font-weight: 700; }
+        .kit-subtotal span:last-child { color: var(--ep-gold); font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700; }
 
         .kit-add-btn {
             display: block; width: 100%;
             background: transparent;
             border: 1px dashed rgba(252,192,14,0.3);
             color: var(--ep-gold);
-            font-family: 'Gotham Book', sans-serif;
+            font-family: 'Gotham Book', 'Montserrat', sans-serif;
             font-size: 0.72rem; font-weight: 600;
             text-transform: uppercase; letter-spacing: 1.5px;
             padding: 10px; cursor: pointer;
@@ -705,7 +703,7 @@
                 color: #FCC00E !important;
             }
             .print-header-sub {
-                font-family: 'Gotham Book', sans-serif;
+                font-family: 'Gotham Book', 'Montserrat', sans-serif;
                 font-size: 0.68rem;
                 text-transform: uppercase;
                 letter-spacing: 1.5px;
@@ -814,7 +812,7 @@
         .auth-field input {
             width: 100%; padding: 10px 12px;
             background: var(--ep-navy); border: 1px solid rgba(255,255,255,0.15);
-            color: var(--ep-white); font-family: 'Gotham Book', sans-serif; font-size: 0.9rem;
+            color: var(--ep-white); font-family: 'Gotham Book', 'Montserrat', sans-serif; font-size: 0.9rem;
         }
         .auth-field input:focus { outline: none; border-color: var(--ep-gold); }
         .auth-error {
@@ -824,7 +822,7 @@
         .auth-btn {
             width: 100%; padding: 12px;
             background: var(--ep-gold); color: var(--ep-navy);
-            border: none; font-family: 'Gotham Bold', sans-serif;
+            border: none; font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.85rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 1px; cursor: pointer; margin-top: 6px;
         }
@@ -855,7 +853,7 @@
             display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;
         }
         .ep-modal-btn-primary, .ep-modal-btn-secondary {
-            padding: 10px 18px; font-family: 'Gotham Bold', sans-serif;
+            padding: 10px 18px; font-family: 'Gotham Bold', 'Montserrat', sans-serif;
             font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
             letter-spacing: 0.5px; cursor: pointer; border: none;
         }
@@ -874,7 +872,7 @@
         }
         .load-quote-row:hover { background: rgba(252,192,14,0.05); }
         .load-quote-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
-        .load-quote-name { font-family: 'Gotham Bold', sans-serif; font-size: 0.88rem; color: var(--ep-white); }
+        .load-quote-name { font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-size: 0.88rem; color: var(--ep-white); }
         .load-quote-date { font-size: 0.72rem; color: var(--ep-gray); }
         .load-quote-delete {
             background: none; border: none; color: var(--ep-gray);
@@ -1320,6 +1318,37 @@
 <script>
 
 // ── SUPABASE AUTH ────────────────────────────────────────────────────────────
+
+// ── NOTICES (native alert/confirm are silently blocked in some in-app browsers) ──
+function epToast(msg, isErr) {
+    var t = document.getElementById('epToast');
+    if (!t) {
+        t = document.createElement('div'); t.id = 'epToast';
+        t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:90vw;z-index:3000;padding:12px 18px;font-size:0.85rem;line-height:1.4;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,0.5);transition:opacity 0.25s;';
+        document.body.appendChild(t);
+    }
+    t.style.background = isErr ? '#3a1414' : '#0f2233';
+    t.style.border = '1px solid ' + (isErr ? '#c0392b' : '#FCC00E');
+    t.style.color = '#fff';
+    t.textContent = msg; t.style.opacity = '1'; t.style.display = 'block';
+    clearTimeout(t._h); t._h = setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { t.style.display = 'none'; }, 260); }, isErr ? 6000 : 3200);
+}
+function epConfirm(message, yesLabel, onYes) {
+    var bd = document.createElement('div');
+    bd.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:3100;display:flex;align-items:center;justify-content:center;padding:20px;';
+    bd.innerHTML = '<div style="background:#0f2233;border:1px solid #FCC00E;max-width:420px;width:100%;padding:20px;">' +
+        '<p style="color:#fff;margin:0 0 16px;font-size:0.9rem;line-height:1.5;"></p>' +
+        '<div style="display:flex;gap:10px;justify-content:flex-end;"><button class="kit-add-btn" data-a="no">Cancel</button>' +
+        '<button class="kit-add-btn" data-a="yes" style="background:#c0392b;border-color:#c0392b;color:#fff;"></button></div></div>';
+    bd.querySelector('p').textContent = message;
+    bd.querySelector('[data-a=yes]').textContent = yesLabel || 'Confirm';
+    document.body.appendChild(bd);
+    var close = function () { bd.remove(); };
+    bd.addEventListener('click', function (e) { if (e.target === bd) close(); });
+    bd.querySelector('[data-a=no]').addEventListener('click', close);
+    bd.querySelector('[data-a=yes]').addEventListener('click', function () { close(); onYes(); });
+}
+
 var sb = supabase.createClient(
     'https://oaztzgvxxloiesorfjlf.supabase.co',
     'sb_publishable_iYK9cCY1xdqn2hZtPyzczA_oBa56LBN'
@@ -1355,7 +1384,9 @@ async function checkAuthAndAuthorization() {
     if (!session) { showLogin(); return; }
     currentUser = session.user;
 
-    var allowResult = await sb.from('pricing_authorized_users').select('email').eq('email', currentUser.email);
+    var allowResult;
+    try { allowResult = await sb.from('pricing_authorized_users').select('email').eq('email', (currentUser.email || '').toLowerCase()); }
+    catch (e) { allowResult = { error: e }; }
     if (allowResult.error || !allowResult.data || allowResult.data.length === 0) {
         showNotAuthorized();
         return;
@@ -1373,7 +1404,12 @@ async function doLogin() {
     var btn = el('loginBtn');
     btn.disabled = true; btn.textContent = 'Signing in...';
 
-    var result = await sb.auth.signInWithPassword({ email: email, password: password });
+    var result;
+    try {
+        result = await sb.auth.signInWithPassword({ email: email, password: password });
+    } catch (e) {
+        result = { error: { message: 'Could not reach the server. Check your connection and try again.' } };
+    }
 
     btn.disabled = false; btn.textContent = 'Sign In';
 
@@ -1394,8 +1430,10 @@ async function doSignOut() {
     try { checkAuthAndAuthorization(); } catch (e) { console.error('EP auth check error:', e); }
     var loginBtn = el('loginBtn');
     if (loginBtn) loginBtn.addEventListener('click', doLogin);
-    var loginPasswordEl = el('loginPassword');
-    if (loginPasswordEl) loginPasswordEl.addEventListener('keydown', function(e) { if (e.key === 'Enter') doLogin(); });
+    ['loginEmail', 'loginPassword'].forEach(function (id) {
+        var f = el(id);
+        if (f) f.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); doLogin(); } });
+    });
     var signOutBtn = el('signOutBtn');
     if (signOutBtn) signOutBtn.addEventListener('click', doSignOut);
     var signOutBtn2 = el('signOutBtnNotAuth');
@@ -2372,7 +2410,7 @@ function adminAddKit(kitType) {
     }, 30);
 }
 async function saveAdmin() {
-    if (!IS_ADMIN) { alert('Your account is not flagged admin.'); return; }
+    if (!IS_ADMIN) { epToast('Your account is not flagged admin.', true); return; }
     var st = el('adminStatus'); if (st) st.textContent = 'Saving...';
     var who = currentUser ? currentUser.email : null, now = new Date().toISOString();
     try {
@@ -2395,7 +2433,7 @@ async function saveAdmin() {
         if (el('adminStatus')) el('adminStatus').textContent = 'Saved ' + now.slice(0, 19).replace('T', ' ') + ' UTC. ' + PRICING_STATUS;
     } catch (e) {
         if (el('adminStatus')) el('adminStatus').textContent = 'Save failed: ' + (e.message || e);
-        alert('Save failed: ' + (e.message || e));
+        epToast('Save failed: ' + (e.message || e), true);
     }
 }
 
@@ -2424,7 +2462,7 @@ async function confirmSaveQuote() {
     var nameInput = el('saveClientName');
     var dateInput = el('saveQuoteDate');
     var clientName = (nameInput.value || '').trim();
-    if (!clientName) { alert('Enter a client name.'); return; }
+    if (!clientName) { epToast('Enter a client name.', true); return; }
     var quoteDate = dateInput.value || new Date().toISOString().slice(0, 10);
 
     var payload = {
@@ -2447,12 +2485,12 @@ async function confirmSaveQuote() {
     if (btn) { btn.disabled = false; btn.textContent = 'Save Quote'; }
 
     if (result.error) {
-        alert('Save failed: ' + result.error.message);
+        epToast('Save failed: ' + result.error.message, true);
         return;
     }
     if (result.data && result.data[0]) editingQuoteId = result.data[0].id;
     closeSaveModal();
-    alert('Quote saved.');
+    epToast('Quote saved.');
 }
 
 // ── CLOUD LOAD ────────────────────────────────────────────────────────────────
@@ -2514,7 +2552,7 @@ function closeLoadModal() {
 async function loadQuoteById(id) {
     var result = await sb.from('pricing_quotes').select('*').eq('id', id).single();
     if (result.error || !result.data) {
-        alert('Failed to load quote: ' + (result.error ? result.error.message : 'not found'));
+        epToast('Failed to load quote: ' + (result.error ? result.error.message : 'not found'), true);
         return;
     }
     applyQuoteData(result.data.quote_data || {}, result.data.updated_at || result.data.created_at);
@@ -2524,15 +2562,17 @@ async function loadQuoteById(id) {
     if (nameInput) nameInput.value = result.data.client_name;
     if (dateInput) dateInput.value = result.data.quote_date;
     closeLoadModal();
-    alert('Quote loaded: ' + result.data.client_name);
+    epToast('Quote loaded: ' + result.data.client_name);
 }
 
-async function deleteQuoteById(id, rowEl) {
-    if (!confirm('Delete this saved quote? This cannot be undone.')) return;
-    var result = await sb.from('pricing_quotes').delete().eq('id', id);
-    if (result.error) { alert('Delete failed: ' + result.error.message); return; }
-    if (rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
-    if (editingQuoteId === id) editingQuoteId = null;
+function deleteQuoteById(id, rowEl) {
+    epConfirm('Delete this saved quote? This cannot be undone.', 'Delete', async function () {
+        var result = await sb.from('pricing_quotes').delete().eq('id', id);
+        if (result.error) { epToast('Delete failed: ' + result.error.message, true); return; }
+        if (rowEl && rowEl.parentNode) rowEl.parentNode.removeChild(rowEl);
+        if (editingQuoteId === id) editingQuoteId = null;
+        epToast('Quote deleted.');
+    });
 }
 
 // ── GLOBAL FALLBACK - works even if DOMContentLoaded misfires ───────────────────
@@ -2625,7 +2665,7 @@ function exportClientPDF() {
     var today = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
     var f = q.fleet;
-    var maint_label = q.maintenanceLevel === 10000 ? 'Basic' : (q.maintenanceLevel === 20000 ? 'Standard' : 'Premium');
+    var maint_label = ({ 10000: 'Basic', 20000: 'Standard', 40000: 'Premium' })[q.maintenanceLevel] || 'Custom';
 
     // ── AGGREGATE COSTS INTO CLIENT CATEGORIES ─────────────────────────────
     // Hardware & Setup = all setup costs
@@ -2680,18 +2720,20 @@ function exportClientPDF() {
     });
 
     // ── SUMMARY TOTALS ─────────────────────────────────────────────────────
-    var annualRecurring = q.annualTotal;
+    // Financed: annual price includes amortized hardware, matching the monthly figure.
+    // Paid up front: annual price is services only, and hardware is the one-time line above.
+    var annualRecurring = q.annPrice;
     var monthlyPrice    = q.monthlyPrice;
     var contractTotal   = q.contractTotal;
 
     var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">'
         + '<title>Enhanced Patrol - Client Quote</title>'
-        + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap">'
+        + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;700&display=swap">'
         + '<style>'
         + '@font-face{font-family:"Gotham Bold";font-weight:700;src:url("https://enhancedpatrol.com/wp-content/uploads/2024/09/GothamBold.woff2") format("woff2")}'
         + '@font-face{font-family:"Gotham Book";font-weight:400;src:url("https://enhancedpatrol.com/wp-content/uploads/2024/09/GothamBook.woff2") format("woff2")}'
         + '*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}'
-        + 'body{background:#0B1923;color:#fff;font-family:"Gotham Book",Arial,sans-serif;font-size:9.5pt;}'
+        + 'body{background:#0B1923;color:#fff;font-family:"Gotham Book",Montserrat,Arial,sans-serif;font-size:9.5pt;}'
         + '.page{max-width:760px;margin:0 auto;padding:0 0 40px;}'
         + '.header{display:flex;align-items:center;justify-content:space-between;padding:28px 36px 22px;background:#0B1923;border-bottom:3px solid #FCC00E;}'
         + '.header img{width:170px;}'
@@ -2701,18 +2743,18 @@ function exportClientPDF() {
         + '.section{margin:0 36px;padding:22px 0 0;}'
         + '.section-title{font-family:"Bebas Neue",sans-serif;font-size:1rem;letter-spacing:3px;color:#FCC00E;border-bottom:1px solid rgba(252,192,14,0.25);padding-bottom:8px;margin-bottom:14px;}'
         + '.fleet-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.85rem;color:#ccc;}'
-        + '.fleet-row span:last-child{color:#fff;font-family:"Gotham Bold",Arial,sans-serif;}'
+        + '.fleet-row span:last-child{color:#fff;font-family:"Gotham Bold",Montserrat,Arial,sans-serif;}'
         + '.cost-card{background:#0f2233;border:1px solid rgba(252,192,14,0.12);margin-bottom:2px;}'
-        + '.cost-card-title{background:#091520;padding:11px 16px;font-family:"Gotham Bold",Arial,sans-serif;font-size:0.8rem;letter-spacing:1px;color:#FCC00E;text-transform:uppercase;border-bottom:1px solid rgba(252,192,14,0.15);}'
+        + '.cost-card-title{background:#091520;padding:11px 16px;font-family:"Gotham Bold",Montserrat,Arial,sans-serif;font-size:0.8rem;letter-spacing:1px;color:#FCC00E;text-transform:uppercase;border-bottom:1px solid rgba(252,192,14,0.15);}'
         + '.cost-row{display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.05);}'
         + '.cost-row span:first-child{color:#9A9A9A;font-size:0.85rem;}'
-        + '.cost-row span:last-child{color:#fff;font-family:"Gotham Bold",Arial,sans-serif;}'
+        + '.cost-row span:last-child{color:#fff;font-family:"Gotham Bold",Montserrat,Arial,sans-serif;}'
         + '.cost-sub{display:flex;justify-content:space-between;padding:7px 16px 7px 28px;border-bottom:1px solid rgba(255,255,255,0.04);}'
         + '.cost-sub span:first-child{color:#6a8a9a;font-size:0.78rem;}'
         + '.cost-sub span:last-child{color:#9A9A9A;font-size:0.85rem;}'
         + '.total-card{background:#FCC00E;padding:14px 20px;display:flex;justify-content:space-between;align-items:center;margin-top:2px;}'
         + '.total-card.sub{background:#c49a2e;padding:11px 20px;}'
-        + '.total-label{font-family:"Gotham Bold",Arial,sans-serif;font-size:0.85rem;color:#0B1923;text-transform:uppercase;letter-spacing:1px;}'
+        + '.total-label{font-family:"Gotham Bold",Montserrat,Arial,sans-serif;font-size:0.85rem;color:#0B1923;text-transform:uppercase;letter-spacing:1px;}'
         + '.total-value{font-family:"Bebas Neue",sans-serif;font-size:1.5rem;color:#0B1923;letter-spacing:1px;}'
         + '.total-card.sub .total-value{font-size:1.15rem;}'
         + '.divider{height:1px;background:rgba(252,192,14,0.1);margin:22px 36px;}'
@@ -2741,10 +2783,12 @@ function exportClientPDF() {
         +   '<div class="section-title">Program Costs</div>'
         +   '<div class="cost-card"><div class="cost-card-title">Hardware &amp; Setup</div>' + hwSection + '</div>'
         +   '<div style="margin-top:8px;"></div>'
-        +   '<div class="cost-card"><div class="cost-card-title">Annual Maintenance Program (' + maint_label + ')</div>'
-        +     '<div class="cost-row"><span>DFR Maintenance - ' + maint_label + ' Program</span><span>' + fmtN(maintenanceTotal) + '/yr</span></div>'
-        +   '</div>'
-        +   '<div style="margin-top:8px;"></div>'
+        +   (maintenanceTotal > 0
+              ? '<div class="cost-card"><div class="cost-card-title">Annual Maintenance Program (' + maint_label + ')</div>'
+              +   '<div class="cost-row"><span>DFR Maintenance - ' + maint_label + ' Program</span><span>' + fmtN(maintenanceTotal) + '/yr</span></div>'
+              + '</div>'
+              + '<div style="margin-top:8px;"></div>'
+              : '')
         +   '<div class="cost-card"><div class="cost-card-title">Annual Piloting Services (' + q.laborLabel + ')</div>'
         +     (pilotLine  ? '<div class="cost-row"><span>Remote Pilots &times; ' + q.pilots + '</span><span>' + fmtN(pilotLine.total) + '/yr</span></div>' : '')
         +     (supvLine   ? '<div class="cost-row"><span>Shift Supervisors &times; ' + q.supervisors + '</span><span>' + fmtN(supvLine.total) + '/yr</span></div>' : '')
@@ -2755,7 +2799,7 @@ function exportClientPDF() {
         + '<div class="divider"></div>'
         + '<div class="section">'
         +   '<div class="section-title">Program Summary</div>'
-        +   '<div class="total-card sub"><span class="total-label">Annual Recurring</span><span class="total-value">' + fmtN(annualRecurring) + '/yr</span></div>'
+        +   '<div class="total-card sub"><span class="total-label">' + (q.payUpfront ? 'Annual Recurring' : 'Annual Price (incl. financed hardware)') + '</span><span class="total-value">' + fmtN(annualRecurring) + '/yr</span></div>'
         +   '<div style="margin-top:2px;"></div>'
         +   '<div class="total-card sub"><span class="total-label">Monthly Price</span><span class="total-value">' + fmtN(monthlyPrice) + '/mo</span></div>'
         +   '<div style="margin-top:2px;"></div>'
@@ -2770,9 +2814,29 @@ function exportClientPDF() {
         + '<script>window.onload=function(){window.print();}<\/script>'
         + '</body></html>';
 
-    var win = window.open('', '_blank');
-    win.document.write(html);
-    win.document.close();
+    var win = null;
+    try { win = window.open('', '_blank'); } catch (e) { win = null; }
+    if (win && win.document) {
+        win.document.write(html);
+        win.document.close();
+        return;
+    }
+    // Pop-up blocked: show the quote in an overlay on this page and print from there.
+    var old = document.getElementById('pdfOverlay'); if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.id = 'pdfOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:3200;background:#0B1923;display:flex;flex-direction:column;';
+    ov.innerHTML = '<div style="display:flex;gap:10px;justify-content:flex-end;padding:10px;border-bottom:2px solid #FCC00E;">' +
+        '<button class="kit-add-btn" id="pdfPrintBtn">Print / Save PDF</button><button class="kit-add-btn" id="pdfCloseBtn">Close</button></div>' +
+        '<iframe id="pdfFrame" style="flex:1;border:0;width:100%;background:#0B1923;"></iframe>';
+    document.body.appendChild(ov);
+    var fr = document.getElementById('pdfFrame');
+    fr.srcdoc = html.replace('<script>window.onload=function(){window.print();}<\/script>', '');
+    document.getElementById('pdfCloseBtn').addEventListener('click', function () { ov.remove(); });
+    document.getElementById('pdfPrintBtn').addEventListener('click', function () {
+        try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { epToast('Printing is not available in this browser. Open this page in Safari or Chrome.', true); }
+    });
+    epToast('Pop-ups are blocked here, so the quote opened on this page.');
 }
 
 

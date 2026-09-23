@@ -15,10 +15,12 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
 <style>
-@font-face{font-family:'Gotham Bold';font-weight:700;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Bold.ttf') format('truetype');}
-@font-face{font-family:'Gotham Book';font-weight:400;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Book.ttf') format('truetype');}
-@font-face{font-family:'Bebas Neue';src:url('https://enhancedpatrol.com/wp-content/uploads/elementor/google-fonts/fonts/bebasneue-97dafd13.woff2') format('woff2');}
+@font-face{font-family:'Gotham Bold'; font-display: swap;font-weight:700;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Bold.ttf') format('truetype');}
+@font-face{font-family:'Gotham Book'; font-display: swap;font-weight:400;src:url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Book.ttf') format('truetype');}
 :root{
 --ep-navy:#0B1923;--ep-navy-card:#0f2233;--ep-navy-deep:#091520;
 --ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;
@@ -27,7 +29,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 a{text-decoration:none;color:inherit;}
-body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ep-navy);color:var(--ep-white);line-height:1.6;-webkit-font-smoothing:antialiased;}
+body{font-family:'Gotham Book', 'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ep-navy);color:var(--ep-white);line-height:1.6;-webkit-font-smoothing:antialiased;}
 :focus-visible{outline:2px solid var(--ep-gold);outline-offset:2px;}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
 
@@ -61,7 +63,7 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 .page-hero h1{font-family:'Bebas Neue',sans-serif;font-size:4.2rem;letter-spacing:3.5px;line-height:1;margin-bottom:10px;}
 .page-hero-sub{color:var(--ep-gray);font-size:0.86rem;letter-spacing:1px;text-transform:uppercase;}
 .ver-stamp{margin-top:10px;font-size:0.68rem;letter-spacing:1.4px;text-transform:uppercase;color:var(--ep-gray);}
-.ver-stamp b{color:var(--ep-gold);font-family:'Gotham Bold',sans-serif;font-weight:700;}
+.ver-stamp b{color:var(--ep-gold);font-family:'Gotham Bold', 'Montserrat',sans-serif;font-weight:700;}
 .ver-stamp .sep{opacity:0.4;margin:0 7px;}
 .ver-stamp .remote{color:var(--ep-blue);}
 @media(max-width:700px){.page-hero{padding:32px 20px 24px;}.page-hero h1{font-size:2.6rem;letter-spacing:2px;}}
@@ -78,14 +80,14 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 .type-toggle-btn.active{background:var(--ep-gold);color:var(--ep-navy,#0d1b2e);}
 .type-toggle-btn:not(.active):hover{background:rgba(252,192,14,0.1);color:var(--ep-white);}
 
-.mini-btn{font-family:'Gotham Bold',sans-serif;font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px;background:transparent;border:1px solid rgba(255,255,255,0.14);color:var(--ep-gray);cursor:pointer;transition:border-color 0.2s,color 0.2s;white-space:nowrap;}
+.mini-btn{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;padding:10px 14px;background:transparent;border:1px solid rgba(255,255,255,0.14);color:var(--ep-gray);cursor:pointer;transition:border-color 0.2s,color 0.2s;white-space:nowrap;}
 .mini-btn:hover{border-color:var(--ep-gold);color:var(--ep-gold);}
 .mini-btn.danger:hover{border-color:var(--ep-block);color:var(--ep-block);}
 
 /* ── DETERMINATION CARD (signature) ── */
 .determination{background:linear-gradient(180deg,var(--ep-navy-card) 0%,var(--ep-navy-deep) 100%);border:1px solid rgba(252,192,14,0.28);border-left:4px solid var(--ep-gold);margin-bottom:20px;}
 .det-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:14px 20px 0;flex-wrap:wrap;}
-.det-eyebrow{font-family:'Gotham Bold',sans-serif;font-size:0.62rem;letter-spacing:2.6px;text-transform:uppercase;color:var(--ep-gold);}
+.det-eyebrow{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.62rem;letter-spacing:2.6px;text-transform:uppercase;color:var(--ep-gold);}
 .det-cow{font-size:0.68rem;color:var(--ep-gray);letter-spacing:0.5px;}
 .det-prov{font-family:'Bebas Neue',sans-serif;font-size:2.5rem;line-height:1.05;letter-spacing:1.5px;padding:2px 20px 0;}
 .det-provsub{padding:0 20px 12px;font-size:0.78rem;color:var(--ep-gray);}
@@ -94,7 +96,7 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 .det-cell:last-child{border-right:none;}
 .det-cell .k{font-size:0.6rem;text-transform:uppercase;letter-spacing:1.6px;color:var(--ep-gray);margin-bottom:5px;}
 .det-cell .v{font-family:'Bebas Neue',sans-serif;font-size:1.85rem;line-height:1;letter-spacing:1px;}
-.det-cell .v.small{font-family:'Gotham Bold',sans-serif;font-size:0.82rem;line-height:1.35;letter-spacing:0.3px;}
+.det-cell .v.small{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.82rem;line-height:1.35;letter-spacing:0.3px;}
 .det-cell .v.unresolved{color:var(--ep-open);}
 .det-cell .n{font-size:0.66rem;color:var(--ep-gray);margin-top:5px;line-height:1.4;}
 @media(max-width:800px){.det-grid{grid-template-columns:repeat(2,1fr);}.det-cell:nth-child(2n){border-right:none;}.det-cell{border-top:1px solid rgba(255,255,255,0.06);}}
@@ -102,7 +104,7 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 .det-findings{border-top:1px solid rgba(252,192,14,0.15);padding:12px 18px 16px;}
 .finding{display:flex;gap:10px;align-items:flex-start;padding:7px 0;font-size:0.8rem;line-height:1.45;}
 .finding + .finding{border-top:1px solid rgba(255,255,255,0.05);}
-.tag{flex-shrink:0;font-family:'Gotham Bold',sans-serif;font-size:0.56rem;letter-spacing:1.3px;text-transform:uppercase;padding:3px 7px;margin-top:2px;color:var(--ep-navy);}
+.tag{flex-shrink:0;font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.56rem;letter-spacing:1.3px;text-transform:uppercase;padding:3px 7px;margin-top:2px;color:var(--ep-navy);}
 .tag.block{background:var(--ep-block);color:#fff;}
 .tag.open{background:var(--ep-open);color:var(--ep-navy);}
 .tag.warn{background:var(--ep-warn);}
@@ -118,7 +120,7 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 
 /* ── ACTION BAR ── */
 .action-bar{display:flex;gap:10px;justify-content:flex-end;margin-bottom:20px;flex-wrap:wrap;}
-.action-btn{font-family:'Gotham Bold',sans-serif;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:13px 22px;border:none;cursor:pointer;transition:all 0.25s;display:inline-flex;align-items:center;gap:8px;}
+.action-btn{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:13px 22px;border:none;cursor:pointer;transition:all 0.25s;display:inline-flex;align-items:center;gap:8px;}
 .action-btn.export{background:var(--ep-gold);color:var(--ep-navy);}
 .action-btn.export:hover{opacity:0.85;}
 .action-btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.14);color:var(--ep-gray);}
@@ -131,7 +133,7 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 .section-header{padding:16px 22px;cursor:pointer;display:flex;align-items:center;gap:14px;user-select:none;transition:background 0.15s;-webkit-tap-highlight-color:transparent;}
 .section-header:hover{background:rgba(252,192,14,0.03);}
 .section-num{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--ep-gold);min-width:34px;text-align:center;}
-.section-title{font-family:'Gotham Bold',sans-serif;font-size:0.7rem;flex:1;text-transform:uppercase;letter-spacing:2.6px;}
+.section-title{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.7rem;flex:1;text-transform:uppercase;letter-spacing:2.6px;}
 .section-progress{font-size:0.72rem;color:var(--ep-gray);white-space:nowrap;}
 .section-toggle{color:var(--ep-gray);font-size:1.1rem;transition:transform 0.2s;}
 .section.open .section-toggle{transform:rotate(180deg);}
@@ -176,7 +178,7 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 .field-group label,.fg-label{display:block;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);margin-bottom:7px;}
 input[type="text"],input[type="date"],input[type="number"],input[type="email"],input[type="tel"],textarea,select{
   width:100%;padding:11px 14px;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,0.12);color:var(--ep-white);
-  font-family:'Gotham Book',sans-serif;font-size:0.92rem;border-radius:0;-webkit-appearance:none;transition:border-color 0.25s;
+  font-family:'Gotham Book', 'Montserrat',sans-serif;font-size:0.92rem;border-radius:0;-webkit-appearance:none;transition:border-color 0.25s;
 }
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--ep-gold);}
 textarea{resize:vertical;min-height:60px;}
@@ -224,18 +226,18 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 /* ── C2 TABLE ── */
 .c2-table{width:100%;border-collapse:collapse;margin-top:8px;}
-.c2-table th{font-family:'Gotham Bold',sans-serif;font-size:0.64rem;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);text-align:left;padding:8px;border-bottom:2px solid var(--ep-gold);background:var(--ep-navy-deep);}
+.c2-table th{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.64rem;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);text-align:left;padding:8px;border-bottom:2px solid var(--ep-gold);background:var(--ep-navy-deep);}
 .c2-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.04);}
 .c2-table input,.c2-table select{width:100%;padding:8px 10px;font-size:0.8rem;}
 .c2-table td.dcell{padding:6px 8px;}
-.c2-des{width:100%;padding:8px 10px;font-size:0.8rem;font-family:'Gotham Bold',sans-serif;letter-spacing:1px;text-transform:uppercase;}
+.c2-des{width:100%;padding:8px 10px;font-size:0.8rem;font-family:'Gotham Bold', 'Montserrat',sans-serif;letter-spacing:1px;text-transform:uppercase;}
 .c2-des.green{background:rgba(48,164,108,0.18);border-color:var(--ep-ok);color:#7BE0AE;}
 .c2-des.yellow{background:rgba(245,165,36,0.18);border-color:var(--ep-warn);color:#FFD08A;}
 .c2-des.red{background:rgba(229,72,77,0.18);border-color:var(--ep-block);color:#FF9EA1;}
 .c2-key{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:10px 0 14px;}
 @media(max-width:700px){.c2-key{grid-template-columns:1fr;}}
 .c2-key div{padding:10px 12px;background:var(--ep-navy-deep);border-left:3px solid var(--ep-gray);font-size:0.74rem;line-height:1.5;color:var(--ep-gray);}
-.c2-key div b{display:block;font-family:'Gotham Bold',sans-serif;font-size:0.64rem;letter-spacing:1.6px;text-transform:uppercase;margin-bottom:4px;}
+.c2-key div b{display:block;font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.64rem;letter-spacing:1.6px;text-transform:uppercase;margin-bottom:4px;}
 .c2-key .kg{border-left-color:var(--ep-ok);} .c2-key .kg b{color:#7BE0AE;}
 .c2-key .ky{border-left-color:var(--ep-warn);} .c2-key .ky b{color:#FFD08A;}
 .c2-key .kr{border-left-color:var(--ep-block);} .c2-key .kr b{color:#FF9EA1;}
@@ -246,17 +248,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .c2-roll.green{border-left-color:var(--ep-ok);} .c2-roll.green .v{color:#7BE0AE;}
 .c2-roll.yellow{border-left-color:var(--ep-warn);} .c2-roll.yellow .v{color:#FFD08A;}
 .c2-roll.red{border-left-color:var(--ep-block);} .c2-roll.red .v{color:#FF9EA1;}
-.c2-add-row{margin-top:10px;font-size:0.72rem;color:var(--ep-gold);cursor:pointer;display:inline-block;padding:4px 0;font-family:'Gotham Bold',sans-serif;letter-spacing:1.2px;text-transform:uppercase;background:none;border:none;}
+.c2-add-row{margin-top:10px;font-size:0.72rem;color:var(--ep-gold);cursor:pointer;display:inline-block;padding:4px 0;font-family:'Gotham Bold', 'Montserrat',sans-serif;letter-spacing:1.2px;text-transform:uppercase;background:none;border:none;}
 
 /* ── MAP ── */
 .map-container{margin-bottom:16px;}
 .map-container>label{display:block;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ep-gray);margin-bottom:7px;}
 .map-wrap{overflow:hidden;border:1px solid rgba(252,192,14,0.12);position:relative;}
 #locationMap{height:280px;width:100%;background:var(--ep-navy-deep);}
-.map-locate-btn{position:absolute;bottom:12px;right:12px;z-index:800;background:var(--ep-gold);color:var(--ep-navy);border:none;padding:11px 18px;font-family:'Gotham Bold',sans-serif;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
+.map-locate-btn{position:absolute;bottom:12px;right:12px;z-index:800;background:var(--ep-gold);color:var(--ep-navy);border:none;padding:11px 18px;font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.4);-webkit-tap-highlight-color:transparent;}
 .map-coords-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:12px;}
 @media(max-width:640px){.map-coords-row{grid-template-columns:1fr;}}
-.btn-lookup{background:transparent;border:1px solid var(--ep-gold);color:var(--ep-gold);padding:11px 18px;font-family:'Gotham Bold',sans-serif;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;cursor:pointer;height:44px;}
+.btn-lookup{background:transparent;border:1px solid var(--ep-gold);color:var(--ep-gold);padding:11px 18px;font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.7rem;text-transform:uppercase;letter-spacing:1px;cursor:pointer;height:44px;}
 .map-addr-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin-top:12px;}
 @media(max-width:640px){.map-addr-row{grid-template-columns:1fr;}}
 .map-hint{font-size:0.7rem;color:var(--ep-gray);margin-top:8px;line-height:1.45;}
@@ -270,28 +272,28 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .appr[data-d="review"]{border-left-color:var(--ep-warn);}
 .appr[data-d="no"]{border-left-color:var(--ep-block);}
 .appr-head{padding:14px 18px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-.appr-head .k{font-family:'Gotham Bold',sans-serif;font-size:0.6rem;letter-spacing:2.4px;text-transform:uppercase;color:var(--ep-gray);}
+.appr-head .k{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.6rem;letter-spacing:2.4px;text-transform:uppercase;color:var(--ep-gray);}
 .appr-head .v{font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:1.5px;line-height:1;}
 .appr[data-d="ok"] .appr-head .v{color:#7BE0AE;}
 .appr[data-d="review"] .appr-head .v{color:#FFD08A;}
 .appr[data-d="no"] .appr-head .v{color:#FF9EA1;}
 .appr-counts{display:flex;gap:16px;font-size:0.7rem;color:var(--ep-gray);padding:0 18px 12px;flex-wrap:wrap;}
-.appr-counts b{color:var(--ep-white);font-family:'Gotham Bold',sans-serif;}
+.appr-counts b{color:var(--ep-white);font-family:'Gotham Bold', 'Montserrat',sans-serif;}
 .appr-grp{border-top:1px solid rgba(255,255,255,0.07);padding:12px 18px;}
-.appr-grp h5{font-family:'Gotham Bold',sans-serif;font-size:0.62rem;letter-spacing:1.8px;text-transform:uppercase;color:var(--ep-gold);margin-bottom:8px;}
+.appr-grp h5{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.62rem;letter-spacing:1.8px;text-transform:uppercase;color:var(--ep-gold);margin-bottom:8px;}
 .appr-row.jump{cursor:pointer;} .appr-row.jump:hover{background:rgba(252,192,14,0.06);} .appr-row.jump .appr-id{text-decoration:underline;text-underline-offset:2px;}
 .ep-flash{animation:epflash 1.6s ease-out;}
 @keyframes epflash{0%,20%{background:rgba(252,192,14,0.28);box-shadow:0 0 0 4px rgba(252,192,14,0.28);}100%{background:transparent;box-shadow:none;}}
 .appr-row{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:0.78rem;line-height:1.45;border-top:1px solid rgba(255,255,255,0.04);}
 .appr-row:first-of-type{border-top:none;}
-.appr-id{flex-shrink:0;font-family:'Gotham Bold',sans-serif;font-size:0.62rem;letter-spacing:0.6px;color:var(--ep-gray);min-width:66px;padding-top:2px;}
+.appr-id{flex-shrink:0;font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.62rem;letter-spacing:0.6px;color:var(--ep-gray);min-width:66px;padding-top:2px;}
 .appr-sp{color:var(--ep-gold);font-size:0.68rem;white-space:nowrap;}
 .appr ul{margin:0 0 0 17px;font-size:0.77rem;line-height:1.5;}
 .appr li{margin-bottom:4px;}
 .appr-ver{padding:10px 18px 14px;font-size:0.66rem;color:var(--ep-gray);line-height:1.5;border-top:1px solid rgba(255,255,255,0.07);}
 
 /* ── SYNC ── */
-.sync-chip{font-family:'Gotham Bold',sans-serif;font-size:0.6rem;letter-spacing:1.4px;text-transform:uppercase;padding:6px 10px;border:1px solid transparent;white-space:nowrap;}
+.sync-chip{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.6rem;letter-spacing:1.4px;text-transform:uppercase;padding:6px 10px;border:1px solid transparent;white-space:nowrap;}
 .sync-chip.ok{color:#7BE0AE;border-color:rgba(48,164,108,0.45);background:rgba(48,164,108,0.1);}
 .sync-chip.pending{color:#FFD08A;border-color:rgba(245,165,36,0.45);background:rgba(245,165,36,0.1);}
 .sync-chip.off{color:var(--ep-gray);border-color:rgba(255,255,255,0.14);}
@@ -317,17 +319,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 #adminStats{display:flex;gap:22px;flex-wrap:wrap;padding:0 22px 14px;font-size:0.72rem;color:var(--ep-gray);text-transform:uppercase;letter-spacing:1.2px;}
 #adminStats b{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:var(--ep-white);letter-spacing:1px;margin-right:5px;}
 #adminTabs{display:flex;gap:0;border-bottom:1px solid rgba(252,192,14,0.2);padding:0 22px;}
-.adm-tab{background:none;border:none;border-bottom:3px solid transparent;color:var(--ep-gray);font-family:'Gotham Bold',sans-serif;font-size:0.68rem;letter-spacing:1.8px;text-transform:uppercase;padding:12px 16px;cursor:pointer;}
+.adm-tab{background:none;border:none;border-bottom:3px solid transparent;color:var(--ep-gray);font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.68rem;letter-spacing:1.8px;text-transform:uppercase;padding:12px 16px;cursor:pointer;}
 .adm-tab.on{color:var(--ep-gold);border-bottom-color:var(--ep-gold);}
 .adm-tab:hover{color:var(--ep-white);}
 .admin-search{padding:14px 22px 0;}
 .admin-search input{max-width:340px;}
 .adm-scroll{overflow-x:auto;padding:14px 22px 22px;}
 .adm-table{width:100%;border-collapse:collapse;font-size:0.78rem;}
-.adm-table th{font-family:'Gotham Bold',sans-serif;font-size:0.6rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--ep-gray);text-align:left;padding:9px 10px;border-bottom:2px solid var(--ep-gold);white-space:nowrap;}
+.adm-table th{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.6rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--ep-gray);text-align:left;padding:9px 10px;border-bottom:2px solid var(--ep-gold);white-space:nowrap;}
 .adm-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.05);vertical-align:middle;}
 .adm-table tbody tr:hover{background:rgba(252,192,14,0.04);}
-.st-pill{display:inline-block;font-family:'Gotham Bold',sans-serif;font-size:0.56rem;letter-spacing:1.1px;text-transform:uppercase;padding:3px 7px;white-space:nowrap;}
+.st-pill{display:inline-block;font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.56rem;letter-spacing:1.1px;text-transform:uppercase;padding:3px 7px;white-space:nowrap;}
 .st-ok{background:rgba(48,164,108,0.18);color:#7BE0AE;}
 .st-warn{background:rgba(245,165,36,0.18);color:#FFD08A;}
 .st-no{background:rgba(229,72,77,0.18);color:#FF9EA1;}
@@ -353,13 +355,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .footer-social a:hover{border-color:var(--ep-gold);color:var(--ep-gold);}
 .footer-badge{display:flex;align-items:center;gap:10px;font-size:0.72rem;color:var(--ep-gray);}
 .footer-badge img{width:52px;height:auto;}
-.footer-col h4{font-family:'Gotham Bold',sans-serif;font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--ep-gold);margin-bottom:14px;}
+.footer-col h4{font-family:'Gotham Bold', 'Montserrat',sans-serif;font-size:0.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--ep-gold);margin-bottom:14px;}
 .footer-col ul{list-style:none;}
 .footer-col li{margin-bottom:9px;}
 .footer-col a{font-size:0.8rem;color:var(--ep-gray);transition:color 0.2s;}
 .footer-col a:hover{color:var(--ep-gold);}
 .footer-newsletter input{margin-bottom:9px;font-size:0.82rem;padding:10px 12px;}
-.footer-newsletter input[type="submit"]{background:var(--ep-gold);color:var(--ep-navy);border:none;font-family:'Gotham Bold',sans-serif;text-transform:uppercase;letter-spacing:1.2px;cursor:pointer;font-size:0.7rem;}
+.footer-newsletter input[type="submit"]{background:var(--ep-gold);color:var(--ep-navy);border:none;font-family:'Gotham Bold', 'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:1.2px;cursor:pointer;font-size:0.7rem;}
 .footer-bottom{max-width:1280px;margin:36px auto 0;padding:20px 0 26px;border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .footer-bottom-links{display:flex;gap:20px;}
 .footer-bottom-links a,.footer-bottom-copy{font-size:0.74rem;color:var(--ep-gray);}
@@ -622,10 +624,17 @@ let PHOTOS = {};
 let INDEXLIST = [];
 let EXTERNAL_OK = localStorage.getItem('ep-sa-external') !== 'off';
 
+function hastyTag(type, gc) {
+  if (type !== 'hasty') return '';
+  if (gc === 'ground_crew_complete') return '[HASTY: ready for RPIC] ';
+  if (gc === 'rejected') return '[HASTY: sent back] ';
+  return '[HASTY: ground crew] ';
+}
 function label(a) {
-  const n = (a.fields && a.fields.siteName) ? a.fields.siteName : 'Untitled site';
-  const d = (a.fields && a.fields.assessDate) ? a.fields.assessDate : (a.created || '').split('T')[0];
-  return n + '  |  ' + d;
+  const f = a.fields || {};
+  const n = f.siteName ? f.siteName : 'Untitled site';
+  const d = f.assessDate ? f.assessDate : (a.created || '').split('T')[0];
+  return hastyTag(f.assessmentType, f.groundCrewStatus) + n + '  |  ' + d;
 }
 function esc(v) {
   return String(v === undefined || v === null ? '' : v)
@@ -1027,11 +1036,12 @@ function classify() {
   if (over) {
     if (assembly) add('block', 'An open-air assembly of persons is present. Overflight is prohibited on every pathway. The coordination alternative in the superseded certificate no longer exists.', 'Overflight, Open-Air Assembly Prohibition (SP 13(c)), Overflight, Open-Air Assembly Prohibition (SP 14(a)), Overflight, Open-Air Assembly Prohibition (SP 15(a))');
     if (oomv === 'sustained') add('block', 'Sustained operations over non-participants or moving vehicles (loitering, hovering, continuous or sequential overflight) are prohibited on every pathway.', 'Overflight, No Sustained Operations (SP 13(d)), Overflight, No Sustained Operations (SP 14(b)), Overflight, No Sustained Operations (SP 15(b))');
-    if (voCount < 1 && out.prov === 'Shielded Operations (SP 11)') add('note', 'No VO is required by the certificate for overflight of non-participants. The VO requirement of the superseded certificate (old Special Provision 33 (SP 33)) does not exist in 107W-2026-01762. VO or DAA is driven only by non-shielded classification.', 'Non-Shielded Operations (SP 12)');
+    if (voCount < 1 && out.prov === 'Shielded Operations (SP 11)') add('note', 'No VO is required by the certificate for overflight of non-participants. The overflight VO requirement of the superseded certificate does not exist in 107W-2026-01762. VO or DAA is driven only by non-shielded classification.', 'Non-Shielded Operations (SP 12)');
   } else if (oomv === 'sustained') {
     add('block', 'Sustained operations over moving vehicles are prohibited.', 'Overflight, No Sustained Operations (SP 13(d)), Overflight, No Sustained Operations (SP 14(b)), Overflight, No Sustained Operations (SP 15(b))');
   }
 
+  if (grid === 0) add(uasfm ? 'block' : 'warn', 'The published UASFM grid at this site is 0 ft. UASFM Grid Operations / NOTAM Requirement (SP 16) does not authorize any altitude here; flight requires a separate ATC authorization' + (uasfm ? '.' : ', which this site is marked as relying on. Confirm it is in hand.'), 'UASFM Grid Operations / NOTAM Requirement (SP 16)');
   // ---- Non-shielded mitigation ----
   if (out.prov === 'Non-Shielded Operations (SP 12)' && (daa === 'none' || daa === '') && voCount < 1) {
     out.provName = 'Not a waiver operation';
@@ -1088,7 +1098,7 @@ function renderDetermination() {
   ).join('');
   el.innerHTML =
     '<div class="det-head"><div class="det-eyebrow">Governing Provision</div><div class="det-cow">' + esc(COW_REF) + '</div></div>' +
-    '<div class="det-prov">' + esc(d.prov) + ' &nbsp;<span style="font-size:1.3rem;color:var(--ep-gold)">' + esc(d.provName) + '</span></div>' +
+    '<div class="det-prov">' + esc(d.prov) + (d.prov.indexOf(d.provName) === -1 ? ' &nbsp;<span style="font-size:1.3rem;color:var(--ep-gold)">' + esc(d.provName) + '</span>' : '') + '</div>' +
     '<div class="det-provsub">' + esc(d.provText) + '</div>' +
     '<div class="det-grid">' +
     '<div class="det-cell"><div class="k">Max altitude</div><div class="v">' + aglVal + '</div><div class="n">' + esc(d.aglNote) + '</div></div>' +
@@ -1147,7 +1157,7 @@ const SECTIONS = [
       '<div class="field-row">' + fText('rpicReviewing', 'RPIC reviewing') +
         fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment', 'Both']) + '</div>' +
       '<div class="field-row">' +
-        fSel('daytimeAssessment', 'Conducted as a daytime site assessment', YN, 'EP practice, carried over from the superseded certificate (old SP 38). Record daylight assessment or sufficient illumination.') +
+        fSel('daytimeAssessment', 'Conducted as a daytime site assessment', YN, 'EP practice, carried over from the superseded certificate. Record daylight assessment or sufficient illumination.') +
         fSel('lighting', 'Area sufficiently illuminated for night operations', ['Yes', 'No', 'Day operations only']) +
       '</div>' +
       '<div class="hint">Assessed against ' + esc(COW_REF) + '. This certificate supersedes 107W-2025-04534; assessments made under the prior certificate must be re-verified item by item.</div>';
@@ -1220,7 +1230,7 @@ const SECTIONS = [
         fNum('acCount', 'Aircraft operating simultaneously', '1') +
       '</div>') +
       (hasty ? '<div class="hint">PRS minimum deployment height and aircraft count are completed by the RPIC.</div>' :
-      '<div class="hint">No blanket MTOW ceiling in this certificate. Weight caps apply only to overflight of non-participants: 0.88 lb (SP 15), 8.8 lb non-PRS on a restricted site (SP 13), 10 lb PRS-equipped (SP 14). PRS is a pathway, not a general equipment requirement. SP 17 permits up to 6 aircraft on the Flight Management System named in the waiver application.</div>');
+      '<div class="hint">No blanket MTOW ceiling in this certificate. Weight caps apply only to overflight of non-participants: 0.88 lb (Overflight of Non-Participants at or Under 0.88 lb (SP 15)), 8.8 lb non-PRS on a restricted site (Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13)), 10 lb PRS-equipped (PRS-Equipped Overflight of Non-Participants (SP 14)). PRS is a pathway, not a general equipment requirement. Multiple UAS Operations (SP 17) permits up to 6 aircraft on the Flight Management System named in the waiver application.</div>');
     bindFields(body);
   },
   checks: [
@@ -1265,7 +1275,7 @@ const SECTIONS = [
 {
   id: 'shield', num: '5', title: 'Shielding Geometry Validation',
   fields(body) {
-    body.innerHTML = '<p class="hint" style="margin-bottom:12px;">Validate against SP 11: 200 ft AGL, or 100 ft above the obstruction within a 100 ft radius of the aircraft, never above 400 ft AGL. The UASFM grid height takes precedence where one applies. Do not enter an assumed value. Obstruction height itself is recorded once, in Section 1.</p>' +
+    body.innerHTML = '<p class="hint" style="margin-bottom:12px;">Validate against Shielded Operations (SP 11): 200 ft AGL, or 100 ft above the obstruction within a 100 ft radius of the aircraft, never above 400 ft AGL. The UASFM grid height takes precedence where one applies. Do not enter an assumed value. Obstruction height itself is recorded once, in Section 1.</p>' +
       '<div class="field-row">' + fSel('shieldMethod', 'Height verification method', ['On-site measurement', 'GIS or satellite survey', 'Engineering plans or facility records']) + '<span></span></div>' +
       fArea('shieldSegments', 'Segment-by-segment shielding record', 'Segment, obstruction type, height, continuity, classification');
     bindFields(body);
@@ -1380,9 +1390,9 @@ function renderRecap() {
   if (!el) return;
   const f = S.fields;
   const d = classify();
-  const item = (k, v, warn) => '<div class="recap-item"><div class="k">' + k + '</div><div class="v' + (warn ? ' warn' : '') + '">' + (v === '' || v === null || v === undefined ? '\u2014' : esc(String(v))) + '</div></div>';
+  const item = (k, v, warn) => '<div class="recap-item"><div class="k">' + k + '</div><div class="v' + (warn ? ' warn' : '') + '">' + (v === '' || v === null || v === undefined ? 'Not set' : esc(String(v))) + '</div></div>';
   const overText = f.oopExpected === 'Yes' ? 'Yes' : 'No';
-  const oomvText = { none: 'None', transient: 'Transient', sustained: 'Sustained' }[f.oomvMode] || '\u2014';
+  const oomvText = { none: 'None', transient: 'Transient', sustained: 'Sustained' }[f.oomvMode] || 'Not set';
   const plannedAlt = num(f.plannedAlt);
   const overCeiling = d.ready && d.agl !== null && plannedAlt !== null && plannedAlt > d.agl;
   const blockCount = d.findings ? d.findings.filter(x => x.level === 'block').length : 0;
@@ -1394,17 +1404,17 @@ function renderRecap() {
   html += item('Date', f.assessDate);
   html += item('Launch method', f.launchMethod);
   html += item('Governing provision', d.ready ? d.provName : 'Not yet determined');
-  html += item('Max altitude', d.ready && d.agl !== null ? d.agl + ' ft AGL' : '\u2014');
+  html += item('Max altitude', d.ready && d.agl !== null ? d.agl + ' ft AGL' : 'Not set');
   html += item('Planned altitude', plannedAlt !== null ? plannedAlt + ' ft AGL' : 'Not set', overCeiling);
-  html += item('Lateral constraint', d.ready ? (d.lateral || '\u2014') : '\u2014');
-  html += item('Range / coverage', d.ready ? (d.range || '\u2014') : '\u2014');
-  html += item('Overflight pathway', d.ready ? d.oonp : '\u2014');
+  html += item('Lateral constraint', d.ready ? (d.lateral || 'Not set') : 'Not set');
+  html += item('Range / coverage', d.ready ? (d.range || 'Not set') : 'Not set');
+  html += item('Overflight pathway', d.ready ? d.oonp : 'Not set');
   html += item('Over non-participants', overText);
   html += item('Over moving vehicles', oomvText);
-  html += item('Aircraft weight', f.mtow ? f.mtow + ' lb' : '\u2014');
-  html += item('PRS equipped', f.prsEquipped || '\u2014');
-  if (d.ready && d.prov === 'SP 12') {
-    html += item('DAA status', { none: 'Not used', active: 'Active', compromised: 'Compromised' }[f.daaStatus] || '\u2014');
+  html += item('Aircraft weight', f.mtow ? f.mtow + ' lb' : 'Not set');
+  html += item('PRS equipped', f.prsEquipped || 'Not set');
+  if (d.ready && d.prov.indexOf('(SP 12)') !== -1) {
+    html += item('DAA status', { none: 'Not used', active: 'Active', compromised: 'Compromised' }[f.daaStatus] || 'Not set');
     html += item('VO count', f.voCount || '0');
   }
   html += item('Blocking findings', blockCount, blockCount > 0);
@@ -1757,7 +1767,7 @@ function renderC2Rollup() {
 function buildC2(body) {
   const c2 = document.createElement('div');
   c2.innerHTML = '<div class="section-divider"></div><div class="fg-label">C2 validation, by route segment</div>' +
-    '<p class="hint" style="margin-bottom:6px;">SP 18(a)(2) requires the RPIC to validate that C2 signal strength is sufficient for control through the entire route. Designate each segment. Record what was observed rather than platform readings.</p>' +
+    '<p class="hint" style="margin-bottom:6px;">Site Survey, C2 Signal Validation (SP 18(a)(ii)) requires the RPIC to validate that C2 signal strength is sufficient for control through the entire route. Designate each segment. Record what was observed rather than platform readings.</p>' +
     '<div class="c2-key">' +
       '<div class="kg"><b>Green</b>Continuous control and telemetry for the full segment. No dropouts, no link warnings. Command response and video stable.</div>' +
       '<div class="ky"><b>Yellow</b>Control maintained throughout, but degraded somewhere in the segment. Intermittent video, brief telemetry lag, or link warnings without loss of control. Record the restriction.</div>' +
@@ -2073,13 +2083,19 @@ function renderAuthBar() {
 }
 function openSignIn() { document.getElementById('signInModal').classList.add('open'); setTimeout(function(){var e=document.getElementById('siEmail'); if(e) e.focus();}, 60); }
 function closeSignIn() { document.getElementById('signInModal').classList.remove('open'); }
+['siEmail', 'siPass'].forEach(function (id) {
+  var el = document.getElementById(id);
+  if (el) el.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); doSignIn(); } });
+});
 function doSignIn() {
   var c = sbClient(); if (!c) { showToast('Sync library did not load', true); return; }
   var email = document.getElementById('siEmail').value.trim();
   var pw = document.getElementById('siPass').value;
   if (!email || !pw) { showToast('Enter email and password', true); return; }
   var btn = document.getElementById('siBtn'); btn.disabled = true; btn.textContent = 'Signing in';
-  c.auth.signInWithPassword({ email: email, password: pw }).then(function (r) {
+  c.auth.signInWithPassword({ email: email, password: pw }).catch(function (e) {
+    return { error: { message: 'Could not reach the server (' + (e && e.message ? e.message : 'network error') + '). Check your connection and try again.' } };
+  }).then(function (r) {
     btn.disabled = false; btn.textContent = 'Sign in';
     if (r.error) { showToast(r.error.message, true); return; }
     SESSION = r.data.session; closeSignIn(); renderAuthBar();
@@ -2126,7 +2142,7 @@ async function pushOne(rec) {
   if (isCurrent) {
     var d = classify(), r = evaluateRules();
     rec.remoteStatus = statusEnum();
-    rec.remoteProv = d.ready ? (d.prov + ' ' + d.provName) : null;
+    rec.remoteProv = d.ready ? (d.provName === 'Not a waiver operation' ? 'Not a waiver operation (' + d.prov + ')' : d.prov) : null;
     rec.remoteAgl = d.agl || null;
     rec.remotePathway = d.ready ? (d.oonp || null) : null;
     rec.remoteBlocking = r.failed.length; rec.remoteReview = r.review.length;
@@ -2166,23 +2182,36 @@ async function pushPhotos(rec) {
     var all = await idbAll('photos');
     all.filter(function (x) { return x.id === rec.id; }).forEach(function (x) { store[x.key] = x.items || []; });
   }
-  var existing = await c.from('assessment_media').select('id,photo_key,seq').eq('assessment_id', rec.remote_id);
+  var existing = await c.from('assessment_media').select('id,photo_key,seq,size_bytes,storage_key').eq('assessment_id', rec.remote_id);
   var have = {};
-  (existing.data || []).forEach(function (m) { have[m.photo_key + '|' + m.seq] = true; });
+  (existing.data || []).forEach(function (m) { have[m.photo_key + '|' + m.seq] = m; });
+  var keep = {};
   for (var key in store) {
     var items = store[key] || [];
     for (var i = 0; i < items.length; i++) {
-      if (have[key + '|' + i]) continue;
       var blob = dataUrlToBlob(items[i]);
       if (!blob) continue;
+      var slot = key + '|' + i, prior = have[slot];
+      keep[slot] = true;
+      if (prior && prior.size_bytes === blob.size) continue;   // unchanged
       var path = 'assessments/' + rec.remote_id + '/' + key + '-' + i + '.jpg';
       var up = await c.storage.from('media').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
       if (up.error) { console.warn('photo upload failed', path, up.error.message); continue; }
-      await c.from('assessment_media').insert({
-        assessment_id: rec.remote_id, photo_key: key, seq: i, storage_key: path,
-        filename: key + '-' + i + '.jpg', content_type: 'image/jpeg', size_bytes: blob.size
-      });
+      if (prior) {
+        await c.from('assessment_media').update({ size_bytes: blob.size, storage_key: path }).eq('id', prior.id);
+      } else {
+        await c.from('assessment_media').insert({
+          assessment_id: rec.remote_id, photo_key: key, seq: i, storage_key: path,
+          filename: key + '-' + i + '.jpg', content_type: 'image/jpeg', size_bytes: blob.size
+        });
+      }
     }
+  }
+  // Photos removed on this device: remove them on the server too, or the RPIC keeps seeing them.
+  var gone = (existing.data || []).filter(function (m) { return !keep[m.photo_key + '|' + m.seq]; });
+  if (gone.length) {
+    await c.storage.from('media').remove(gone.map(function (m) { return m.storage_key; }));
+    for (var g = 0; g < gone.length; g++) await c.from('assessment_media').delete().eq('id', gone[g].id);
   }
 }
 function dataUrlToBlob(d) {
@@ -2198,8 +2227,13 @@ function dataUrlToBlob(d) {
 async function pullList() {
   var c = sbClient(); if (!c) return [];
   var res = await c.from('site_assessments')
-    .select('id,site_name,assess_date,status,updated_at,device_id,blocking_count')
+    .select('id,site_name,assess_date,status,updated_at,device_id,blocking_count,atype:payload->fields->>assessmentType,gcstatus:payload->fields->>groundCrewStatus')
     .order('updated_at', { ascending: false }).limit(200);
+  if (res.error) {
+    res = await c.from('site_assessments')
+      .select('id,site_name,assess_date,status,updated_at,device_id,blocking_count')
+      .order('updated_at', { ascending: false }).limit(200);
+  }
   if (res.error) throw res.error;
   REMOTE = res.data || [];
   return REMOTE;
@@ -2215,6 +2249,12 @@ async function pullOne(remoteId) {
   rec.fields = p.fields || {}; rec.checks = p.checks || {}; rec.notes = p.notes || {};
   rec.c2rows = (p.c2rows && p.c2rows.length) ? migrateC2(p.c2rows) : blankC2();
   rec.updated = row.updated_at; rec.synced_at = row.updated_at; rec.dirty = false;
+  // Stamp the layout/certificate the server copy was saved under, so migrateLegacy clears check
+  // slots whose meaning has since changed. Without this, a record pulled onto a new device took
+  // the current version and kept old checkmarks sitting on different items.
+  rec.tool = row.tool_version || (p.fields && p.fields.__tool) || '0';
+  rec.cow = row.cow_ref || rec.cow;
+  rec = migrateLegacy(rec);
   await idbPut('assessments', JSON.parse(JSON.stringify(rec)));
   var med = await c.from('assessment_media').select('photo_key,seq,storage_key').eq('assessment_id', remoteId).order('seq');
   var grouped = {};
@@ -2438,34 +2478,35 @@ async function adminDelete(id, name) {
   var msg = 'Permanently delete "' + (name || 'this assessment') + '" from the server?\n\n' +
             'Removes the assessment record' + (keys.length ? ', ' + keys.length + ' photo file(s)' : '') +
             ' and any copy on this device.\n\nThis cannot be undone.';
-  if (!confirm(msg)) return;
-  try {
-    if (keys.length) {
-      var rm = await c.storage.from('media').remove(keys);
-      if (rm.error) console.warn('storage remove', rm.error.message);
-    }
-    var del = await c.from('site_assessments').delete().eq('id', id);
-    if (del.error) throw del.error;
+  inlineConfirm(msg, 'Delete permanently', async function () {
+    try {
+      if (keys.length) {
+        var rm = await c.storage.from('media').remove(keys);
+        if (rm.error) console.warn('storage remove', rm.error.message);
+      }
+      var del = await c.from('site_assessments').delete().eq('id', id);
+      if (del.error) throw del.error;
 
-    // Purge the local copy so sync does not try to update a row that is gone.
-    var locals = (await idbAll('assessments')).filter(function (a) { return a.remote_id === id; });
-    var removedCurrent = false;
-    for (var i = 0; i < locals.length; i++) {
-      await deletePhotosFor(locals[i].id);
-      await idbDel('assessments', locals[i].id);
-      if (locals[i].id === S.id) removedCurrent = true;
+      // Purge the local copy so sync does not try to update a row that is gone.
+      var locals = (await idbAll('assessments')).filter(function (a) { return a.remote_id === id; });
+      var removedCurrent = false;
+      for (var i = 0; i < locals.length; i++) {
+        await deletePhotosFor(locals[i].id);
+        await idbDel('assessments', locals[i].id);
+        if (locals[i].id === S.id) removedCurrent = true;
+      }
+      ADMIN.assessments = ADMIN.assessments.filter(function (x) { return x.id !== id; });
+      REMOTE = (REMOTE || []).filter(function (x) { return x.id !== id; });
+      renderAdmin();
+      if (removedCurrent) {
+        var rest = (await idbAll('assessments')).sort(function (a, b) { return (b.updated || '').localeCompare(a.updated || ''); });
+        if (rest.length) { await openAssessment(rest[0].id); } else { newAssessment(); }
+      } else { refreshPicker(); }
+      showToast('Deleted "' + (name || 'assessment') + '"');
+    } catch (e) {
+      showToast('Delete failed: ' + e.message, true);
     }
-    ADMIN.assessments = ADMIN.assessments.filter(function (x) { return x.id !== id; });
-    REMOTE = (REMOTE || []).filter(function (x) { return x.id !== id; });
-    renderAdmin();
-    if (removedCurrent) {
-      var rest = (await idbAll('assessments')).sort(function (a, b) { return (b.updated || '').localeCompare(a.updated || ''); });
-      if (rest.length) { await openAssessment(rest[0].id); } else { newAssessment(); }
-    } else { refreshPicker(); }
-    showToast('Deleted "' + (name || 'assessment') + '"');
-  } catch (e) {
-    showToast('Delete failed: ' + e.message, true);
-  }
+  });
 }
 function adminOpen(remoteId) { closeAdmin(); openRemote(remoteId); }
 function adminExport() {
@@ -2498,7 +2539,7 @@ function refreshPicker() {
     if (only.length) {
       html += '<optgroup label="On server, not on this device">' + only.map(r =>
         '<option class="remote-opt" value="remote:' + r.id + '">' +
-        esc((r.site_name || 'Untitled site') + '  |  ' + (r.assess_date || '')) + '</option>').join('') + '</optgroup>';
+        esc(hastyTag(r.atype, r.gcstatus) + (r.site_name || 'Untitled site') + '  |  ' + (r.assess_date || '')) + '</option>').join('') + '</optgroup>';
     }
     sel.innerHTML = html;
     renderAuthBar();
@@ -2623,7 +2664,14 @@ function duplicateAssessment() {
   src.fields.siteName = (src.fields.siteName || 'Untitled') + ' (copy)';
   src.fields.approvalDecision = ''; src.fields.approvalConditions = ''; src.fields.approvalReasons = '';
   src.fields.assessDate = now.split('T')[0];
-  src.fields.reassessDate = '';
+  src.fields.reassessDate = ''; src.fields.reassessTriggers = '';
+  // A copy is a new assessment: it must not write to the original's server row, and nobody has
+  // reviewed or signed it yet.
+  delete src.remote_id; delete src.synced_at; src.dirty = true;
+  ['rpicAttested', 'rpicAttestedAt', 'rpicAttestedBy', 'approverName', 'approverCert', 'openItemsAck',
+   'groundCrewCompletedAt', 'groundCrewBy', 'rpicRejectionNote', 'rpicRejectedBy', 'rpicRejectedAt'].forEach(k => { src.fields[k] = ''; });
+  if (src.fields.assessmentType === 'hasty') src.fields.groundCrewStatus = 'in_progress';
+  delete src.legacyCow; delete src.legacyTool; delete src.legacyMigrated; delete src.legacyToolMigrated;
   S = src; PHOTOS = srcPhotos;
   const writes = Object.keys(PHOTOS).map(k => idbPut('photos', { pk: S.id + '|' + k, id: S.id, key: k, items: PHOTOS[k] }));
   Promise.all(writes.concat([idbPut('assessments', JSON.parse(JSON.stringify(S)))]))
@@ -2631,15 +2679,16 @@ function duplicateAssessment() {
 }
 function deleteAssessment() {
   const name = (S.fields && S.fields.siteName) || 'this assessment';
-  if (!confirm('Delete "' + name + '" and all of its photos? This cannot be undone.')) return;
-  const gone = S.id;
-  Promise.all([idbDel('assessments', gone), deletePhotosFor(gone)])
-    .then(() => idbAll('assessments'))
-    .then(all => {
-      const next = all.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''))[0];
-      if (next) { openAssessment(next.id); showToast('Assessment deleted'); }
-      else { newAssessment(); showToast('Assessment deleted'); }
-    });
+  inlineConfirm('Delete "' + name + '" and all of its photos from this device? This cannot be undone.', 'Delete', function () {
+    const gone = S.id;
+    Promise.all([idbDel('assessments', gone), deletePhotosFor(gone)])
+      .then(() => idbAll('assessments'))
+      .then(all => {
+        const next = all.sort((a, b) => (b.updated || '').localeCompare(a.updated || ''))[0];
+        if (next) { openAssessment(next.id); showToast('Assessment deleted'); }
+        else { newAssessment(); showToast('Assessment deleted'); }
+      });
+  });
 }
 async function saveAssessment() {
   const btns = [document.getElementById('saveAssessmentBtn'), document.getElementById('saveAssessmentBtnMobile')].filter(Boolean);
@@ -2650,24 +2699,36 @@ async function saveAssessment() {
   await handOffToRpic('Assessment saved.');
   btns.forEach((b, i) => { b.disabled = false; b.textContent = labels[i]; });
 }
+/* In-page confirmation. Native confirm() is silently suppressed by some in-app browsers,
+   which makes destructive buttons appear to do nothing. */
+function inlineConfirm(message, yesLabel, onYes) {
+  const old = document.getElementById('inlineConfirmPanel');
+  if (old) old.remove();
+  const bd = document.createElement('div');
+  bd.id = 'inlineConfirmPanel';
+  bd.className = 'type-modal-backdrop no-print';
+  bd.innerHTML = '<div class="type-modal" role="alertdialog" aria-modal="true">' +
+    '<p style="color:var(--ep-white);font-size:0.9rem;white-space:pre-line;"></p>' +
+    '<div style="display:flex;gap:10px;justify-content:flex-end;">' +
+    '<button class="action-btn ghost" data-act="no">Cancel</button>' +
+    '<button class="action-btn" data-act="yes" style="background:#c0392b;border-color:#c0392b;color:#fff;"></button></div></div>';
+  bd.querySelector('p').textContent = message;
+  bd.querySelector('[data-act=yes]').textContent = yesLabel || 'Confirm';
+  document.body.appendChild(bd);
+  const close = () => bd.remove();
+  bd.addEventListener('click', e => { if (e.target === bd) close(); });
+  bd.querySelector('[data-act=no]').addEventListener('click', close);
+  bd.querySelector('[data-act=yes]').addEventListener('click', () => { close(); onYes(); });
+  bd.querySelector('[data-act=no]').focus();
+}
 function clearCurrent() {
-  if (document.getElementById('clearConfirmPanel')) return;
-  const anchor = document.querySelector('.assess-bar');
-  if (!anchor) return;
-  const p = document.createElement('div');
-  p.id = 'clearConfirmPanel'; p.className = 'no-print';
-  p.style.cssText = 'width:100%;background:rgba(220,80,60,0.12);border:1px solid rgba(220,80,60,0.5);border-radius:5px;padding:10px 14px;margin-top:8px;font-size:0.82rem;';
-  p.innerHTML =
-    '<div style="margin-bottom:8px;">Clear every field, check and photo in this assessment? This cannot be undone.</div>' +
-    '<button class="action-btn" id="clearConfirmYes" style="margin-right:8px;">Clear it</button>' +
-    '<button class="action-btn ghost" onclick="document.getElementById(\'clearConfirmPanel\').remove()">Cancel</button>';
-  anchor.insertAdjacentElement('afterend', p);
-  document.getElementById('clearConfirmYes').addEventListener('click', function () {
-    p.remove();
-    const id = S.id, created = S.created;
+  inlineConfirm('Clear every field, check and photo in this assessment? This cannot be undone.', 'Clear it', function () {
+    const id = S.id, created = S.created, type = S.fields.assessmentType;
     deletePhotosFor(id).then(() => {
       PHOTOS = {};
       S = blankAssessment(); S.id = id; S.created = created;
+      S.fields.assessmentType = type || 'fixed';
+      if (S.fields.assessmentType === 'hasty') S.fields.groundCrewStatus = 'in_progress';
       return idbPut('assessments', JSON.parse(JSON.stringify(S)));
     }).then(() => { render(); refreshPicker(); showToast('Assessment cleared'); });
   });
@@ -2698,6 +2759,8 @@ document.getElementById('importFile').addEventListener('change', function () {
     a.id = 'sa_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
     a.updated = new Date().toISOString();
     a.c2rows = (a.c2rows && a.c2rows.length) ? migrateC2(a.c2rows) : blankC2();
+    a.dirty = true;
+    if (a.remote_id && INDEXLIST.some(x => x.remote_id === a.remote_id)) { delete a.remote_id; delete a.synced_at; }
     S = migrateLegacy(a); PHOTOS = p.photos || {};
     const writes = Object.keys(PHOTOS).map(k => idbPut('photos', { pk: S.id + '|' + k, id: S.id, key: k, items: PHOTOS[k] }));
     Promise.all(writes.concat([idbPut('assessments', JSON.parse(JSON.stringify(S)))]))

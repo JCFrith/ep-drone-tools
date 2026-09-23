@@ -12,22 +12,20 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BVLOS Site Classification Wizard | Enhanced Patrol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
 <style>
     @font-face {
-        font-family: 'Gotham Bold';
+        font-family: 'Gotham Bold'; font-display: swap;
         font-weight: 700;
         src: url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Bold.ttf') format('truetype');
     }
     @font-face {
-        font-family: 'Gotham Book';
+        font-family: 'Gotham Book'; font-display: swap;
         font-weight: 400;
         src: url('https://enhancedpatrol.com/wp-content/uploads/2024/08/Gotham-Book.ttf') format('truetype');
     }
-    @font-face {
-        font-family: 'Bebas Neue';
-        src: url('https://enhancedpatrol.com/wp-content/uploads/elementor/google-fonts/fonts/bebasneue-97dafd13.woff2') format('woff2');
-    }
-
     :root {
         --ep-navy:      #0B1923;
         --ep-navy-card: #0f2233;
@@ -42,7 +40,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-        font-family: 'Gotham Book', -apple-system, BlinkMacSystemFont, sans-serif;
+        font-family: 'Gotham Book', 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
         background: var(--ep-navy);
         color: var(--ep-white);
         line-height: 1.6;
@@ -77,7 +75,7 @@
     .header-nav > li { position: relative; }
     .header-nav > li > a {
         display: block; padding: 28px 18px;
-        color: var(--ep-white); font-family: 'Gotham Book', sans-serif;
+        color: var(--ep-white); font-family: 'Gotham Book', 'Montserrat', sans-serif;
         font-size: 0.9rem; font-weight: 600; letter-spacing: 1px; transition: color 0.25s;
     }
     .header-nav > li > a:hover { color: var(--ep-gold); }
@@ -89,14 +87,14 @@
     .header-nav > li:hover .dropdown { display: block; }
     .dropdown a {
         display: block; padding: 11px 22px; color: var(--ep-white);
-        font-family: 'Gotham Book', sans-serif; font-size: 0.83rem;
+        font-family: 'Gotham Book', 'Montserrat', sans-serif; font-size: 0.83rem;
         border-bottom: 1px solid rgba(255,255,255,0.04); transition: color 0.2s, background 0.2s;
     }
     .dropdown a:hover { color: var(--ep-gold); background: rgba(252,192,14,0.05); }
     .btn-header {
         display: flex; align-items: center; gap: 8px; padding: 13px 24px;
         border: 1px solid var(--ep-gold); color: var(--ep-white);
-        font-family: 'Gotham Book', sans-serif; font-size: 0.8rem; font-weight: 600;
+        font-family: 'Gotham Book', 'Montserrat', sans-serif; font-size: 0.8rem; font-weight: 600;
         text-transform: uppercase; letter-spacing: 1px; transition: background 0.25s, color 0.25s; white-space: nowrap;
     }
     .btn-header:hover { background: var(--ep-gold); color: var(--ep-navy); }
@@ -106,7 +104,7 @@
     .mobile-nav.open { display: block; }
     .mobile-nav a {
         display: block; padding: 13px 30px; color: var(--ep-white);
-        font-family: 'Gotham Book', sans-serif; font-size: 0.88rem;
+        font-family: 'Gotham Book', 'Montserrat', sans-serif; font-size: 0.88rem;
         border-bottom: 1px solid rgba(255,255,255,0.05);
     }
     .mobile-nav a:hover { color: var(--ep-gold); }
@@ -158,13 +156,13 @@
     .opt.sel { border-color: var(--ep-blue); background: rgba(0,162,233,0.08); }
     .opt-icon { width: 34px; height: 34px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: background 0.15s; }
     .opt.sel .opt-icon { background: var(--ep-blue); }
-    .opt-label { font-family: 'Gotham Bold', sans-serif; font-size: 0.84rem; font-weight: 700; margin-bottom: 2px; }
+    .opt-label { font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-size: 0.84rem; font-weight: 700; margin-bottom: 2px; }
     .opt-desc { font-size: 0.75rem; color: var(--ep-gray); line-height: 1.4; }
 
     /* Input */
     .field-group { margin-bottom: 22px; }
-    .field-label { display: block; font-size: 0.72rem; font-family: 'Gotham Bold', sans-serif; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ep-gray); margin-bottom: 10px; }
-    .field-input { background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.1); padding: 12px 16px; color: var(--ep-white); font-size: 1rem; font-family: 'Gotham Book', sans-serif; width: 100%; outline: none; transition: border-color 0.2s; }
+    .field-label { display: block; font-size: 0.72rem; font-family: 'Gotham Bold', 'Montserrat', sans-serif; text-transform: uppercase; letter-spacing: 1.5px; color: var(--ep-gray); margin-bottom: 10px; }
+    .field-input { background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.1); padding: 12px 16px; color: var(--ep-white); font-size: 1rem; font-family: 'Gotham Book', 'Montserrat', sans-serif; width: 100%; outline: none; transition: border-color 0.2s; }
     .field-input:focus { border-color: var(--ep-gold); }
     .field-note { font-size: 0.75rem; color: var(--ep-gray); margin-top: 6px; }
 
@@ -173,19 +171,19 @@
 
     /* Nav */
     .nav-row { display: flex; gap: 10px; margin-top: 12px; }
-    .btn-back { background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 12px 22px; color: var(--ep-gray); font-size: 0.8rem; font-family: 'Gotham Book', sans-serif; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: border-color 0.2s; }
+    .btn-back { background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 12px 22px; color: var(--ep-gray); font-size: 0.8rem; font-family: 'Gotham Book', 'Montserrat', sans-serif; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: border-color 0.2s; }
     .btn-back:hover { border-color: var(--ep-gray); }
-    .btn-next { flex: 1; background: var(--ep-blue); border: none; padding: 13px 28px; color: var(--ep-white); font-size: 0.82rem; font-family: 'Gotham Bold', sans-serif; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; transition: opacity 0.2s; }
+    .btn-next { flex: 1; background: var(--ep-blue); border: none; padding: 13px 28px; color: var(--ep-white); font-size: 0.82rem; font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; transition: opacity 0.2s; }
     .btn-next:disabled { opacity: 0.3; cursor: not-allowed; }
-    .btn-classify { flex: 1; background: var(--ep-gold); border: none; padding: 13px 28px; color: var(--ep-navy); font-size: 0.82rem; font-family: 'Gotham Bold', sans-serif; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; transition: opacity 0.2s; }
+    .btn-classify { flex: 1; background: var(--ep-gold); border: none; padding: 13px 28px; color: var(--ep-navy); font-size: 0.82rem; font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; transition: opacity 0.2s; }
     .btn-classify:disabled { opacity: 0.3; cursor: not-allowed; }
 
     /* RESULT */
     .result-wrap { animation: fadeUp 0.3s ease; }
     @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-    .sec-label { font-family: 'Gotham Bold', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--ep-gold); display: block; margin-bottom: 12px; }
+    .sec-label { font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--ep-gold); display: block; margin-bottom: 12px; }
     .result-card { background: var(--ep-navy-card); border: 1px solid rgba(0,162,233,0.35); border-top: 3px solid var(--ep-blue); padding: 26px 28px; margin-bottom: 16px; }
-    .sp-badge { display: inline-block; background: rgba(0,162,233,0.12); border: 1px solid rgba(0,162,233,0.35); padding: 3px 10px; font-size: 0.68rem; font-family: 'Gotham Bold', sans-serif; letter-spacing: 2px; color: var(--ep-blue); text-transform: uppercase; margin-bottom: 10px; }
+    .sp-badge { display: inline-block; background: rgba(0,162,233,0.12); border: 1px solid rgba(0,162,233,0.35); padding: 3px 10px; font-size: 0.68rem; font-family: 'Gotham Bold', 'Montserrat', sans-serif; letter-spacing: 2px; color: var(--ep-blue); text-transform: uppercase; margin-bottom: 10px; }
     .class-name { font-family: 'Bebas Neue', sans-serif; font-size: 2.4rem; letter-spacing: 2px; color: var(--ep-white); line-height: 1.1; margin-bottom: 18px; }
     .ceil-label { font-size: 0.75rem; color: var(--ep-gray); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
     .ceil-value { font-family: 'Bebas Neue', sans-serif; font-size: 5rem; color: var(--ep-gold); letter-spacing: 2px; line-height: 1; }
@@ -196,17 +194,17 @@
     .req-card { background: var(--ep-navy-card); border: 1px solid rgba(255,255,255,0.07); padding: 20px 24px; margin-bottom: 16px; }
     .req-row { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
     .req-row:last-child { margin-bottom: 0; }
-    .req-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 1px; font-family: 'Gotham Bold', sans-serif; }
+    .req-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; margin-top: 1px; font-family: 'Gotham Bold', 'Montserrat', sans-serif; }
     .req-icon.pass { background: rgba(22,163,74,0.12); border: 1px solid #16a34a; color: #4ade80; }
     .req-icon.fail { background: rgba(220,38,38,0.12); border: 1px solid #dc2626; color: #f87171; }
     .req-icon.info { background: rgba(0,162,233,0.1); border: 1px solid rgba(0,162,233,0.3); color: var(--ep-blue); font-size: 11px; }
     .req-text { font-size: 0.82rem; line-height: 1.6; }
-    .req-text strong { font-family: 'Gotham Bold', sans-serif; font-weight: 700; margin-right: 4px; }
+    .req-text strong { font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-weight: 700; margin-right: 4px; }
     .req-text span { color: var(--ep-gray); }
     .warning-box { background: rgba(120,53,15,0.18); border-left: 3px solid #d97706; padding: 11px 14px; font-size: 0.8rem; color: #fbbf24; line-height: 1.6; margin-bottom: 10px; }
     .cow-ref-box { background: rgba(0,162,233,0.05); border: 1px solid rgba(0,162,233,0.15); padding: 12px 16px; font-size: 0.78rem; color: var(--ep-gray); line-height: 1.6; margin-top: 8px; }
     .cow-ref-box strong { color: var(--ep-white); }
-    .btn-reset { width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 13px 24px; color: var(--ep-gray); font-size: 0.78rem; font-family: 'Gotham Bold', sans-serif; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 10px; transition: border-color 0.2s, color 0.2s; }
+    .btn-reset { width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.12); padding: 13px 24px; color: var(--ep-gray); font-size: 0.78rem; font-family: 'Gotham Bold', 'Montserrat', sans-serif; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 10px; transition: border-color 0.2s, color 0.2s; }
     .btn-reset:hover { border-color: var(--ep-gray); color: var(--ep-white); }
 
     /* FOOTER */
@@ -219,15 +217,15 @@
     .footer-social a:hover { background: var(--ep-gold); border-color: var(--ep-gold); color: var(--ep-navy); }
     .footer-badge { display: flex; align-items: center; gap: 12px; color: var(--ep-gray); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
     .footer-badge img { width: 52px; height: auto; }
-    .footer-col h4 { font-family: 'Gotham Bold', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--ep-white); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; }
+    .footer-col h4 { font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-size: 0.82rem; font-weight: 700; color: var(--ep-white); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; }
     .footer-col ul { list-style: none; }
     .footer-col ul li { border-bottom: 1px solid rgba(255,255,255,0.05); }
     .footer-col ul li a { display: flex; align-items: center; gap: 8px; padding: 9px 0; color: var(--ep-gray); font-size: 0.84rem; transition: color 0.2s; }
     .footer-col ul li a::before { content: '\203A'; color: var(--ep-gold); font-size: 1rem; line-height: 1; }
     .footer-col ul li a:hover { color: var(--ep-gold); }
-    .footer-newsletter input[type="text"], .footer-newsletter input[type="email"] { width: 100%; padding: 10px 13px; background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.1); color: var(--ep-white); font-family: 'Gotham Book', sans-serif; font-size: 0.84rem; margin-bottom: 10px; }
+    .footer-newsletter input[type="text"], .footer-newsletter input[type="email"] { width: 100%; padding: 10px 13px; background: var(--ep-navy-deep); border: 1px solid rgba(255,255,255,0.1); color: var(--ep-white); font-family: 'Gotham Book', 'Montserrat', sans-serif; font-size: 0.84rem; margin-bottom: 10px; }
     .footer-newsletter input[type="text"]:focus, .footer-newsletter input[type="email"]:focus { outline: none; border-color: var(--ep-gold); }
-    .footer-newsletter input[type="submit"] { width: 100%; padding: 12px; background: var(--ep-gold); color: var(--ep-navy); border: none; font-family: 'Gotham Bold', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: opacity 0.25s; }
+    .footer-newsletter input[type="submit"] { width: 100%; padding: 12px; background: var(--ep-gold); color: var(--ep-navy); border: none; font-family: 'Gotham Bold', 'Montserrat', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; cursor: pointer; transition: opacity 0.25s; }
     .footer-newsletter input[type="submit"]:hover { opacity: 0.85; }
     .footer-bottom { max-width: 1280px; margin: 0 auto; padding: 18px 0 20px; border-top: 1px solid rgba(255,255,255,0.06); display: flex; justify-content: space-between; align-items: center; }
     .footer-bottom-links { display: flex; gap: 28px; }
@@ -381,7 +379,7 @@
             <a href="#">Terms &amp; Service</a>
         </div>
         <p class="footer-bottom-copy">
-            &copy; Copyright 2024 &mdash; All rights reserved.
+            &copy; Copyright 2024 - All rights reserved.
             <br><small>Developed by <a href="https://multisitedev.com/">MultisiteDev</a></small>
         </p>
     </div>
@@ -420,6 +418,7 @@ function classify(){
             if(vo2sm==="no"&&daa!=="active")warnings.push("VO count does not cover a 2 SM radius. That coverage is the definition of sufficient VO(s) under Non-Shielded Operations, Visual Observer Coverage (SP 12(c)).");}
         else if(daa==="active")notes.push("VO not required when the DAA system described in the waiver application is active and under observation by the RPIC or Electronic Observer.");
     }
+    if(grid===0&&ceilAGL>0){(uasfm==='yes'?blocks:warnings).push('The published UASFM grid at this site is 0 ft. UASFM Grid Operations / NOTAM Requirement (SP 16) does not authorize any altitude here; a separate ATC authorization is required before flight.');}
     if(grid!==null&&ceilAGL>0&&grid<ceilAGL){ceilAGL=grid;ceilCalc=(ceilCalc?ceilCalc+" → ":"")+`capped at UASFM grid ${grid} ft`;notes.push(sp==="Shielded Operations (SP 11)"?"UASFM grid height takes precedence over the 200 ft and obstruction figures (Shielded Operations, UASFM Grid Precedence (SP 11(c))).":"UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes operations only at or below the UASFM grid height.");}
     if(uasfm==="yes")notes.push("UASFM Grid Operations / NOTAM Requirement (SP 16): §107.41 authorized at or below the UASFM grid. File a NOTAM no more than 72 and no less than 24 hours before operating and verify it is issued. Above the grid a separate ATC authorization is required; LAANC may not be used.");
 
@@ -436,7 +435,7 @@ function classify(){
         if(assembly==="yes")blocks.push("Overflight of open-air assemblies of persons is prohibited on every pathway (Overflight, Open-Air Assembly Prohibition (SP 13(c)), 14(a), 15(a)). The coordination alternative in the superseded certificate no longer exists.");
         if(sustained==="yes")blocks.push("Sustained overflight (loitering, hovering, continuous or sequential) of non-participants or moving vehicles is prohibited on every pathway (Overflight, No Sustained Operations (SP 13(d)), 14(b), 15(b)). Overflight must be transitory.");
         notes.push("Routes must be designed to avoid overflight of human beings and traffic areas (Overflight, Route Design to Avoid People and Traffic (SP 13(e)), 14(c)).");
-        if(sp==="Shielded Operations (SP 11)")notes.push("Overflight does not by itself require a VO. The VO rule of the superseded certificate (old Special Provision 33 (SP 33)) does not exist in "+COW+".");
+        if(sp==="Shielded Operations (SP 11)")notes.push("Overflight does not by itself require a VO. The overflight VO rule of the superseded certificate does not exist in "+COW+".");
     }else{
         pathwayText="No overflight of non-participants or moving vehicles. Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), 14 and 15 do not apply. No blanket MTOW ceiling applies; the aircraft must be on the eligible-UAS list (UAS and Docking Systems Eligibility (SP 25)).";
     }
@@ -486,7 +485,7 @@ function stepHTML(){
         <div class="field-group">
             <span class="field-label">DAA system at this site</span>
             ${infoBox('Non-Shielded Operations, DAA Requirement (SP 12(b)): the DAA system specified in the waiver application must be active and under observation by the RPIC or Electronic Observer. Where coverage is compromised the ceiling is 200 ft AGL.')}
-            <div class="grid-1">${opt('daa','active','📡','Active and under observation','400 ft AGL')}${opt('daa','compromised','📶','Installed, coverage compromised here','200 ft AGL')}${opt('daa','none','—','Not used','')}</div>
+            <div class="grid-1">${opt('daa','active','📡','Active and under observation','400 ft AGL')}${opt('daa','compromised','📶','Installed, coverage compromised here','200 ft AGL')}${opt('daa','none','○','Not used','')}</div>
         </div>
         <div class="field-group">
             <span class="field-label">Visual Observers assigned?</span>
@@ -507,7 +506,7 @@ function stepHTML(){
         <div class="field-group">
             <span class="field-label">Parachute recovery system fitted (ASTM F3322-18 as revised)?</span>
             ${infoBox('PRS is a pathway, not a general requirement. It raises the overflight ceiling from 8.8 lb to 10 lb and removes the restricted-access condition, but the aircraft may never fly below the manufacturer minimum deployment height (PRS-Equipped Overflight, Minimum Deployment Height (SP 14(g))).')}
-            <div class="grid-2">${opt('prs','yes','🪂','Yes, PRS fitted','PRS-Equipped Overflight of Non-Participants (SP 14) pathway')}${opt('prs','no','—','No PRS','Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) or Overflight of Non-Participants at or Under 0.88 lb (SP 15) pathway')}</div>
+            <div class="grid-2">${opt('prs','yes','🪂','Yes, PRS fitted','PRS-Equipped Overflight of Non-Participants (SP 14) pathway')}${opt('prs','no','○','No PRS','Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13) or Overflight of Non-Participants at or Under 0.88 lb (SP 15) pathway')}</div>
         </div>`;
 
     if(step===3){
@@ -526,7 +525,7 @@ function stepHTML(){
         </div>
         <div class="field-group">
             <span class="field-label">Open-air assembly of persons within or adjacent to the route?</span>
-            ${infoBox('Prohibited on every pathway (SP 13(c), 14(a), 15(a)). The term is undefined in the certificate; treat any gathering of persons in the open as an assembly.')}
+            ${infoBox('Prohibited on every pathway (Overflight, Open-Air Assembly Prohibition (SP 13(c)), Overflight, Open-Air Assembly Prohibition (SP 14(a)), Overflight, Open-Air Assembly Prohibition (SP 15(a))). The term is undefined in the certificate; treat any gathering of persons in the open as an assembly.')}
             <div class="grid-2">${opt('assembly','no','✓','No','')}${opt('assembly','yes','🎪','Yes','Prohibited')}</div>
         </div>
         ${(w!==null&&w>0.88&&answers.prs!=='yes')?`
@@ -549,9 +548,9 @@ function resultHTML(){
         <span class="sec-label">Classification Result</span>
         <div class="result-card">
             <div class="sp-badge">${sp}</div>
-            <div class="class-name">${classification}</div>
+            ${sp.indexOf(classification)===-1?`<div class="class-name">${classification}</div>`:""}
             <div class="ceil-label">Maximum Altitude Ceiling</div>
-            <div><span class="ceil-value">${ceilAGL>0?ceilAGL:'—'}</span><span class="ceil-unit">${ceilAGL>0?'ft AGL max':'no pathway'}</span></div>
+            <div><span class="ceil-value">${ceilAGL>0?ceilAGL:'N/A'}</span><span class="ceil-unit">${ceilAGL>0?'ft AGL max':'no pathway'}</span></div>
             <hr class="divider">
             <span class="sec-label">Altitude Formula</span>
             <div class="formula-box">${ceilFormula}${ceilCalc?`<br><span class="formula-calc">→ ${ceilCalc}</span>`:''}</div>
