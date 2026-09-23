@@ -161,6 +161,14 @@ body{font-family:'Gotham Book',-apple-system,BlinkMacSystemFont,sans-serif;backg
 .type-modal .cancel-btn{background:none;border:none;color:var(--ep-gray);font-size:0.78rem;cursor:pointer;margin-top:4px;text-decoration:underline;}
 .hasty-banner{background:rgba(220,80,60,0.1);border:1px solid rgba(220,80,60,0.4);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.8rem;line-height:1.5;}
 .hasty-hidden-note{padding:14px 0;color:var(--ep-gray);font-size:0.82rem;font-style:italic;}
+#rpicRecap{background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.25);border-radius:6px;padding:16px 18px;margin-top:18px;}
+#rpicRecap .recap-title{font-size:0.78rem;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--ep-gold);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+#rpicRecap .recap-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px 16px;}
+#rpicRecap .recap-item .k{font-size:0.66rem;text-transform:uppercase;letter-spacing:0.5px;color:var(--ep-gray);margin-bottom:2px;}
+#rpicRecap .recap-item .v{font-size:0.92rem;font-weight:600;color:var(--ep-white);}
+#rpicRecap .recap-item .v.warn{color:#ff9d8a;}
+#rpicRecap .recap-note{grid-column:1/-1;font-size:0.76rem;color:var(--ep-gray);border-top:1px solid rgba(255,255,255,0.08);padding-top:10px;margin-top:4px;}
+
 
 
 /* ── FORMS ── */
@@ -446,6 +454,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <select id="assessPicker" aria-label="Open assessment"></select>
     <button class="mini-btn" onclick="newAssessment()">New</button>
+    <button class="mini-btn" style="border-color:rgba(220,80,60,0.5);color:#ff9d8a;" onclick="clearCurrent()">Clear</button>
     <button class="mini-btn" onclick="duplicateAssessment()">Duplicate</button>
     <button class="mini-btn" onclick="exportJSON()">Export JSON</button>
     <button class="mini-btn" onclick="importJSON()">Import</button>
@@ -462,14 +471,20 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="action-bar no-print">
-    <button class="action-btn ghost" onclick="clearCurrent()">Clear this assessment</button>
     <button class="action-btn export" onclick="window.print()">Print / Save PDF</button>
   </div>
 
   <div id="mainContent"></div>
+
+  <div id="rpicRecap"></div>
+
+  <div class="action-bar no-print" style="margin-top:6px;">
+    <button class="action-btn" id="saveAssessmentBtn" style="background:var(--ep-gold);color:var(--ep-navy,#0d1b2e);font-weight:700;width:100%;font-size:0.95rem;padding:14px;" onclick="saveAssessment()">Save Assessment</button>
+  </div>
 </div>
 
 <div class="bottom-action-bar no-print">
+  <button class="action-btn" id="saveAssessmentBtnMobile" style="background:var(--ep-gold);color:var(--ep-navy,#0d1b2e);font-weight:700;" onclick="saveAssessment()">Save</button>
   <button class="action-btn ghost" onclick="exportJSON()">Export</button>
   <button class="action-btn export" onclick="window.print()">Print / PDF</button>
 </div>
@@ -1360,10 +1375,48 @@ const SECTIONS = [
 ];
 
 // ── RENDER ─────────────────────────────────────────────────
+function renderRecap() {
+  const el = document.getElementById('rpicRecap');
+  if (!el) return;
+  const f = S.fields;
+  const d = classify();
+  const item = (k, v, warn) => '<div class="recap-item"><div class="k">' + k + '</div><div class="v' + (warn ? ' warn' : '') + '">' + (v === '' || v === null || v === undefined ? '\u2014' : esc(String(v))) + '</div></div>';
+  const overText = f.oopExpected === 'Yes' ? 'Yes' : 'No';
+  const oomvText = { none: 'None', transient: 'Transient', sustained: 'Sustained' }[f.oomvMode] || '\u2014';
+  const plannedAlt = num(f.plannedAlt);
+  const overCeiling = d.ready && d.agl !== null && plannedAlt !== null && plannedAlt > d.agl;
+  const blockCount = d.findings ? d.findings.filter(x => x.level === 'block').length : 0;
+  let html = '<div class="recap-title">Quick Reference' +
+    '<span class="assess-type-badge ' + (f.assessmentType === 'hasty' ? 'hasty' : 'fixed') + '">' + (f.assessmentType === 'hasty' ? 'Hasty' : 'Fixed') + '</span></div>';
+  html += '<div class="recap-grid">';
+  html += item('Site', f.siteName);
+  html += item('Assessed by', f.assessedBy);
+  html += item('Date', f.assessDate);
+  html += item('Launch method', f.launchMethod);
+  html += item('Governing provision', d.ready ? d.provName : 'Not yet determined');
+  html += item('Max altitude', d.ready && d.agl !== null ? d.agl + ' ft AGL' : '\u2014');
+  html += item('Planned altitude', plannedAlt !== null ? plannedAlt + ' ft AGL' : 'Not set', overCeiling);
+  html += item('Lateral constraint', d.ready ? (d.lateral || '\u2014') : '\u2014');
+  html += item('Range / coverage', d.ready ? (d.range || '\u2014') : '\u2014');
+  html += item('Overflight pathway', d.ready ? d.oonp : '\u2014');
+  html += item('Over non-participants', overText);
+  html += item('Over moving vehicles', oomvText);
+  html += item('Aircraft weight', f.mtow ? f.mtow + ' lb' : '\u2014');
+  html += item('PRS equipped', f.prsEquipped || '\u2014');
+  if (d.ready && d.prov === 'SP 12') {
+    html += item('DAA status', { none: 'Not used', active: 'Active', compromised: 'Compromised' }[f.daaStatus] || '\u2014');
+    html += item('VO count', f.voCount || '0');
+  }
+  html += item('Blocking findings', blockCount, blockCount > 0);
+  if (overCeiling) html += '<div class="recap-note" style="color:#ff9d8a;">Planned altitude exceeds the computed ceiling.</div>';
+  html += '</div>';
+  el.innerHTML = html;
+}
 function render() {
   renderTypeToggle();
-  if (S.fields.assessmentType === 'hasty' && S.fields.groundCrewStatus !== 'ground_crew_complete') { renderHastyForm(); return; }
+  if (S.fields.assessmentType === 'hasty' && S.fields.groundCrewStatus !== 'ground_crew_complete') { renderHastyForm(); renderRecap(); return; }
   renderFullSections();
+  renderRecap();
 }
 
 function groundCrewItems() {
@@ -2592,14 +2645,36 @@ function deleteAssessment() {
       else { newAssessment(); showToast('Assessment deleted'); }
     });
 }
+async function saveAssessment() {
+  const btns = [document.getElementById('saveAssessmentBtn'), document.getElementById('saveAssessmentBtnMobile')].filter(Boolean);
+  const labels = btns.map(b => b.textContent);
+  btns.forEach(b => { b.disabled = true; b.textContent = 'Saving...'; });
+  save();
+  await new Promise(r => setTimeout(r, 250)); // let the debounced local save land first
+  await handOffToRpic('Assessment saved.');
+  btns.forEach((b, i) => { b.disabled = false; b.textContent = labels[i]; });
+}
 function clearCurrent() {
-  if (!confirm('Clear every field, check and photo in this assessment? This cannot be undone.')) return;
-  const id = S.id, created = S.created;
-  deletePhotosFor(id).then(() => {
-    PHOTOS = {};
-    S = blankAssessment(); S.id = id; S.created = created;
-    return idbPut('assessments', JSON.parse(JSON.stringify(S)));
-  }).then(() => { render(); refreshPicker(); showToast('Assessment cleared'); });
+  if (document.getElementById('clearConfirmPanel')) return;
+  const anchor = document.querySelector('.assess-bar');
+  if (!anchor) return;
+  const p = document.createElement('div');
+  p.id = 'clearConfirmPanel'; p.className = 'no-print';
+  p.style.cssText = 'width:100%;background:rgba(220,80,60,0.12);border:1px solid rgba(220,80,60,0.5);border-radius:5px;padding:10px 14px;margin-top:8px;font-size:0.82rem;';
+  p.innerHTML =
+    '<div style="margin-bottom:8px;">Clear every field, check and photo in this assessment? This cannot be undone.</div>' +
+    '<button class="action-btn" id="clearConfirmYes" style="margin-right:8px;">Clear it</button>' +
+    '<button class="action-btn ghost" onclick="document.getElementById(\'clearConfirmPanel\').remove()">Cancel</button>';
+  anchor.insertAdjacentElement('afterend', p);
+  document.getElementById('clearConfirmYes').addEventListener('click', function () {
+    p.remove();
+    const id = S.id, created = S.created;
+    deletePhotosFor(id).then(() => {
+      PHOTOS = {};
+      S = blankAssessment(); S.id = id; S.created = created;
+      return idbPut('assessments', JSON.parse(JSON.stringify(S)));
+    }).then(() => { render(); refreshPicker(); showToast('Assessment cleared'); });
+  });
 }
 
 // ── EXPORT / IMPORT ────────────────────────────────────────
