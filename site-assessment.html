@@ -1755,6 +1755,14 @@ function buildApproval(body) {
   body.appendChild(panel);
   setTimeout(renderApproval, 10);
 
+  if (!S.fields.reassessDate) S.fields.reassessDate = sixMonths(S.fields.assessDate);
+  const reassess = document.createElement('div');
+  reassess.innerHTML =
+    '<div class="field-row"><div class="field-group"><label>Reassessment date</label><input type="date" data-field="reassessDate" value="' + esc(S.fields.reassessDate) + '"></div>' +
+    '<div class="field-group"><label>Conditions requiring reassessment</label><input type="text" data-field="reassessTriggers" value="' + esc(S.fields.reassessTriggers) + '" placeholder="Infrastructure, staging, C2, construction, seasonal"></div></div>';
+  body.appendChild(reassess);
+  bindFields(reassess);
+
   const gate = document.createElement('div');
   gate.id = 'rpicGate';
   gate.className = 'rpic-gate' + (S.fields.rpicAttested === 'Yes' ? ' satisfied' : '');
@@ -1796,8 +1804,6 @@ function buildApproval(body) {
     '<div class="field-group" id="approvalCondWrap" style="display:' + (S.fields.approvalDecision === 'CONDITIONAL' ? 'block' : 'none') + '"><label>Conditions</label><textarea data-field="approvalConditions" placeholder="List conditions">' + esc(S.fields.approvalConditions) + '</textarea></div>' +
     '<div class="field-group" id="approvalReasonWrap" style="display:' + (S.fields.approvalDecision === 'NOT APPROVED' ? 'block' : 'none') + '"><label>Reasons for non-approval</label><textarea data-field="approvalReasons" placeholder="List reasons">' + esc(S.fields.approvalReasons) + '</textarea></div>' +
     '<div class="field-group"><label>Open certificate items acknowledged</label><textarea data-field="openItemsAck" placeholder="Record how the undefined open-air assembly term and the 0.88 lb pathway boundary were handled for this site">' + esc(S.fields.openItemsAck) + '</textarea></div>' +
-    '<div class="field-row"><div class="field-group"><label>Reassessment date</label><input type="date" data-field="reassessDate" value="' + esc(S.fields.reassessDate || sixMonths(S.fields.assessDate)) + '"></div>' +
-    '<div class="field-group"><label>Conditions requiring reassessment</label><input type="text" data-field="reassessTriggers" value="' + esc(S.fields.reassessTriggers) + '" placeholder="Infrastructure, staging, C2, construction, seasonal"></div></div>' +
     '<div class="field-row"><div class="field-group"><label>Approving RPIC</label><input type="text" data-field="approverName" value="' + esc(S.fields.approverName) + '"></div>' +
     '<div class="field-group"><label>Remote pilot certificate number</label><input type="text" data-field="approverCert" value="' + esc(S.fields.approverCert) + '"></div></div>' +
     '<div class="field-row"><div class="field-group"><label>Date</label><input type="date" data-field="approvalDate" value="' + esc(S.fields.approvalDate) + '"></div>' +
