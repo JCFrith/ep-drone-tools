@@ -411,7 +411,8 @@ function classify(){
     }else{
         sp="Non-Shielded Operations (SP 12)";classification="Non-Shielded Operations";
         if(daa==="active"){ceilAGL=400;ceilFormula="400 ft AGL with DAA active and under observation";daaRequired=true;}
-        else if(daa==="compromised"){ceilAGL=200;ceilFormula="200 ft AGL where DAA effectivity or coverage is compromised (Non-Shielded Operations, DAA Requirement (SP 12(b)))";daaRequired=true;}
+        else if(daa==="compromised"&&vo==="yes"&&vo2sm==="yes"){ceilAGL=400;ceilFormula="400 ft AGL on the VO pathway (Non-Shielded Operations, Visual Observer Coverage (SP 12(c))). DAA coverage is compromised, so VOs carry see-and-avoid";daaRequired=false;}
+        else if(daa==="compromised"){ceilAGL=200;ceilFormula="200 ft AGL where DAA effectivity or coverage is compromised (Non-Shielded Operations, DAA Requirement (SP 12(b))). Sufficient VOs covering 2 SM would allow 400 ft AGL";daaRequired=true;}
         else if(vo==="yes"){ceilAGL=400;ceilFormula="400 ft AGL with sufficient VO(s)";}
         else{ceilAGL=0;ceilFormula="No pathway";classification="Not a waiver operation";blocks.push("Non-Shielded Operations (SP 12) offers two alternatives: DAA under observation (12(b)) or VO(s) continuously observing a 2 SM radius (12(c)). With neither, fly under standard Part 107 VLOS or reclassify as Shielded Operations (SP 11) shielded.");}
         if(vo==="yes"){voRequired=true;voReason="Sufficient VO(s) means the minimum number needed to continuously observe a 2 SM radius around the aircraft (Non-Shielded Operations, Visual Observer Coverage (SP 12(c))), with continuous full-duplex hands-free voice and a reliable backup (Non-Shielded Operations, VO Communication Equipment (SP 12(e))). Operations cease if voice is lost (Cease Operations on Loss of VO Communication (SP 21(c))).";
@@ -484,8 +485,8 @@ function stepHTML(){
         ${answers.obstructions!=='yes'?`
         <div class="field-group">
             <span class="field-label">DAA system at this site</span>
-            ${infoBox('Non-Shielded Operations, DAA Requirement (SP 12(b)): the DAA system specified in the waiver application must be active and under observation by the RPIC or Electronic Observer. Where coverage is compromised the ceiling is 200 ft AGL.')}
-            <div class="grid-1">${opt('daa','active','📡','Active and under observation','400 ft AGL')}${opt('daa','compromised','📶','Installed, coverage compromised here','200 ft AGL')}${opt('daa','none','○','Not used','')}</div>
+            ${infoBox('Non-Shielded Operations, DAA Requirement (SP 12(b)): the DAA system specified in the waiver application must be active and under observation by the RPIC or Electronic Observer. Where coverage is compromised the ceiling is 200 ft AGL, unless sufficient VOs cover a 2 SM radius, which allows 400 ft AGL on the VO pathway.')}
+            <div class="grid-1">${opt('daa','active','📡','Active and under observation','400 ft AGL')}${opt('daa','compromised','📶','Installed, coverage compromised here','200 ft AGL, or 400 ft with VOs')}${opt('daa','none','○','Not used','')}</div>
         </div>
         <div class="field-group">
             <span class="field-label">Visual Observers assigned?</span>

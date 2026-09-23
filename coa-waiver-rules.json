@@ -1,5 +1,5 @@
 {
-  "version": "4.2",
+  "version": "4.3",
   "certificate": "107W-2026-01762",
   "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 4.0 restates the shielded/non-shielded split, the three operations-over-non-participants pathways, the UASFM grid authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Trims Aircraft & Equipment to site-invariant items (aircraft-state checks such as Remote ID, ADS-B, maintenance log and FCC compliance now belong on a separate pre-flight readiness checklist, not a per-site record), removes duplicate Shielding Geometry and Property items already covered elsewhere, and splits the applicable sections between ground-crew and RPIC items with a single RPIC attestation gating final approval. Items carried over from the superseded certificate as EP practice are labelled as such.",
   "decisions": {
@@ -1890,10 +1890,54 @@
             "type": "fieldEquals",
             "field": "daaStatus",
             "value": "compromised"
+          },
+          {
+            "type": "anyOf",
+            "of": [
+              {
+                "type": "fieldNotEquals",
+                "field": "vo2sm",
+                "value": "Yes"
+              },
+              {
+                "type": "numberAtMost",
+                "field": "voCount",
+                "value": 0
+              }
+            ]
           }
         ]
       },
-      "text": "DAA coverage is compromised at this site. Non-shielded operations are limited to 200 ft AGL (Non-Shielded Operations, DAA Requirement (SP 12(b)))."
+      "text": "DAA coverage is compromised at this site and sufficient VOs are not in place. Non-shielded operations are limited to 200 ft AGL (Non-Shielded Operations, DAA Requirement (SP 12(b)))."
+    },
+    {
+      "id": "COND-DAA-VO",
+      "when": {
+        "type": "allOf",
+        "of": [
+          {
+            "type": "fieldNotEquals",
+            "field": "shieldContinuity",
+            "value": "continuous"
+          },
+          {
+            "type": "fieldEquals",
+            "field": "daaStatus",
+            "value": "compromised"
+          },
+          {
+            "type": "fieldEquals",
+            "field": "vo2sm",
+            "value": "Yes"
+          },
+          {
+            "type": "numberAtLeast",
+            "field": "voCount",
+            "value": 1
+          }
+        ]
+      },
+      "text": "DAA coverage is compromised at this site. Operations run on the VO pathway (Non-Shielded Operations, Visual Observer Coverage (SP 12(c))) at up to 400 ft AGL; VOs must continuously cover a 2 SM radius and carry see-and-avoid for the entire flight."
     },
     {
       "id": "COND-VO",
