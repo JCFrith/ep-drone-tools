@@ -88,6 +88,7 @@ module.exports = async (req, res) => {
       res.setHeader('Cache-Control', 'public, s-maxage=43200, stale-while-revalidate=86400');
       return res.end(JSON.stringify({ type: 'FeatureCollection', features }));
     } catch (e) {
+      console.error('layer tile failed', req.query.layer, z, x, y, e && e.code, e && e.message);
       res.statusCode = e && e.code === 429 ? 503 : 502;
       res.setHeader('Cache-Control', 'no-store');
       if (e && e.code === 429) res.setHeader('Retry-After', '60');
@@ -119,6 +120,7 @@ module.exports = async (req, res) => {
     res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=60');
     return res.end(JSON.stringify({ fetched: new Date().toISOString(), metars: Array.isArray(j) ? j : [] }));
   } catch (e) {
+    console.error('relay failed', src, e && e.message);
     res.statusCode = 502;
     res.setHeader('Cache-Control', 'no-store');
     return res.end(JSON.stringify({ error: 'FAA source did not respond: ' + (e && e.message ? e.message : 'unknown') }));

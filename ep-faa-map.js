@@ -208,7 +208,7 @@
       var need = tilesFor(pad(view, 0.15), d.tz);
       st.tooMany = need.length > MAX_TILES;
       if (st.tooMany) { setStatus(); return; }
-      var missing = need.filter(function (k) { var c = TILE_CACHE[d.key + '/' + k]; return !c || (c.err && !c.busy); });
+      var missing = need.filter(function (k) { var c = TILE_CACHE[d.key + '/' + k]; return !c || (c.err && (c.tries || 0) < 3); });
       var redraw = function () {
         if (dead) return;
         var seen = {}, feats = [];
@@ -225,18 +225,23 @@
       if (Date.now() < COOLDOWN_UNTIL && missing.length) { redraw(); return; }
       missing.forEach(function (k) {
         var ck = d.key + '/' + k, xy = k.split('/');
-        TILE_CACHE[ck] = { busy: true };
+        var tries = ((TILE_CACHE[ck] && TILE_CACHE[ck].tries) || 0) + 1;
+        TILE_CACHE[ck] = { busy: true, tries: tries };
         enqueue(function () {
-          if (Date.now() < COOLDOWN_UNTIL) { TILE_CACHE[ck] = { err: 'rate limit' }; redraw(); return Promise.resolve(); }
+          if (Date.now() < COOLDOWN_UNTIL) { TILE_CACHE[ck] = { err: 'rate limit', tries: tries - 1 }; redraw(); return Promise.resolve(); }
           return getJson(relay + '?src=layer&layer=' + d.key + '&z=' + d.tz + '&x=' + xy[0] + '&y=' + xy[1]).then(function (gj) {
             TILE_CACHE[ck] = { features: gj.features || [] }; redraw();
-          }, function (e) { TILE_CACHE[ck] = { err: e.message }; redraw(); });
+          }, function (e) { TILE_CACHE[ck] = { err: e.message, tries: tries }; redraw(); scheduleRetry(); });
         });
       });
       redraw();
     }
 
-    var cooldownTimer = null;
+    var cooldownTimer = null, retryTimer = null;
+    function scheduleRetry() {
+      if (retryTimer || dead) return;
+      retryTimer = setTimeout(function () { retryTimer = null; refresh(); }, Math.max(6000, COOLDOWN_UNTIL - Date.now() + 500));
+    }
     function refresh() {
       if (dead) return;
       var b = map.getBounds(), view = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], z = map.getZoom();
