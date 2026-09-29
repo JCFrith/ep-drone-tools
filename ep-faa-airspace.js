@@ -341,6 +341,10 @@
 
   var CACHE = {};
   function lookup(lat, lng) {
+    api.inflight++;
+    return lookupInner(lat, lng).then(function (r) { api.inflight--; return r; }, function (e) { api.inflight--; throw e; });
+  }
+  function lookupInner(lat, lng) {
     lat = Number(lat); lng = Number(lng);
     var ck = lat.toFixed(5) + ',' + lng.toFixed(5);
     var hit = CACHE[ck];
@@ -449,8 +453,8 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectCss); else injectCss();
   }
 
-  window.EPFAA = {
-    version: '1.0',
+  var api = window.EPFAA = {
+    version: '1.1', inflight: 0,
     lookup: lookup, analyze: analyze, renderHTML: renderHTML, summaryLine: summaryLine,
     facilitiesText: facilitiesText, distMi: distMi, fmtTime: fmtTime,
     links: { tfr: 'https://tfr.faa.gov/', notam: 'https://notams.aim.faa.gov/notamSearch/' }

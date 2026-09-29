@@ -22,6 +22,46 @@
     { key: 'apt', name: 'Airports and heliports', tz: 9, minZoom: 10, on: false }
   ];
   var MAX_TILES = 30;
+  // Same tile definitions the relay uses (api/faa.js). If the relay is throttled on a cold tile, the
+  // browser asks the FAA service directly with the identical query.
+  var ARC = 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/';
+  var TILE_DEFS = {
+    uasfm: { svcs: ['FAA_UAS_FacilityMap_Data'], fields: 'OBJECTID,CEILING', precision: 5 },
+    cls: { svcs: ['Class_Airspace'], fields: 'OBJECTID,NAME,CLASS,LOCAL_TYPE,LOWER_VAL,LOWER_CODE',
+      where: "CLASS IN ('B','C','D') OR LOCAL_TYPE IN ('CLASS_E2','CLASS_E3','CLASS_E4')", offset: 0.0004 },
+    sua: { svcs: ['Special_Use_Airspace'], fields: 'OBJECTID,NAME,TYPE_CODE,LOWER_VAL,UPPER_VAL', offset: 0.0006 },
+    nsr: { svcs: ['DoD_Mar_13', 'Part_Time_National_Security_UAS_Flight_Restrictions', 'Prohibited_Areas', 'National_Defense_Airspace_TFR_Areas'], fields: '*', offset: 0.0002 },
+    stad: { svcs: ['Stadiums'], fields: 'OBJECTID,NAME' },
+    apt: { svcs: ['US_Airport'], fields: 'OBJECTID,IDENT,NAME,TYPE_CODE' }
+  };
+  function tileBbox(z, x, y) {
+    var n = Math.pow(2, z);
+    var lon = function (v) { return v / n * 360 - 180; };
+    var lat = function (v) { return Math.atan(Math.sinh(Math.PI * (1 - 2 * v / n))) * 180 / Math.PI; };
+    return [lon(x), lat(y + 1), lon(x + 1), lat(y)];
+  }
+  function waitForLookup() {
+    // The pin lookup gets the FAA quota first: hold direct tile queries while one is running.
+    return new Promise(function (res) {
+      var t0 = Date.now();
+      (function poll() { if (!(window.EPFAA && EPFAA.inflight > 0) || Date.now() - t0 > 20000) res(); else setTimeout(poll, 400); })();
+    });
+  }
+  function directTile(key, z, x, y) {
+    var def = TILE_DEFS[key], bbox = tileBbox(z, x, y);
+    return waitForLookup().then(function () {
+      return Promise.all(def.svcs.map(function (svc) {
+        var p = ['where=' + encodeURIComponent(def.where || '1=1'), 'geometry=' + encodeURIComponent(bbox.map(function (n) { return n.toFixed(6); }).join(',')),
+          'geometryType=esriGeometryEnvelope', 'inSR=4326', 'spatialRel=esriSpatialRelIntersects', 'outFields=' + encodeURIComponent(def.fields),
+          'returnGeometry=true', 'outSR=4326', 'geometryPrecision=' + (def.precision || 5), 'resultRecordCount=2000', 'f=geojson'];
+        if (def.offset) p.push('maxAllowableOffset=' + def.offset);
+        return fetch(ARC + svc + '/FeatureServer/0/query?' + p.join('&')).then(function (r) { return r.json(); }).then(function (j) {
+          if (j && j.error) { if (j.error.code === 429) COOLDOWN_UNTIL = Date.now() + 60000; throw new Error(j.error.message || 'FAA error'); }
+          return (j.features || []).map(function (f) { f.id = svc + ':' + (f.id != null ? f.id : (f.properties && f.properties.OBJECTID)); return f; });
+        });
+      }));
+    }).then(function (arr) { return { type: 'FeatureCollection', features: [].concat.apply([], arr) }; });
+  }
   var TILE_CACHE = {};                 // shared by every map on the page: 'layer/x/y' -> features
   var COOLDOWN_UNTIL = 0;              // set when the FAA services throttle us
 
@@ -68,8 +108,7 @@
   function contains(o, i) { return o && i[0] >= o[0] && i[1] >= o[1] && i[2] <= o[2] && i[3] <= o[3]; }
   function getJson(url) {
     return fetch(url).then(function (r) {
-      if (r.status === 503 || r.status === 429) { COOLDOWN_UNTIL = Date.now() + 60000; throw new Error('FAA rate limit'); }
-      if (!r.ok) throw new Error('HTTP ' + r.status);
+      if (!r.ok) { var e = new Error(r.status === 503 ? 'FAA rate limit' : 'HTTP ' + r.status); e.status = r.status; throw e; }
       return r.json();
     });
   }
@@ -229,9 +268,14 @@
         TILE_CACHE[ck] = { busy: true, tries: tries };
         enqueue(function () {
           if (Date.now() < COOLDOWN_UNTIL) { TILE_CACHE[ck] = { err: 'rate limit', tries: tries - 1 }; redraw(); return Promise.resolve(); }
-          return getJson(relay + '?src=layer&layer=' + d.key + '&z=' + d.tz + '&x=' + xy[0] + '&y=' + xy[1]).then(function (gj) {
-            TILE_CACHE[ck] = { features: gj.features || [] }; redraw();
-          }, function (e) { TILE_CACHE[ck] = { err: e.message, tries: tries }; redraw(); scheduleRetry(); });
+          return getJson(relay + '?src=layer&layer=' + d.key + '&z=' + d.tz + '&x=' + xy[0] + '&y=' + xy[1])
+            .catch(function (e) {
+              if (e.status === 502 || e.status === 503) return directTile(d.key, d.tz, +xy[0], +xy[1]);
+              throw e;
+            })
+            .then(function (gj) {
+              TILE_CACHE[ck] = { features: gj.features || [] }; redraw();
+            }, function (e) { TILE_CACHE[ck] = { err: e.message, tries: tries }; redraw(); scheduleRetry(); });
         });
       });
       redraw();
