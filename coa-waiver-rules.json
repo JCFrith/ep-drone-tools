@@ -1,7 +1,7 @@
 {
   "version": "4.4",
   "certificate": "107W-2026-01762",
-  "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 4.0 restates the shielded/non-shielded split, the three operations-over-non-participants pathways, the UASFM grid authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Trims Aircraft & Equipment to site-invariant items (aircraft-state checks such as Remote ID, ADS-B, maintenance log and FCC compliance now belong on a separate pre-flight readiness checklist, not a per-site record), removes duplicate Shielding Geometry and Property items already covered elsewhere, and splits the applicable sections between ground-crew and RPIC items with a single RPIC attestation gating final approval. Items carried over from the superseded certificate as EP practice are labelled as such. Version 4.4 adds the FAA airspace lookup: the site pin is checked against FAA open data (UAS Facility Maps, class airspace, special use and prohibited airspace, National Security UAS Flight Restrictions, stadiums, and airports and heliports within 3 miles). A pin moved after the lookup, a recorded class or grid height that differs from the FAA data without a reason, or a site inside national security, prohibited or national defense airspace blocks approval.",
+  "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 4.0 restates the shielded/non-shielded split, the three operations-over-non-participants pathways, the UASFM grid authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Trims Aircraft & Equipment to site-invariant items (aircraft-state checks such as Remote ID, ADS-B, maintenance log and FCC compliance now belong on a separate pre-flight readiness checklist, not a per-site record), removes duplicate Shielding Geometry and Property items already covered elsewhere, and splits the applicable sections between ground-crew and RPIC items with a single RPIC attestation gating final approval. Items carried over from the superseded certificate as EP practice are labelled as such. Version 4.4 adds the FAA airspace lookup: the site pin is checked against FAA open data (UAS Facility Maps, class airspace, special use and prohibited airspace, National Security UAS Flight Restrictions, stadiums, and airports and heliports within 3 miles). A pin moved after the lookup, a recorded class or grid height that differs from the FAA data without a reason, a site inside national security, prohibited or national defense airspace, or an incomplete lookup blocks approval.",
   "decisions": {
     "approvedWithConditions": "APPROVED WITH CONDITIONS",
     "notApproved": "NOT APPROVED",
@@ -1056,6 +1056,20 @@
       "label": "Site outside national security, prohibited and national defense airspace",
       "failReason": "FAA data places the site inside a National Security UAS Flight Restriction, a prohibited area or national defense airspace.",
       "correctiveAction": "Move the operating area outside the restriction and re-run the FAA airspace lookup. The site cannot be approved while it sits inside one."
+    },
+    {
+      "id": "AIR-016",
+      "category": "Airspace & Regulatory",
+      "severity": "notApproved",
+      "provision": "Site Assessment",
+      "test": {
+        "type": "fieldNotEquals",
+        "field": "faaStatus",
+        "value": "partial"
+      },
+      "label": "FAA airspace lookup complete",
+      "failReason": "The FAA airspace lookup is incomplete: at least one FAA data query did not respond, so a restriction at the site may have been missed.",
+      "correctiveAction": "Re-run the FAA airspace lookup in Section 3, or discard it and check the site on the sectional chart and B4UFLY."
     },
     {
       "id": "PROP-001",

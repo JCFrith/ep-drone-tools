@@ -27,15 +27,15 @@
       fields: 'CEILING,UNIT,MAP_EFF,LAST_EDIT,ARPT_COUNT,APT1_FAAID,APT1_NAME,APT2_FAAID,APT2_NAME,APT3_FAAID,APT3_NAME,APT4_FAAID,APT4_NAME,APT5_FAAID,APT5_NAME,AIRSPACE_1,AIRSPACE_2,AIRSPACE_3,AIRSPACE_4,AIRSPACE_5' },
     cls: { svc: 'Class_Airspace', label: 'Class airspace', critical: true,
       fields: 'NAME,IDENT,CLASS,LOCAL_TYPE,LOWER_VAL,LOWER_UOM,LOWER_CODE,UPPER_VAL,UPPER_CODE,WKHR_CODE,WKHR_RMK' },
-    sua: { svc: 'Special_Use_Airspace', label: 'Special use airspace',
+    sua: { svc: 'Special_Use_Airspace', label: 'Special use airspace', critical: true,
       fields: 'NAME,TYPE_CODE,LOWER_VAL,LOWER_CODE,UPPER_VAL,UPPER_CODE,TIMESOFUSE,CONT_AGENT' },
-    pro: { svc: 'Prohibited_Areas', label: 'Prohibited areas',
+    pro: { svc: 'Prohibited_Areas', label: 'Prohibited areas', critical: true,
       fields: 'NAME,TYPE_CODE,LOWER_VAL,LOWER_CODE,UPPER_VAL,UPPER_CODE,TIMESOFUSE' },
-    nsufr: { svc: 'DoD_Mar_13', label: 'National Security UAS Flight Restrictions',
+    nsufr: { svc: 'DoD_Mar_13', label: 'National Security UAS Flight Restrictions', critical: true,
       fields: 'Facility,Base,Floor,Ceiling,Reason,State' },
-    nsufrPt: { svc: 'Part_Time_National_Security_UAS_Flight_Restrictions', label: 'Part-time National Security UAS Flight Restrictions',
+    nsufrPt: { svc: 'Part_Time_National_Security_UAS_Flight_Restrictions', label: 'Part-time National Security UAS Flight Restrictions', critical: true,
       fields: 'Facility,Base,Floor,Ceiling,Reason,ACTIVETIME,ENDTIME' },
-    nda: { svc: 'National_Defense_Airspace_TFR_Areas', label: 'National defense airspace',
+    nda: { svc: 'National_Defense_Airspace_TFR_Areas', label: 'National defense airspace', critical: true,
       fields: 'NAME,TYPE_CODE,LOCAL_TYPE,WKHR_CODE,WKHR_RMK' },
     apt: { svc: 'US_Airport', label: 'Airports and heliports', points: true,
       fields: 'IDENT,NAME,TYPE_CODE,PRIVATEUSE,MIL_CODE,OPERSTATUS,ELEVATION' },
@@ -81,10 +81,19 @@
       'resultRecordCount=200',
       'f=json'
     ].join('&');
-    return withTimeout(BASE + L.svc + '/FeatureServer/0/query?' + p).then(function (j) {
-      if (j && j.error) throw new Error(j.error.message || 'query error');
-      return (j && j.features) || [];
-    });
+    var url = BASE + L.svc + '/FeatureServer/0/query?' + p;
+    // ArcGIS Online throttles bursts (HTTP 200 with error code 429 in the body). Retry twice with backoff.
+    var attempt = function (n) {
+      return withTimeout(url).then(function (j) {
+        if (j && j.error) throw new Error((j.error.code === 429 ? 'rate limited: ' : '') + (j.error.message || 'query error'));
+        if (!j || !Array.isArray(j.features)) throw new Error('unexpected response');
+        return j.features;
+      }).catch(function (e) {
+        if (n >= 2) throw e;
+        return new Promise(function (res) { setTimeout(res, n === 0 ? 1500 : 4000); }).then(function () { return attempt(n + 1); });
+      });
+    };
+    return attempt(0);
   }
   /* Ground elevation in ft MSL. Two free sources raced; the first valid answer wins. USGS EPQS is the
      authoritative US source but often takes 20 s or more; Open-Meteo (Copernicus 90 m DEM) usually
@@ -268,7 +277,7 @@
     flag('info', R.facilities.length
       ? R.facilities.length + ' airport or heliport record(s) within 3 miles (Facility Notification Within 3 Miles (SP 19(d)))' + (near.length ? ', ' + near.length + ' within 1 SM' : '') + '. Agricultural aerial application operations are not in this data.'
       : 'No airport or heliport record within 3 miles. Agricultural aerial application operations are not in this data.');
-    errors.forEach(function (e) { flag(LAYERS[e] && LAYERS[e].critical ? 'warn' : 'info', 'The ' + (LAYERS[e] ? LAYERS[e].label : e) + ' query did not respond. That check was not made.'); });
+    errors.forEach(function (e) { flag('warn', 'The ' + (LAYERS[e] ? LAYERS[e].label : e) + ' query did not respond, so that check was not made. Re-run the lookup.'); });
 
     var levels = R.flags.map(function (f) { return f.level; });
     var critFail = errors.some(function (e) { return LAYERS[e] && LAYERS[e].critical; });
@@ -276,8 +285,12 @@
     return R;
   }
 
+  var CACHE = {};
   function lookup(lat, lng) {
     lat = Number(lat); lng = Number(lng);
+    var ck = lat.toFixed(5) + ',' + lng.toFixed(5);
+    var hit = CACHE[ck];
+    if (hit && Date.now() - hit.t < 10 * 60 * 1000) return Promise.resolve(JSON.parse(hit.r));
     if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return Promise.reject(new Error('Invalid coordinates'));
     var raw = {}, errors = [], elev = null;
     var facDeg = (FAC_RADIUS_MI + 0.05) / 69.05, stadDeg = (STADIUM_RADIUS_NM * MI_PER_NM + 0.05) / 69.05;
@@ -288,13 +301,15 @@
     jobs.push(elevation(lat, lng).then(function (v) { elev = v; }, function () { elev = null; }));
     return Promise.all(jobs).then(function () {
       if (errors.length === Object.keys(LAYERS).length) throw new Error('FAA data services unreachable');
-      return analyze(lat, lng, raw, elev, errors);
+      var R = analyze(lat, lng, raw, elev, errors);
+      if (!errors.length) CACHE[ck] = { t: Date.now(), r: JSON.stringify(R) };
+      return R;
     });
   }
 
   /* ---- Presentation ---- */
   function esc(v) { return s(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  var STATUS_TEXT = { ok: 'No airspace conflict found', warn: 'Review the flagged items', stop: 'Restricted: do not operate', partial: 'Incomplete: a core FAA query failed' };
+  var STATUS_TEXT = { ok: 'No airspace conflict found', warn: 'Review the flagged items', stop: 'Restricted: do not operate', partial: 'Incomplete: an FAA query did not respond' };
   function fmtTime(iso) {
     try { return new Date(iso).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
     catch (e) { return iso; }
