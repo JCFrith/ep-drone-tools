@@ -264,7 +264,7 @@
     else if (R.controlled && !R.grid)
       flag('warn', 'Controlled airspace reaches the surface here but no UASFM grid is published. UASFM Grid Operations / NOTAM Requirement (SP 16) cannot authorize this site. Flight needs a separate ATC authorization.');
     else if (R.grid)
-      flag('info', R.classOption + ' at the surface. UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes operations at or below ' + R.grid.ceiling + ' ft AGL with a NOTAM filed 24 to 72 hours prior. LAANC may not be used for waivered operations.');
+      flag('info', 'Controlled airspace (' + R.classOption + ') with a published UASFM grid. UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes operations at or below ' + R.grid.ceiling + ' ft AGL with a NOTAM filed 24 to 72 hours prior. LAANC may not be used for waivered operations.');
     else
       flag('info', 'No controlled airspace between the surface and 400 ft AGL at this pin. Class G: no airspace authorization required.');
     R.classes.filter(function (c) { return c.partTime; }).forEach(function (c) {
