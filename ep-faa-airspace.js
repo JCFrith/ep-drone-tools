@@ -197,6 +197,10 @@
     });
     // The UASFM cell names the controlled class too. Use whichever source is more restrictive.
     if (R.grid) R.grid.airspace.forEach(function (c) { if (CLASS_RANK[c] && CLASS_RANK[c] > best) best = CLASS_RANK[c]; });
+    if (R.grid) R.grid.airspace.forEach(function (c) {
+      if (CLASS_RANK[c] && !R.classes.some(function (x) { return x.cls === c && x.floorAgl === 0; }))
+        flag('info', 'The UASFM cell lists Class ' + c + ' here, but the class airspace data shows no Class ' + c + ' surface area at the pin. The published grid is treated as governing.');
+    });
     var bestClass = Object.keys(CLASS_RANK).filter(function (k) { return CLASS_RANK[k] === best; })[0];
     R.controlled = best > 0;
     R.classOption = R.controlled ? CLASS_OPTION[bestClass] : 'Class G';
