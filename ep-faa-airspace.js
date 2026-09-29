@@ -7,7 +7,8 @@
    national security UAS flight restrictions, prohibited areas, national defense airspace,
    stadiums within 3 NM, and airports/heliports within 3 statute miles (Facility Notification
    Within 3 Miles (SP 19(d))).
-   What it does not answer:  TFRs and NOTAMs. Those still need a manual check before each flight. */
+   TFR shapes come from tfr.faa.gov through the EP relay (/api/faa) when the page is served from the
+   EP site. What it does not answer:  NOTAM text. That still needs a check before each flight. */
 (function () {
   'use strict';
   var BASE = 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/';
@@ -21,6 +22,8 @@
   var STADIUM_RADIUS_NM = 3;
   var MI_PER_NM = 1.15078;
   var OPS_CEILING_AGL = 400;
+  var TFR_NEAR_NM = 5;
+  var RELAY = (typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) ? '/api/faa' : null;
 
   var LAYERS = {
     uasfm: { svc: 'FAA_UAS_FacilityMap_Data', label: 'UAS Facility Map', critical: true,
@@ -52,6 +55,36 @@
   function envelope(lat, lng, dLat) {
     var dLng = dLat / Math.max(0.2, Math.cos(lat * Math.PI / 180));
     return [lng - dLng, lat - dLat, lng + dLng, lat + dLat].map(function (x) { return x.toFixed(6); }).join(',');
+  }
+  /* Point in polygon (GeoJSON Polygon or MultiPolygon, holes respected). */
+  function ringHas(ring, x, y) {
+    var inside = false;
+    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) inside = !inside;
+    }
+    return inside;
+  }
+  function polyHas(g, x, y) {
+    if (!g) return false;
+    var polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+    return polys.some(function (p) { return p.length && ringHas(p[0], x, y) && !p.slice(1).some(function (h) { return ringHas(h, x, y); }); });
+  }
+  /* Shortest distance in statute miles from a point to a polygon outline (flat-earth, fine at these ranges). */
+  function edgeMi(g, lat, lng) {
+    if (!g) return Infinity;
+    var kx = 69.172 * Math.cos(lat * Math.PI / 180), ky = 69.05, best = Infinity;
+    var polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+    polys.forEach(function (p) { p.forEach(function (ring) {
+      for (var i = 1; i < ring.length; i++) {
+        var ax = (ring[i - 1][0] - lng) * kx, ay = (ring[i - 1][1] - lat) * ky, bx = (ring[i][0] - lng) * kx, by = (ring[i][1] - lat) * ky;
+        var dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+        var t = L2 ? Math.max(0, Math.min(1, -(ax * dx + ay * dy) / L2)) : 0;
+        var px = ax + t * dx, py = ay + t * dy;
+        best = Math.min(best, Math.sqrt(px * px + py * py));
+      }
+    }); });
+    return best;
   }
   function distMi(lat1, lng1, lat2, lng2) {
     var R = 3958.7613, r = Math.PI / 180;
@@ -155,7 +188,7 @@
     var R = {
       v: 1, lat: +lat.toFixed(6), lng: +lng.toFixed(6), at: new Date().toISOString(),
       elevFt: elev, elevSrc: elevSrc, grid: null, classes: [], controlled: false, classOption: '',
-      sua: [], prohibited: [], nsufr: [], nsufrPartTime: [], nda: [], stadiums: [], facilities: [],
+      sua: [], prohibited: [], nsufr: [], nsufrPartTime: [], nda: [], stadiums: [], facilities: [], tfrs: [], tfrChecked: !!raw.tfr,
       errors: errors, flags: [], status: 'ok'
     };
     var flag = function (level, text) { R.flags.push({ level: level, text: text }); };
@@ -247,6 +280,15 @@
       R.facilities.push({ id: s(a.IDENT), name: s(a.NAME), type: FAC_TYPES[s(a.TYPE_CODE).toUpperCase()] || s(a.TYPE_CODE),
         priv: Number(a.PRIVATEUSE) === 1, mil: !!mil && mil !== 'CIVIL', status: s(a.OPERSTATUS), mi: Math.round(mi * 100) / 100 });
     });
+    (raw.tfr || []).forEach(function (f) {
+      var p = f.properties || {}, inside = polyHas(f.geometry, lng, lat);
+      var nm = inside ? 0 : edgeMi(f.geometry, lat, lng) / MI_PER_NM;
+      if (!inside && nm > TFR_NEAR_NM) return;
+      var key = s(p.NOTAM_KEY).replace(/-\d+-FDC-F$/, '').replace(/-FDC.*$/, '');
+      if (R.tfrs.some(function (t) { return t.notam === key && t.inside === inside; })) return;
+      R.tfrs.push({ notam: key, title: s(p.TITLE), type: s(p.LEGAL), inside: inside, nm: Math.round(nm * 10) / 10 });
+    });
+    R.tfrs.sort(function (a, b) { return a.nm - b.nm; });
     R.stadiums.sort(function (a, b) { return a.nm - b.nm; });
     R.facilities.sort(function (a, b) { return a.mi - b.mi; });
 
@@ -281,7 +323,14 @@
     flag('info', R.facilities.length
       ? R.facilities.length + ' airport or heliport record(s) within 3 miles (Facility Notification Within 3 Miles (SP 19(d)))' + (near.length ? ', ' + near.length + ' within 1 SM' : '') + '. Agricultural aerial application operations are not in this data.'
       : 'No airport or heliport record within 3 miles. Agricultural aerial application operations are not in this data.');
-    errors.forEach(function (e) { flag('warn', 'The ' + (LAYERS[e] ? LAYERS[e].label : e) + ' query did not respond, so that check was not made. Re-run the lookup.'); });
+    R.tfrs.forEach(function (t) {
+      if (t.inside) flag('warn', 'Inside TFR ' + t.notam + (t.type ? ' (' + t.type.toLowerCase() + ')' : '') + ': ' + t.title + '. Read the NOTAM for its times, altitudes and whether UAS are restricted before any flight.');
+      else flag('info', 'TFR ' + t.notam + ' is ' + t.nm + ' NM away: ' + t.title + '.');
+    });
+    errors.forEach(function (e) {
+      var lbl = e === 'tfr' ? 'TFR' : (LAYERS[e] ? LAYERS[e].label : e);
+      flag('warn', 'The ' + lbl + ' query did not respond, so that check was not made.' + (e === 'tfr' ? ' Check TFRs at tfr.faa.gov.' : ' Re-run the lookup.'));
+    });
 
     var levels = R.flags.map(function (f) { return f.level; });
     var critFail = errors.some(function (e) { return LAYERS[e] && LAYERS[e].critical; });
@@ -303,8 +352,15 @@
       return query(k, lat, lng, d).then(function (f) { raw[k] = f; }, function () { errors.push(k); raw[k] = []; });
     });
     jobs.push(elevation(lat, lng).then(function (v) { elev = v; }, function () { elev = null; }));
+    if (RELAY) {
+      var tDeg = (TFR_NEAR_NM * MI_PER_NM + 0.5) / 69.05;
+      jobs.push(withTimeout(RELAY + '?src=tfr&bbox=' + envelope(lat, lng, tDeg)).then(function (j) {
+        if (!j || !Array.isArray(j.features)) throw new Error('bad TFR response');
+        raw.tfr = j.features;
+      }).catch(function () { errors.push('tfr'); }));
+    }
     return Promise.all(jobs).then(function () {
-      if (errors.length === Object.keys(LAYERS).length) throw new Error('FAA data services unreachable');
+      if (errors.filter(function (e) { return LAYERS[e]; }).length === Object.keys(LAYERS).length) throw new Error('FAA data services unreachable');
       var R = analyze(lat, lng, raw, elev, errors);
       if (!errors.length) CACHE[ck] = { t: Date.now(), r: JSON.stringify(R) };
       return R;
@@ -348,7 +404,7 @@
     }
     h += '<div class="faa-src">Source: FAA Aeronautical Information Services and UAS Data Delivery System open data' +
       (R.grid && R.grid.mapEff ? ', UASFM effective ' + esc(R.grid.mapEff) : '') + '; ground elevation ' + esc(R.elevSrc || 'unavailable') + '. Pulled ' + esc(fmtTime(R.at)) +
-      ' for ' + R.lat.toFixed(5) + ', ' + R.lng.toFixed(5) + '. TFRs and NOTAMs are not covered. The RPIC confirms every value.</div>';
+      ' for ' + R.lat.toFixed(5) + ', ' + R.lng.toFixed(5) + '. ' + (R.tfrChecked ? 'TFR shapes from tfr.faa.gov; NOTAM text is not covered.' : 'TFRs and NOTAMs are not covered.') + ' The RPIC confirms every value.</div>';
     return h;
   }
   function facilitiesText(R, maxMi) {

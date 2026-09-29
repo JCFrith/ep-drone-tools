@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Airspace &amp; Weather | Enhanced Patrol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="ep-faa-airspace.js"></script>
+<script src="ep-faa-map.js"></script>
+<style>
+  :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-white:#FFFFFF;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-warn:#F5A524;--ep-block:#E5484D;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ep-navy);color:var(--ep-white);display:flex;flex-direction:column;-webkit-font-smoothing:antialiased;}
+  a{color:var(--ep-blue);}
+  .topbar{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--ep-navy-deep);border-bottom:2px solid var(--ep-gold);flex-wrap:wrap;}
+  .topbar img{height:34px;}
+  .topbar h1{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.6rem;letter-spacing:2px;line-height:1;}
+  .topbar h1 em{color:var(--ep-gold);font-style:normal;}
+  .topbar .hub{margin-left:auto;font-size:.78rem;color:var(--ep-gray);text-decoration:none;border:1px solid rgba(255,255,255,.2);padding:6px 10px;border-radius:6px;}
+  .searchbar{display:flex;gap:8px;padding:10px 16px;background:var(--ep-navy-card);flex-wrap:wrap;align-items:center;}
+  .searchbar input{flex:1 1 240px;min-width:0;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:9px 11px;font:inherit;font-size:.9rem;}
+  .btn{font:inherit;font-size:.8rem;font-weight:600;padding:9px 13px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;cursor:pointer;white-space:nowrap;}
+  .btn.primary{background:var(--ep-dark-blue);border-color:var(--ep-blue);}
+  .btn:disabled{opacity:.5;cursor:default;}
+  .hint{font-size:.72rem;color:var(--ep-gray);}
+  .layout{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 440px;min-height:0;}
+  #map{min-height:320px;height:100%;background:var(--ep-navy-deep);}
+  .panel{overflow-y:auto;background:var(--ep-navy);border-left:1px solid rgba(255,255,255,.08);padding:14px 16px 40px;}
+  .card{background:var(--ep-navy-card);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px 14px;margin-bottom:12px;}
+  .card h2{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ep-blue);margin-bottom:8px;display:flex;justify-content:space-between;gap:8px;align-items:center;}
+  .card h2 small{color:var(--ep-gray);letter-spacing:0;text-transform:none;font-weight:400;}
+  .empty{font-size:.85rem;color:var(--ep-gray);line-height:1.5;}
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+  .tile{background:rgba(255,255,255,.03);border-radius:6px;padding:7px 8px;}
+  .tile .k{font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ep-gray);}
+  .tile .v{font-size:1rem;font-weight:700;}
+  .tile .s{font-size:.66rem;color:var(--ep-gray);}
+  .tile.bad .v{color:var(--ep-block);} .tile.warn .v{color:var(--ep-warn);}
+  .wx-scroll{overflow-x:auto;margin:0 -4px;}
+  table.wx{border-collapse:collapse;font-size:.74rem;width:100%;min-width:560px;}
+  table.wx th{position:sticky;top:0;background:var(--ep-navy-card);color:var(--ep-gray);font-weight:600;font-size:.62rem;text-transform:uppercase;letter-spacing:.04em;padding:5px 4px;text-align:right;}
+  table.wx th:first-child,table.wx td:first-child{text-align:left;}
+  table.wx td{padding:5px 4px;border-top:1px solid rgba(255,255,255,.06);text-align:right;white-space:nowrap;}
+  table.wx td.bad{color:var(--ep-block);font-weight:700;} table.wx td.warn{color:var(--ep-warn);}
+  table.wx td.night{color:var(--ep-gray);}
+  .arrow{display:inline-block;font-size:.8em;margin-left:2px;}
+  .row-inline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;font-size:.74rem;color:var(--ep-gray);}
+  .row-inline input{width:70px;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:5px;padding:5px 7px;font:inherit;}
+  .alert{border-left:3px solid var(--ep-warn);padding:6px 9px;margin-bottom:6px;background:rgba(245,165,36,.07);font-size:.8rem;}
+  .alert.sev{border-color:var(--ep-block);background:rgba(229,72,77,.08);}
+  .metar{font-size:.78rem;margin-bottom:8px;}
+  .metar code{display:block;font-size:.72rem;background:var(--ep-navy-deep);padding:6px 8px;border-radius:5px;margin-top:3px;white-space:pre-wrap;word-break:break-word;color:#d7e3ee;}
+  .fc{display:inline-block;padding:1px 6px;border-radius:4px;font-weight:700;font-size:.66rem;margin-left:6px;color:#091520;}
+  .fc.VFR{background:#30A46C;} .fc.MVFR{background:#3b82f6;color:#fff;} .fc.IFR{background:#E5484D;color:#fff;} .fc.LIFR{background:#B03C9A;color:#fff;}
+  .sun{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:.78rem;}
+  .sun div span{display:block;font-size:.6rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ep-gray);}
+  .src{font-size:.66rem;color:var(--ep-gray);line-height:1.45;margin-top:8px;}
+  .loc{font-size:.86rem;line-height:1.4;}
+  .loc b{font-size:.95rem;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ep-navy-card);border:1px solid var(--ep-blue);border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:9999;display:none;max-width:90vw;}
+  @media (max-width: 900px){
+    .layout{grid-template-columns:1fr;grid-template-rows:58vh auto;}
+    .panel{border-left:none;border-top:1px solid rgba(255,255,255,.08);overflow:visible;}
+    body{height:auto;min-height:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
+  <h1>Airspace <em>&amp;</em> Weather</h1>
+  <a class="hub" href="index.html">All tools</a>
+</div>
+<div class="searchbar">
+  <input id="q" type="text" placeholder="Address, or latitude, longitude" autocomplete="off">
+  <button class="btn primary" id="findBtn" onclick="findQuery()">Find</button>
+  <button class="btn" onclick="locateMe()">My location</button>
+  <span class="hint">Or tap the map to drop a pin.</span>
+</div>
+<div class="layout">
+  <div id="map"></div>
+  <div class="panel" id="panel">
+    <div class="card"><div class="empty">Drop a pin to see the airspace at that spot, TFRs, the next 12 hours of weather including wind at drone altitudes, active weather alerts and the nearest airport observations.</div></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* Flight-day airspace and weather check. Sources: FAA open data (airspace, UASFM, TFR through /api/faa),
+   Open-Meteo forecast (winds at 10 m, 80 m and 120 m), National Weather Service alerts, and
+   aviationweather.gov METARs (through /api/faa). Nothing is stored except the wind limit on this device. */
+var map, pin = null, PT = null, seq = 0;
+var WMO = {0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorms',96:'Thunderstorms, hail',99:'Thunderstorms, hail'};
+
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._to); t._to=setTimeout(function(){t.style.display='none';},3500); }
+function getLimit(){ try{ var v=parseFloat(localStorage.getItem('ep-aw-windlimit')); return isNaN(v)?null:v; }catch(e){ return null; } }
+function setLimit(v){ try{ if(v==='') localStorage.removeItem('ep-aw-windlimit'); else localStorage.setItem('ep-aw-windlimit', v); }catch(e){} if(PT&&PT.wx) renderWx(); }
+function card(id, title, sub){ return '<div class="card" id="'+id+'"><h2>'+title+(sub?'<small>'+sub+'</small>':'')+'</h2><div class="body"><div class="empty">Loading</div></div></div>'; }
+function setBody(id, html){ var c=document.getElementById(id); if(c) c.querySelector('.body').innerHTML=html; }
+function compass(d){ if(d==null||isNaN(d)) return ''; return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(d/22.5)%16]; }
+function arrow(d){ return d==null?'':'<span class="arrow" style="transform:rotate('+((d+180)%360)+'deg)" title="from '+compass(d)+'">&#8593;</span>'; }
+
+/* ---- Sun times (NOAA sunrise equation). h0 = -0.833 for sunrise/sunset, -6 for civil twilight. ---- */
+function sunEvent(lat, lng, y, m, d, h0){
+  var r=Math.PI/180, n=Math.round(Date.UTC(y,m-1,d,12)/864e5+2440587.5-2451545+0.0008);
+  var Js=n-lng/360, M=(357.5291+0.98560028*Js)%360, C=1.9148*Math.sin(M*r)+0.02*Math.sin(2*M*r)+0.0003*Math.sin(3*M*r);
+  var lam=(M+C+180+102.9372)%360, Jt=2451545+Js+0.0053*Math.sin(M*r)-0.0069*Math.sin(2*lam*r);
+  var dec=Math.asin(Math.sin(lam*r)*Math.sin(23.4397*r));
+  var cw=(Math.sin(h0*r)-Math.sin(lat*r)*Math.sin(dec))/(Math.cos(lat*r)*Math.cos(dec));
+  if(cw<-1||cw>1) return null;
+  var w=Math.acos(cw)/r, toDate=function(J){ return new Date((J-2440587.5)*864e5); };
+  return { rise: toDate(Jt-w/360), set: toDate(Jt+w/360) };
+}
+function fmtLocal(d, off){ if(!d) return 'None'; var t=new Date(d.getTime()+off*1000), h=t.getUTCHours(), mi=t.getUTCMinutes(); return ((h%12)||12)+':'+(mi<10?'0':'')+mi+(h<12?' am':' pm'); }
+function hourLabel(iso){ var h=parseInt(iso.slice(11,13),10); return ((h%12)||12)+(h<12?' am':' pm'); }
+
+/* ---- Map ---- */
+function initMap(){
+  var h=(location.hash||'').replace('#','').split(',').map(Number);
+  var start = (h.length>=2 && isFinite(h[0]) && isFinite(h[1])) ? [h[0],h[1]] : [35.85,-86.39];
+  map=L.map('map',{center:start, zoom:(h[2]&&isFinite(h[2]))?h[2]:10});
+  var osm=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(map);
+  if(window.EPFAAMap) EPFAAMap.attach(map,{base:osm, collapsed:window.innerWidth<900});
+  map.on('click', function(e){ setPin(e.latlng.lat, e.latlng.lng, false); });
+  map.on('moveend', function(){ if(PT) writeHash(); });
+  if(h.length>=2 && isFinite(h[0]) && isFinite(h[1])) setPin(h[0],h[1],false);
+}
+function writeHash(){ if(!PT) return; history.replaceState(null,'','#'+PT.lat.toFixed(5)+','+PT.lng.toFixed(5)+','+map.getZoom()); }
+function pinIcon(){ return L.divIcon({className:'',html:'<div style="width:22px;height:22px;background:#FCC00E;border:3px solid #164998;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>',iconSize:[22,22],iconAnchor:[11,11]}); }
+function setPin(lat, lng, fly){
+  if(!pin){ pin=L.marker([lat,lng],{draggable:true,icon:pinIcon(),zIndexOffset:1000}).addTo(map); pin.on('dragend',function(){ var p=pin.getLatLng(); setPin(p.lat,p.lng,false); }); }
+  else pin.setLatLng([lat,lng]);
+  if(fly) map.setView([lat,lng], Math.max(map.getZoom(),13));
+  PT={lat:lat,lng:lng,id:++seq};
+  writeHash();
+  renderShell(); runAll(PT);
+}
+
+/* ---- Search ---- */
+function findQuery(){
+  var q=document.getElementById('q').value.trim();
+  if(!q){ toast('Enter an address or coordinates'); return; }
+  var m=q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if(m){ setPin(parseFloat(m[1]),parseFloat(m[2]),true); return; }
+  var b=document.getElementById('findBtn'); b.disabled=true;
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q='+encodeURIComponent(q),{headers:{'Accept-Language':'en'}})
+    .then(function(r){return r.ok?r.json():null;}).then(function(a){
+      b.disabled=false;
+      if(!a||!a.length){ toast('No match for that address'); return; }
+      setPin(parseFloat(a[0].lat),parseFloat(a[0].lon),true);
+    }).catch(function(){ b.disabled=false; toast('Address lookup failed'); });
+}
+document.getElementById('q').addEventListener('keydown',function(e){ if(e.key==='Enter'){ e.preventDefault(); findQuery(); } });
+function locateMe(){
+  if(!navigator.geolocation){ toast('Geolocation is not available'); return; }
+  toast('Getting location');
+  navigator.geolocation.getCurrentPosition(function(p){ setPin(p.coords.latitude,p.coords.longitude,true); },
+    function(e){ toast('Location error: '+e.message); },{enableHighAccuracy:true,timeout:15000});
+}
+
+/* ---- Panel ---- */
+function renderShell(){
+  var lim=getLimit();
+  document.getElementById('panel').innerHTML =
+    '<div class="card"><div class="loc"><b>'+PT.lat.toFixed(5)+', '+PT.lng.toFixed(5)+'</b><div class="hint" id="addr"></div></div></div>' +
+    card('cAir','Airspace at the pin') +
+    card('cNow','Weather now') +
+    '<div class="card" id="cHours"><h2>Next 12 hours<small>local time at the pin</small></h2><div class="row-inline">Aircraft wind limit <input type="number" min="0" step="1" id="wlim" value="'+(lim==null?'':lim)+'" placeholder="mph"> mph <span>Hours with wind or gusts at or above the limit turn red.</span></div><div class="body"><div class="empty">Loading</div></div></div>' +
+    card('cSun','Sun','civil twilight bounds night operations') +
+    card('cAlerts','Weather alerts','National Weather Service') +
+    card('cMetar','Nearest airport observations','METAR');
+  document.getElementById('wlim').addEventListener('input',function(){ setLimit(this.value); });
+}
+function runAll(P){
+  // Address (display only)
+  fetch('https://nominatim.openstreetmap.org/reverse?format=json&zoom=17&lat='+P.lat+'&lon='+P.lng,{headers:{'Accept-Language':'en'}})
+    .then(function(r){return r.json();}).then(function(d){ if(P!==PT) return; var el=document.getElementById('addr'); if(el&&d&&d.display_name) el.textContent=d.display_name; }).catch(function(){});
+  // Airspace
+  if(window.EPFAA){
+    EPFAA.lookup(P.lat,P.lng).then(function(R){ if(P!==PT) return;
+      setBody('cAir', EPFAA.renderHTML(R) + '<div class="faa-btns" style="margin-top:8px;"><a class="faa-btn" href="'+EPFAA.links.notam+'" target="_blank" rel="noopener">Check NOTAMs</a><a class="faa-btn" href="'+EPFAA.links.tfr+'" target="_blank" rel="noopener">tfr.faa.gov</a></div>');
+    }, function(e){ if(P!==PT) return; setBody('cAir','<div class="empty">FAA airspace lookup failed: '+esc(e.message)+'. Check B4UFLY or the sectional.</div>'); });
+  }
+  // Forecast
+  var u='https://api.open-meteo.com/v1/forecast?latitude='+P.lat.toFixed(4)+'&longitude='+P.lng.toFixed(4)+
+    '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,precipitation'+
+    '&hourly=temperature_2m,dew_point_2m,precipitation_probability,precipitation,weather_code,cloud_cover_low,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m'+
+    '&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=auto&forecast_days=2';
+  fetch(u).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ if(P!==PT) return; P.wx=j; renderWx(); renderSun(); })
+    .catch(function(e){ if(P!==PT) return; setBody('cNow','<div class="empty">Forecast unavailable: '+esc(e.message)+'</div>'); setBody('cHours','<div class="empty">Forecast unavailable.</div>'); renderSun(); });
+  // NWS alerts
+  fetch('https://api.weather.gov/alerts/active?point='+P.lat.toFixed(4)+','+P.lng.toFixed(4),{headers:{Accept:'application/geo+json'}})
+    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ if(P!==PT) return;
+      var f=(j.features||[]).map(function(x){return x.properties||{};});
+      setBody('cAlerts', f.length ? f.map(function(a){
+        var sev=/Extreme|Severe/.test(a.severity||'');
+        return '<div class="alert'+(sev?' sev':'')+'"><b>'+esc(a.event)+'</b>'+(a.severity?' ('+esc(a.severity)+')':'')+'<div class="hint">'+esc(a.headline||'')+'</div></div>';
+      }).join('') : '<div class="empty">No active alerts for this point.</div>');
+    }).catch(function(){ if(P!==PT) return; setBody('cAlerts','<div class="empty">National Weather Service alerts unavailable (US locations only).</div>'); });
+  // METARs through the relay
+  var d=0.75, bb=[P.lng-d/Math.cos(P.lat*Math.PI/180),P.lat-d,P.lng+d/Math.cos(P.lat*Math.PI/180),P.lat+d].map(function(n){return n.toFixed(3);}).join(',');
+  fetch('/api/faa?src=metar&bbox='+bb).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ if(P!==PT) return;
+    var m=(j.metars||[]).map(function(x){ x._mi=EPFAA.distMi(P.lat,P.lng,x.lat,x.lon); return x; }).sort(function(a,b){return a._mi-b._mi;}).slice(0,3);
+    setBody('cMetar', m.length ? m.map(function(x){
+      var age=Math.round((Date.now()/1000-x.obsTime)/60);
+      return '<div class="metar"><b>'+esc(x.icaoId)+'</b> '+esc(x.name||'')+' <span class="hint">'+x._mi.toFixed(1)+' mi, '+age+' min old</span>'+(x.fltCat?'<span class="fc '+esc(x.fltCat)+'">'+esc(x.fltCat)+'</span>':'')+'<code>'+esc(x.rawOb)+'</code></div>';
+    }).join('') : '<div class="empty">No reporting station within about 50 miles.</div>');
+  }).catch(function(){ if(P!==PT) return; setBody('cMetar','<div class="empty">METARs unavailable right now. Check aviationweather.gov.</div>'); });
+}
+function renderWx(){
+  var j=PT&&PT.wx; if(!j) return;
+  var lim=getLimit(), c=j.current||{}, H=j.hourly||{}, off=j.utc_offset_seconds||0;
+  var lvl=function(v){ return (lim!=null && v!=null && v>=lim) ? 'bad' : ''; };
+  var vis=function(m){ return m==null?'':(m/1609.34>=10?'10+':(m/1609.34).toFixed(1)); };
+  // Current conditions
+  var nowIdx=0, nowIso=new Date(Date.now()+off*1000).toISOString().slice(0,13);
+  for(var i=0;i<(H.time||[]).length;i++){ if(H.time[i].slice(0,13)>=nowIso){ nowIdx=i; break; } }
+  var w120=H.wind_speed_120m?H.wind_speed_120m[nowIdx]:null, w80=H.wind_speed_80m?H.wind_speed_80m[nowIdx]:null;
+  setBody('cNow','<div class="tiles">'+
+    '<div class="tile"><div class="k">Conditions</div><div class="v" style="font-size:.86rem">'+esc(WMO[c.weather_code]||'')+'</div><div class="s">'+Math.round(c.temperature_2m)+'&deg;F, '+c.relative_humidity_2m+'% RH</div></div>'+
+    '<div class="tile '+lvl(c.wind_speed_10m)+'"><div class="k">Wind 10 m</div><div class="v">'+Math.round(c.wind_speed_10m)+' mph</div><div class="s">from '+compass(c.wind_direction_10m)+arrow(c.wind_direction_10m)+'</div></div>'+
+    '<div class="tile '+lvl(c.wind_gusts_10m)+'"><div class="k">Gusts</div><div class="v">'+Math.round(c.wind_gusts_10m)+' mph</div><div class="s">surface</div></div>'+
+    '<div class="tile '+lvl(w80)+'"><div class="k">Wind 80 m</div><div class="v">'+(w80==null?'':Math.round(w80)+' mph')+'</div><div class="s">about 260 ft</div></div>'+
+    '<div class="tile '+lvl(w120)+'"><div class="k">Wind 120 m</div><div class="v">'+(w120==null?'':Math.round(w120)+' mph')+'</div><div class="s">about 390 ft</div></div>'+
+    '<div class="tile '+((c.visibility!=null&&c.visibility<4828)?'warn':'')+'"><div class="k">Visibility</div><div class="v">'+vis(c.visibility)+' mi</div><div class="s">low cloud '+c.cloud_cover_low+'%</div></div>'+
+    '</div><div class="src">Forecast model data from Open-Meteo for this point, not an observation. Use the METARs below for what is being reported now.</div>');
+  // Hourly
+  var rows='';
+  for(var k=nowIdx;k<Math.min(nowIdx+12,(H.time||[]).length);k++){
+    var t=H.time[k], hh=parseInt(t.slice(11,13),10);
+    var dayEv=sunEvent(PT.lat,PT.lng,+t.slice(0,4),+t.slice(5,7),+t.slice(8,10),-6);
+    var tUtc=Date.parse(t+':00Z')-off*1000, night=dayEv?(tUtc<dayEv.rise.getTime()||tUtc>dayEv.set.getTime()):false;
+    var wmax=Math.max(H.wind_speed_10m[k]||0,H.wind_gusts_10m[k]||0,H.wind_speed_80m[k]||0,H.wind_speed_120m[k]||0);
+    rows+='<tr><td class="'+(night?'night':'')+'">'+hourLabel(t)+(night?' &#9790;':'')+'</td>'+
+      '<td>'+esc(WMO[H.weather_code[k]]||'')+'</td>'+
+      '<td>'+Math.round(H.temperature_2m[k])+'&deg;</td>'+
+      '<td class="'+(H.precipitation_probability[k]>=50?'warn':'')+'">'+H.precipitation_probability[k]+'%</td>'+
+      '<td class="'+lvl(H.wind_speed_10m[k])+'">'+Math.round(H.wind_speed_10m[k])+arrow(H.wind_direction_10m[k])+'</td>'+
+      '<td class="'+lvl(H.wind_gusts_10m[k])+'">'+Math.round(H.wind_gusts_10m[k])+'</td>'+
+      '<td class="'+lvl(H.wind_speed_80m[k])+'">'+Math.round(H.wind_speed_80m[k])+arrow(H.wind_direction_80m[k])+'</td>'+
+      '<td class="'+lvl(H.wind_speed_120m[k])+'">'+Math.round(H.wind_speed_120m[k])+arrow(H.wind_direction_120m[k])+'</td>'+
+      '<td class="'+((H.visibility[k]!=null&&H.visibility[k]<4828)?'warn':'')+'">'+vis(H.visibility[k])+'</td>'+
+      '<td>'+H.cloud_cover_low[k]+'%</td></tr>';
+  }
+  setBody('cHours','<div class="wx-scroll"><table class="wx"><thead><tr><th>Hour</th><th>Sky</th><th>Temp</th><th>Rain</th><th>Wind 10 m</th><th>Gust</th><th>80 m</th><th>120 m</th><th>Vis mi</th><th>Low cld</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+    '<div class="src">Winds in mph; the arrow points where the wind is blowing. &#9790; marks hours outside civil twilight. Wind limits vary by aircraft: set yours above.</div>');
+}
+function renderSun(){
+  var off=(PT.wx&&PT.wx.utc_offset_seconds!=null)?PT.wx.utc_offset_seconds:-new Date().getTimezoneOffset()*60;
+  var loc=new Date(Date.now()+off*1000), y=loc.getUTCFullYear(), m=loc.getUTCMonth()+1, d=loc.getUTCDate();
+  var sr=sunEvent(PT.lat,PT.lng,y,m,d,-0.833), cv=sunEvent(PT.lat,PT.lng,y,m,d,-6);
+  setBody('cSun','<div class="sun"><div><span>Civil dawn</span>'+fmtLocal(cv&&cv.rise,off)+'</div><div><span>Sunrise</span>'+fmtLocal(sr&&sr.rise,off)+'</div><div><span>Sunset</span>'+fmtLocal(sr&&sr.set,off)+'</div><div><span>Civil dusk</span>'+fmtLocal(cv&&cv.set,off)+'</div></div>'+
+    '<div class="src">Computed for the pin, today, local time. Operations outside civil twilight need anti-collision lighting visible for 3 statute miles (14 CFR 107.29).</div>');
+}
+initMap();
+</script>
+</body>
+</html>

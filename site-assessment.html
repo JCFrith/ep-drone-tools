@@ -16,6 +16,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 <script src="ep-faa-airspace.js"></script>
+<script src="ep-faa-map.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
@@ -548,7 +549,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ============================================================
 const COW_REF = 'CoW 107W-2026-01762, effective 13 AUG 2026 to 31 JAN 2030';
 const COW_PRIOR = 'CoW 107W-2025-04534, effective 14 JAN 2026 to 31 JAN 2030';
-const TOOL_VER = '8.3';
+const TOOL_VER = '8.4';
 const BUILD_DATE = '2026-09-29';
 
 // ── INDEXEDDB ──────────────────────────────────────────────
@@ -1918,7 +1919,7 @@ function buildApproval(body) {
 }
 
 // ── MAP ────────────────────────────────────────────────────
-let lMap = null, lMarker = null;
+let lMap = null, lMarker = null, lMapFaa = null;
 function mkIc() {
   return L.divIcon({
     className: '',
@@ -1929,11 +1930,12 @@ function mkIc() {
 function initMap() {
   const el = document.getElementById('locationMap');
   if (!el || typeof L === 'undefined') return;
-  if (lMap) { lMap.remove(); lMap = null; lMarker = null; }
+  if (lMap) { if (lMapFaa) { try { lMapFaa.remove(); } catch (e) {} lMapFaa = null; } lMap.remove(); lMap = null; lMarker = null; }
   const lat = parseFloat(S.fields.mapLat) || 35.71, lng = parseFloat(S.fields.mapLng) || -86.40;
   const has = S.fields.mapLat && S.fields.mapLng;
   lMap = L.map('locationMap', { center: [lat, lng], zoom: has ? 17 : 10, attributionControl: true });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(lMap);
+  const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(lMap);
+  if (window.EPFAAMap) lMapFaa = EPFAAMap.attach(lMap, { base: osm, collapsed: true, legend: true });
   if (has) { lMarker = L.marker([lat, lng], { draggable: true, icon: mkIc() }).addTo(lMap); bDrag(); }
   lMap.on('click', e => {
     if (!lMarker) { lMarker = L.marker([e.latlng.lat, e.latlng.lng], { draggable: true, icon: mkIc() }).addTo(lMap); bDrag(); }
