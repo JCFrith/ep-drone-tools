@@ -385,6 +385,7 @@
     </div>
 </footer>
 
+<script src="ep-faa-airspace.js"></script>
 <script>
 /* Site Classification Wizard, CoW 107W-2026-01762 (effective 13 AUG 2026, supersedes 107W-2025-04534).
    Governing airspace provision: Shielded Operations (SP 11) shielded or Non-Shielded Operations (SP 12) non-shielded. Site character does not change it.
@@ -440,6 +441,7 @@ function classify(){
     }else{
         pathwayText="No overflight of non-participants or moving vehicles. Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), 14 and 15 do not apply. No blanket MTOW ceiling applies; the aircraft must be on the eligible-UAS list (UAS and Docking Systems Eligibility (SP 25)).";
     }
+    if(answers.faa&&answers.faa.flags){answers.faa.flags.forEach(f=>{if(f.level==='stop')blocks.push('FAA data: '+f.text);else if(f.level==='warn')warnings.push('FAA data: '+f.text);});}
     return{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes,blocks,pathway,pathwayText};
 }
 
@@ -452,6 +454,61 @@ function canAdvance(){
 }
 
 function sel(k,v){answers[k]=v;render();}
+
+/* FAA airspace lookup (ep-faa-airspace.js). Fills the UASFM answer and grid height from FAA open data.
+   Answers it filled are tracked so a second lookup can refresh them without overwriting a manual choice. */
+let wzFaaBusy=false;
+function escH(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function faaBlock(){
+    if(!window.EPFAA)return'';
+    const R=answers.faa;
+    return`<div class="field-group"><span class="field-label">Site location (optional): pull airspace from FAA data</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><input class="field-input" style="flex:1 1 220px;" id="wzFaaQ" placeholder="Address, or latitude, longitude" value="${escH(answers.faaQuery||'')}" oninput="answers.faaQuery=this.value" onkeydown="if(event.key==='Enter'){event.preventDefault();wzFaaRun();}"/>
+        <button type="button" class="faa-btn primary" onclick="wzFaaRun()" ${wzFaaBusy?'disabled':''}>${wzFaaBusy?'Querying':'Look up'}</button>
+        <button type="button" class="faa-btn" onclick="wzFaaLocate()" ${wzFaaBusy?'disabled':''}>My location</button></div>
+        ${R?`<div class="faa-box" style="margin-top:10px;">${EPFAA.renderHTML(R)}<div class="faa-btns" style="margin-top:8px;"><a class="faa-btn" href="${EPFAA.links.tfr}" target="_blank" rel="noopener">Check TFRs</a><a class="faa-btn" href="${EPFAA.links.notam}" target="_blank" rel="noopener">Check NOTAMs</a></div></div>`:''}
+        <div class="field-note">Fills the UASFM answer and grid height below. Confirm them before relying on the result. TFRs and NOTAMs are not covered.</div></div>`;
+}
+async function wzFaaAt(lat,lng){
+    wzFaaBusy=true;render();
+    let R=null,err=null;
+    try{R=await EPFAA.lookup(lat,lng);}catch(e){err=e;}
+    wzFaaBusy=false;
+    if(!R){render();wzToast('FAA lookup failed'+(err&&err.message?': '+err.message:'')+'. Answer the airspace questions manually.');return;}
+    answers.faa=R;
+    const take=(k,ak,v)=>{if(!answers[k]||answers[k]===answers[ak]){answers[k]=v;answers[ak]=v;}};
+    if(R.grid)take('gridHeight','faaGrid',String(R.grid.ceiling));
+    else if(answers.faaGrid&&answers.gridHeight===answers.faaGrid){answers.gridHeight='';answers.faaGrid='';}
+    const u=(R.controlled&&R.grid&&R.grid.ceiling>0)?'yes':(!R.controlled?'no':'');
+    if(u&&(answers.uasfm===undefined||answers.uasfm===answers.faaUasfm)){answers.uasfm=u;answers.faaUasfm=u;}
+    render();
+}
+function wzFaaRun(){
+    const q=(answers.faaQuery||'').trim();
+    if(!q){wzToast('Enter an address or coordinates first');return;}
+    const m=q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if(m){wzFaaAt(parseFloat(m[1]),parseFloat(m[2]));return;}
+    wzFaaBusy=true;render();
+    fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(q),{headers:{'Accept-Language':'en'}})
+        .then(r=>r.ok?r.json():null).then(a=>{
+            wzFaaBusy=false;
+            if(!a||!a.length){render();wzToast('No match for that address');return;}
+            answers.faaQuery=parseFloat(a[0].lat).toFixed(6)+', '+parseFloat(a[0].lon).toFixed(6);
+            wzFaaAt(parseFloat(a[0].lat),parseFloat(a[0].lon));
+        }).catch(()=>{wzFaaBusy=false;render();wzToast('Address lookup failed');});
+}
+function wzFaaLocate(){
+    if(!navigator.geolocation){wzToast('Geolocation is not available in this browser');return;}
+    navigator.geolocation.getCurrentPosition(p=>{
+        answers.faaQuery=p.coords.latitude.toFixed(6)+', '+p.coords.longitude.toFixed(6);
+        wzFaaAt(p.coords.latitude,p.coords.longitude);
+    },e=>wzToast('Location error: '+e.message),{enableHighAccuracy:true,timeout:15000});
+}
+function wzToast(m){
+    let t=document.getElementById('wzToast');
+    if(!t){t=document.createElement('div');t.id='wzToast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0f2233;color:#fff;border:1px solid #00A2E9;border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:9999;max-width:90vw;';document.body.appendChild(t);}
+    t.textContent=m;t.style.display='block';clearTimeout(t._to);t._to=setTimeout(()=>{t.style.display='none';},3500);
+}
 
 function opt(k,v,icon,label,desc=''){
     const s=answers[k]===v;
@@ -493,6 +550,7 @@ function stepHTML(){
             <div class="grid-2">${opt('vo','yes','👁️','Yes','')}${opt('vo','no','✗','No','')}</div>
         </div>
         ${answers.vo==='yes'?`<div class="field-group"><span class="field-label">VO count sufficient to continuously observe a 2 SM radius?</span><div class="grid-2">${opt('vo2sm','yes','✓','Yes','Non-Shielded Operations, Visual Observer Coverage (SP 12(c))')}${opt('vo2sm','no','✗','No','')}</div></div>`:''}`:''}
+        ${faaBlock()}
         <div class="field-group">
             <span class="field-label">Controlled airspace at or below the UASFM grid (UASFM Grid Operations / NOTAM Requirement (SP 16))?</span>
             ${infoBox('UASFM Grid Operations / NOTAM Requirement (SP 16) authorizes §107.41 operations at or below the published UASFM grid height with a NOTAM filed 24 to 72 hours prior. Class G needs no authorization. Above the grid needs separate ATC authorization; LAANC may not be used for waivered operations.')}
