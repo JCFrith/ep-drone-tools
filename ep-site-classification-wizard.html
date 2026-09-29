@@ -441,7 +441,7 @@ function classify(){
     }else{
         pathwayText="No overflight of non-participants or moving vehicles. Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13), 14 and 15 do not apply. No blanket MTOW ceiling applies; the aircraft must be on the eligible-UAS list (UAS and Docking Systems Eligibility (SP 25)).";
     }
-    if(answers.faa&&answers.faa.flags){answers.faa.flags.forEach(f=>{if(f.level==='stop')blocks.push('FAA data: '+f.text);else if(f.level==='warn')warnings.push('FAA data: '+f.text);});}
+    if(answers.faa&&answers.faa.flags){answers.faa.flags.forEach(f=>{if(f.level==='stop')blocks.push('FAA data: '+escH(f.text));else if(f.level==='warn')warnings.push('FAA data: '+escH(f.text));});}
     return{classification,sp,ceilAGL,ceilFormula,ceilCalc,voRequired,voReason,daaRequired,warnings,notes,blocks,pathway,pathwayText};
 }
 
