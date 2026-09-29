@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Launch Checklist | Enhanced Patrol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<style>
+  :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-white:#FFFFFF;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-warn:#F5A524;--ep-block:#E5484D;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ep-navy);color:#fff;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .topbar{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--ep-navy-deep);border-bottom:2px solid var(--ep-gold);flex-wrap:wrap;}
+  .topbar img{height:34px;}
+  .topbar h1{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.6rem;letter-spacing:2px;line-height:1;}
+  .topbar h1 em{color:var(--ep-gold);font-style:normal;}
+  .topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:.72rem;color:var(--ep-gray);}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 16px 80px;}
+  .card{background:var(--ep-navy-card);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:14px 16px;margin-bottom:14px;}
+  .card h2{font-size:.74rem;letter-spacing:.09em;text-transform:uppercase;color:var(--ep-blue);margin-bottom:10px;}
+  label.f{display:block;margin-bottom:10px;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ep-gray);}
+  label.f input,label.f select{display:block;width:100%;margin-top:4px;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:10px 11px;font:inherit;font-size:.92rem;text-transform:none;letter-spacing:0;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn{font:inherit;font-size:.8rem;font-weight:700;padding:11px 15px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;cursor:pointer;}
+  .btn.primary{background:var(--ep-dark-blue);border-color:var(--ep-blue);}
+  .btn.gold{background:var(--ep-gold);border-color:var(--ep-gold);color:var(--ep-navy);}
+  .btn.red{border-color:var(--ep-block);color:#ff9d8a;}
+  .btn:disabled{opacity:.45;cursor:default;}
+  .hint{font-size:.74rem;color:var(--ep-gray);line-height:1.5;}
+  .code{font-family:'Bebas Neue',sans-serif;font-size:2.4rem;letter-spacing:6px;color:var(--ep-gold);line-height:1;}
+  .meta{display:flex;gap:14px;flex-wrap:wrap;font-size:.8rem;margin-top:6px;color:#d7e3ee;}
+  .meta b{color:#fff;}
+  .banner{border-radius:8px;padding:12px 14px;margin-bottom:14px;font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:10px;}
+  .banner.open{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);}
+  .banner.go{background:rgba(48,164,108,.18);border:1px solid var(--ep-ok);}
+  .banner.no_go,.banner.aborted{background:rgba(229,72,77,.18);border:1px solid var(--ep-block);}
+  .banner.launched,.banner.closed{background:rgba(0,162,233,.12);border:1px solid var(--ep-blue);}
+  .sec{margin-bottom:14px;}
+  .sec h3{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ep-gold);margin-bottom:6px;display:flex;justify-content:space-between;}
+  .sec h3 small{color:var(--ep-gray);letter-spacing:0;text-transform:none;font-weight:400;}
+  .item{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,.06);}
+  .item .txt{flex:1;font-size:.88rem;line-height:1.4;}
+  .item .who{font-size:.62rem;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:4px;margin-right:6px;vertical-align:1px;}
+  .who.agp{background:rgba(252,192,14,.18);color:var(--ep-gold);} .who.rpic{background:rgba(0,162,233,.18);color:var(--ep-blue);}
+  .item .by{display:block;font-size:.66rem;color:var(--ep-gray);margin-top:2px;}
+  .st{display:flex;gap:4px;flex:0 0 auto;}
+  .st button{font:inherit;font-size:.66rem;font-weight:700;padding:8px 9px;min-width:44px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--ep-gray);cursor:pointer;}
+  .st button.on.ok{background:var(--ep-ok);border-color:var(--ep-ok);color:#fff;}
+  .st button.on.na{background:rgba(255,255,255,.2);color:#fff;border-color:#fff;}
+  .st button.on.no{background:var(--ep-block);border-color:var(--ep-block);color:#fff;}
+  .st button:disabled{opacity:.3;cursor:default;}
+  .item.mine{background:rgba(255,255,255,.02);}
+  .list .sess{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid rgba(255,255,255,.06);cursor:pointer;font-size:.85rem;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ep-navy-card);border:1px solid var(--ep-blue);border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:9999;display:none;max-width:90vw;}
+  .live{font-size:.66rem;color:var(--ep-ok);} .live.off{color:var(--ep-warn);}
+  @media (max-width:520px){ .row2{grid-template-columns:1fr;} .st button{min-width:40px;padding:8px 7px;} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
+  <h1>Launch <em>Checklist</em></h1>
+  <div class="right"><span id="who"></span><a class="btn" style="padding:6px 10px;font-size:.7rem;text-decoration:none;" href="index.html">All tools</a></div>
+</div>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* Live launch checklist shared between the AGP at the site and the RPIC at the ROC.
+   Items are the LAUNCH CHECKLIST from Check Lists, Attachment G (07d). Each item has one owner:
+   the database only lets ground personnel accounts mark AGP items, and records who marked every
+   item and when. Owner assignments follow the AGP duties in CONOPS 5.1.2 (AGP secure the launch
+   and recovery area and do the basic physical inspection; the RPIC owns C2, control and BVLOS).
+   Edit TEMPLATE below to change an item or its owner. */
+var CHECKLIST_VERSION = 'Attachment G Launch Checklist (07d), EP owner split v1';
+var TEMPLATE = [
+  // [section, key, label, owner for AGP manual launch, owner for dock launch ('' = not used)]
+  ['1. Pre-Launch Area Verification', 'a_launch', 'Launch zone clear', 'agp', 'rpic'],
+  ['1. Pre-Launch Area Verification', 'a_landing', 'Landing zone clear', 'agp', 'rpic'],
+  ['1. Pre-Launch Area Verification', 'a_elz', 'Emergency landing zone clear', 'agp', 'rpic'],
+  ['1. Pre-Launch Area Verification', 'a_people', 'No pedestrians or vehicles in area', 'agp', 'rpic'],
+  ['1. Pre-Launch Area Verification', 'a_overhead', 'No overhead hazards', 'agp', 'rpic'],
+  ['1. Pre-Launch Area Verification', 'a_ground', 'Ground hazards checked', 'agp', 'rpic'],
+  ['1. Pre-Launch Area Verification', 'a_dock', 'Dock perimeter sensors clear', '', 'rpic'],
+  ['2. Aircraft Readiness', 'r_airframe', 'Airframe condition acceptable', 'agp', 'rpic'],
+  ['2. Aircraft Readiness', 'r_battery', 'Battery seated and healthy', 'agp', 'rpic'],
+  ['2. Aircraft Readiness', 'r_payload', 'Payload and sensors operational', 'agp', 'rpic'],
+  ['2. Aircraft Readiness', 'r_gimbal', 'Gimbal operational', 'agp', 'rpic'],
+  ['2. Aircraft Readiness', 'r_rid', 'Remote ID broadcasting', 'rpic', 'rpic'],
+  ['2. Aircraft Readiness', 'r_fw', 'Firmware matches Annex H', 'rpic', 'rpic'],
+  ['2. Aircraft Readiness', 'r_maint', 'No maintenance flags', 'rpic', 'rpic'],
+  ['2. Aircraft Readiness', 'r_prs', 'Parachute/FTS armed (if required)', 'agp', 'rpic'],
+  ['2. Aircraft Readiness', 'r_telem', 'Telemetry stable', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_link', 'GCS link health indicator nominal/stable', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_telem', 'Telemetry stable', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_video', 'Video feed stable (if applicable)', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_input', 'Manual control input produces aircraft response within 1 second', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_roc1', 'ROC primary comms checked', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_roc2', 'ROC secondary comms checked', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_agp', 'RPIC–AGP comms checked', 'rpic', ''],
+  ['3. C2 & Communications', 'c_vo', 'RPIC–VO comms checked (if applicable)', 'rpic', 'rpic'],
+  ['4. Handoff Readiness', 'h_orient', 'Aircraft orientation confirmed', 'agp', ''],
+  ['4. Handoff Readiness', 'h_hover', 'Hover stable (3–10 ft AGL)', 'agp', ''],
+  ['4. Handoff Readiness', 'h_drift', 'No drift or instability', 'agp', ''],
+  ['4. Handoff Readiness', 'h_status', 'RPIC system status normal', 'rpic', ''],
+  ['4. Handoff Readiness', 'h_route', 'RPIC route verified', 'rpic', ''],
+  ['5. Launch Authorization', 'go_rpic', 'RPIC GO', 'rpic', 'rpic'],
+  ['5. Launch Authorization', 'go_agp', 'AGP GO', 'agp', ''],
+  ['6. Launch Execution', 'x_launch', 'AGP launch performed', 'agp', ''],
+  ['6. Launch Execution', 'x_dock', 'Dock launch sequence complete', '', 'rpic'],
+  ['6. Launch Execution', 'x_stable', 'Stable hover or stable dock emergence', 'agp', 'rpic'],
+  ['6. Launch Execution', 'x_telem', 'Telemetry stable at takeoff', 'rpic', 'rpic'],
+  ['7. Control Transfer to RPIC', 't_lat', 'RPIC control input check (lateral)', 'rpic', 'rpic'],
+  ['7. Control Transfer to RPIC', 't_vert', 'RPIC control input check (vertical)', 'rpic', 'rpic'],
+  ['7. Control Transfer to RPIC', 't_yaw', 'RPIC control input check (yaw)', 'rpic', 'rpic'],
+  ['7. Control Transfer to RPIC', 't_abn', 'No abnormal aircraft response', 'rpic', 'rpic'],
+  ['7. Control Transfer to RPIC', 't_conf', 'Control confirmed', 'rpic', 'rpic'],
+  ['8. Final BVLOS Confirmation', 'f_shield', 'Shielding validated', 'rpic', 'rpic'],
+  ['8. Final BVLOS Confirmation', 'f_c2', 'C2 link stable', 'rpic', 'rpic'],
+  ['8. Final BVLOS Confirmation', 'f_wx', 'Weather acceptable', 'rpic', 'rpic'],
+  ['8. Final BVLOS Confirmation', 'f_ground', 'Ground area clear', 'rpic', 'rpic'],
+  ['8. Final BVLOS Confirmation', 'f_ready', 'RPIC ready for BVLOS segment', 'rpic', 'rpic']
+];
+var GO_SECTION = '5. Launch Authorization';
+
+var SB_URL = 'https://oaztzgvxxloiesorfjlf.supabase.co', SB_KEY = 'sb_publishable_iYK9cCY1xdqn2hZtPyzczA_oBa56LBN';
+var sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ep-sa-auth' } }) : null;
+var SESSION = null, SESS = null, ITEMS = [], FLEET = [], channel = null, poll = null, live = false;
+var Q = new URLSearchParams(location.search);
+
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._to); t._to=setTimeout(function(){t.style.display='none';},3500); }
+function role(){ return (SESSION && SESSION.user && SESSION.user.app_metadata && SESSION.user.app_metadata.role) || 'viewer'; }
+function canMark(owner){ var r=role(); return r==='admin'||r==='pilot'||(r==='agp'&&owner==='agp'); }
+function app(){ return document.getElementById('app'); }
+function when(t){ try{ return new Date(t).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'}); }catch(e){ return ''; } }
+
+/* ---- Auth ---- */
+function renderWho(){ document.getElementById('who').textContent = SESSION ? SESSION.user.email+' ('+role()+')' : ''; }
+function signInView(){
+  app().innerHTML='<div class="card"><h2>Sign in</h2><p class="hint" style="margin-bottom:12px;">Use the same account as the site assessment tool.</p>'+
+    '<label class="f">Email<input id="em" type="email" autocomplete="username"></label><label class="f">Password<input id="pw" type="password" autocomplete="current-password"></label>'+
+    '<button class="btn primary" id="siBtn" onclick="doSignIn()">Sign in</button></div>';
+  document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doSignIn(); });
+}
+function doSignIn(){
+  var b=document.getElementById('siBtn'); b.disabled=true;
+  sb.auth.signInWithPassword({email:document.getElementById('em').value.trim(),password:document.getElementById('pw').value}).then(function(r){
+    b.disabled=false; if(r.error){ toast(r.error.message); return; } SESSION=r.data.session; renderWho(); route();
+  });
+}
+
+/* ---- Start / join ---- */
+function genCode(){ var a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s=''; for(var i=0;i<6;i++) s+=a[Math.floor(Math.random()*a.length)]; return s; }
+async function homeView(){
+  app().innerHTML='<div class="card"><h2>Join a launch</h2><div class="row2"><label class="f">Launch code<input id="jc" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;" placeholder="ABC123"></label><div style="align-self:end;margin-bottom:10px;"><button class="btn primary" onclick="joinCode()">Join</button></div></div>'+
+    '<div class="list" id="recent"><p class="hint">Loading recent launches</p></div></div>'+
+    '<div class="card"><h2>Start a launch</h2>'+
+    '<label class="f">Site<input id="ns" value="'+esc(Q.get('site')||'')+'" placeholder="Site name"></label>'+
+    '<div class="row2"><label class="f">Aircraft<select id="na"><option value="">Loading fleet</option></select></label>'+
+    '<label class="f">Launch method<select id="nm"><option value="agp">AGP manual launch</option><option value="dock">Dock launch</option></select></label></div>'+
+    '<div class="row2"><label class="f">RPIC<input id="nr" placeholder="Name or email"></label><label class="f">AGP<input id="ng" placeholder="Name or email"></label></div>'+
+    '<button class="btn gold" onclick="startLaunch()">Start launch checklist</button>'+
+    '<p class="hint" style="margin-top:10px;">Share the code with the other crew member. Both of you see every check the moment it is made.</p></div>';
+  var me = SESSION.user.email; if(role()==='agp') document.getElementById('ng').value=me; else document.getElementById('nr').value=me;
+  document.getElementById('jc').addEventListener('keydown',function(e){ if(e.key==='Enter') joinCode(); });
+  var f=await sb.from('fleet_aircraft').select('id,name,model,status,is_test').order('name');
+  FLEET=f.data||[];
+  var want=Q.get('aircraft')||'';
+  document.getElementById('na').innerHTML='<option value="">Select aircraft</option>'+FLEET.filter(function(a){return a.status!=='retired';}).map(function(a){
+    return '<option value="'+esc(a.id)+'"'+(a.id===want?' selected':'')+(a.status!=='active'?' disabled':'')+'>'+esc(a.name+(a.model?', '+a.model:'')+(a.is_test?' (TEST)':'')+(a.status!=='active'?' (OUT OF SERVICE)':''))+'</option>'; }).join('');
+  var since=new Date(Date.now()-12*3600e3).toISOString();
+  var r=await sb.from('launch_sessions').select('id,code,site_name,aircraft_label,status,created_at,created_by').gte('created_at',since).order('created_at',{ascending:false}).limit(10);
+  var el=document.getElementById('recent');
+  el.innerHTML=(r.data&&r.data.length)?'<p class="hint" style="margin:8px 0 2px;">Last 12 hours</p>'+r.data.map(function(x){
+    return '<div class="sess" onclick="openSession(\''+x.id+'\')"><span><b>'+esc(x.code)+'</b> '+esc(x.site_name||'')+' <span class="hint">'+esc(x.aircraft_label||'')+'</span></span><span class="hint">'+esc(x.status.replace('_',' '))+', '+when(x.created_at)+'</span></div>';
+  }).join(''):'<p class="hint" style="margin-top:8px;">No launches in the last 12 hours.</p>';
+}
+async function startLaunch(){
+  var site=document.getElementById('ns').value.trim(), aid=document.getElementById('na').value, method=document.getElementById('nm').value;
+  if(!site){ toast('Enter the site'); return; }
+  if(!aid){ toast('Select the aircraft'); return; }
+  var ac=FLEET.filter(function(a){return a.id===aid;})[0];
+  var row={site_name:site,aircraft_id:aid,aircraft_label:ac?ac.name:'',launch_method:method,rpic_email:document.getElementById('nr').value.trim()||null,agp_email:document.getElementById('ng').value.trim()||null,checklist_version:CHECKLIST_VERSION};
+  var ins=null;
+  for(var tries=0;tries<5;tries++){ row.code=genCode(); ins=await sb.from('launch_sessions').insert(row).select().single(); if(!ins.error) break; if(!/duplicate|unique/i.test(ins.error.message)) break; }
+  if(ins.error){ toast('Could not start: '+ins.error.message); return; }
+  var col=method==='dock'?4:3, items=[], seq=0;
+  TEMPLATE.forEach(function(t){ if(!t[col]) return; items.push({session_id:ins.data.id,seq:++seq,section:t[0],item_key:t[1],label:t[2],owner:t[col]}); });
+  var ii=await sb.from('launch_items').insert(items);
+  if(ii.error){ toast('Checklist items failed: '+ii.error.message); return; }
+  openSession(ins.data.id);
+}
+async function joinCode(){
+  var c=document.getElementById('jc').value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{6}$/.test(c)){ toast('Enter the 6 character code'); return; }
+  var r=await sb.from('launch_sessions').select('id').eq('code',c).maybeSingle();
+  if(r.error||!r.data){ toast('No launch with that code'); return; }
+  openSession(r.data.id);
+}
+
+/* ---- Live session ---- */
+async function openSession(id){
+  history.replaceState(null,'','?s='+id);
+  await loadSession(id);
+  subscribe(id);
+}
+async function loadSession(id){
+  var a=await sb.from('launch_sessions').select('*').eq('id',id).single();
+  if(a.error){ toast('Could not open: '+a.error.message); homeView(); return; }
+  var b=await sb.from('launch_items').select('*').eq('session_id',id).order('seq');
+  SESS=a.data; ITEMS=b.data||[]; paint();
+}
+function subscribe(id){
+  if(channel){ sb.removeChannel(channel); channel=null; }
+  channel=sb.channel('launch-'+id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'launch_items',filter:'session_id=eq.'+id},function(p){
+      var n=p.new; ITEMS=ITEMS.map(function(x){ return x.id===n.id?n:x; }); paint();
+    })
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'launch_sessions',filter:'id=eq.'+id},function(p){ SESS=p.new; paint(); })
+    .subscribe(function(st){ live = st==='SUBSCRIBED'; paintLive(); });
+  clearInterval(poll);
+  poll=setInterval(function(){ if(!live && SESS) loadSession(SESS.id); }, 5000);   // fallback if realtime is blocked
+}
+function paintLive(){ var el=document.getElementById('liveTag'); if(el){ el.className='live'+(live?'':' off'); el.textContent=live?'Live':'Reconnecting, refreshing every 5 s'; } }
+function computeStatus(){
+  if(SESS.status==='aborted'||SESS.status==='closed') return SESS.status;
+  if(ITEMS.some(function(x){return x.state==='no';})) return 'no_go';
+  var done=function(x){return x.state==='ok'||x.state==='na';};
+  var pre=ITEMS.filter(function(x){return parseInt(x.section,10)<=5;});
+  if(ITEMS.length && ITEMS.every(done)) return 'launched';
+  if(pre.length && pre.every(done)) return 'go';
+  return 'open';
+}
+var BANNER={open:'Checklist in progress',go:'GO: cleared to launch',no_go:'NO-GO: abort. Any NO-GO cancels the launch.',launched:'Launch complete, control with the RPIC, ready for BVLOS',aborted:'Launch aborted',closed:'Closed'};
+function paint(){
+  if(!SESS) return;
+  var st=computeStatus(), locked=SESS.status==='aborted'||SESS.status==='closed';
+  var secs=[]; ITEMS.forEach(function(x){ if(secs.indexOf(x.section)<0) secs.push(x.section); });
+  var preDone=ITEMS.filter(function(x){return parseInt(x.section,10)<5;}).every(function(x){return x.state==='ok'||x.state==='na';});
+  var h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;"><div><div class="hint">Launch code</div><div class="code">'+esc(SESS.code)+'</div></div>'+
+    '<div style="text-align:right;"><span id="liveTag" class="live">Live</span><div style="margin-top:6px;"><button class="btn" style="padding:6px 10px;font-size:.7rem;" onclick="leave()">Back</button></div></div></div>'+
+    '<div class="meta"><span>Site <b>'+esc(SESS.site_name||'')+'</b></span><span>Aircraft <b>'+esc(SESS.aircraft_label||'')+'</b></span><span>'+(SESS.launch_method==='dock'?'Dock launch':'AGP manual launch')+'</span>'+
+    (SESS.rpic_email?'<span>RPIC <b>'+esc(SESS.rpic_email)+'</b></span>':'')+(SESS.agp_email?'<span>AGP <b>'+esc(SESS.agp_email)+'</b></span>':'')+'</div></div>'+
+    '<div class="banner '+st+'">'+esc(BANNER[st])+'</div>';
+  secs.forEach(function(sec){
+    var its=ITEMS.filter(function(x){return x.section===sec;}), d=its.filter(function(x){return x.state==='ok'||x.state==='na';}).length;
+    h+='<div class="card sec"><h3>'+esc(sec)+'<small>'+d+'/'+its.length+'</small></h3>'+its.map(function(x){
+      var mine=canMark(x.owner), dis=locked||!mine||(sec===GO_SECTION&&!preDone&&x.state!=='no');
+      var b=function(v,t){ return '<button class="'+v+(x.state===v?' on '+v:'')+'" '+(dis?'disabled':'')+' onclick="mark('+x.id+',\''+v+'\')">'+t+'</button>'; };
+      return '<div class="item'+(mine?' mine':'')+'"><div class="txt"><span class="who '+x.owner+'">'+x.owner.toUpperCase()+'</span>'+esc(x.label)+
+        (x.state&&x.updated_by?'<span class="by">'+esc(x.state.toUpperCase())+' by '+esc(x.updated_by)+', '+when(x.updated_at)+'</span>':'')+'</div>'+
+        '<div class="st">'+b('ok',sec===GO_SECTION?'GO':'OK')+(sec===GO_SECTION?'':b('na','N/A'))+b('no',sec===GO_SECTION?'NO-GO':'NO')+'</div></div>';
+    }).join('')+(sec===GO_SECTION&&!preDone?'<p class="hint" style="margin-top:6px;">GO unlocks once every item in sections 1 to 4 is OK or N/A.</p>':'')+'</div>';
+  });
+  if(!locked) h+='<div style="display:flex;gap:10px;flex-wrap:wrap;"><button class="btn red" onclick="setStatus(\'aborted\')">Abort launch</button><button class="btn" onclick="setStatus(\'closed\')">Close checklist</button></div>'+
+    '<p class="hint" style="margin-top:10px;">Every mark is recorded with the account and time. '+esc(SESS.checklist_version||'')+'</p>';
+  app().innerHTML=h; paintLive();
+  if(SESS.status!==st && !locked && (role()==='admin'||role()==='pilot'||role()==='agp')){ SESS.status=st; sb.from('launch_sessions').update({status:st}).eq('id',SESS.id).then(function(){}); }
+}
+async function mark(id,v){
+  var it=ITEMS.filter(function(x){return x.id===id;})[0]; if(!it) return;
+  if(!canMark(it.owner)){ toast('This item belongs to the '+it.owner.toUpperCase()); return; }
+  var prev={state:it.state,updated_by:it.updated_by,updated_at:it.updated_at}, nv=it.state===v?'':v;
+  it.state=nv; it.updated_by=SESSION.user.email; it.updated_at=new Date().toISOString(); paint();
+  var r=await sb.from('launch_items').update({state:nv}).eq('id',id).select().single();
+  if(r.error||!r.data){ Object.assign(it,prev); paint(); toast('Not saved: '+(r.error?r.error.message:'this item belongs to the other crew member')); loadSession(SESS.id); return; }
+  ITEMS=ITEMS.map(function(x){return x.id===id?r.data:x;}); paint();
+}
+async function setStatus(s){
+  var r=await sb.from('launch_sessions').update({status:s}).eq('id',SESS.id).select().single();
+  if(r.error){ toast(r.error.message); return; } SESS=r.data; paint();
+}
+function leave(){ if(channel){ sb.removeChannel(channel); channel=null; } clearInterval(poll); SESS=null; history.replaceState(null,'',location.pathname); homeView(); }
+
+/* ---- Boot ---- */
+function route(){
+  if(!SESSION){ signInView(); return; }
+  if(['admin','pilot','agp'].indexOf(role())<0){ app().innerHTML='<div class="card"><p>This account ('+esc(role())+') cannot use the launch checklist.</p></div>'; return; }
+  var sid=Q.get('s'); if(sid) openSession(sid); else homeView();
+}
+if(!sb){ app().innerHTML='<div class="card"><p>Could not load the sync library. Check the connection and reload.</p></div>'; }
+else sb.auth.getSession().then(function(r){ SESSION=(r&&r.data&&r.data.session)||null; renderWho(); route(); });
+</script>
+</body>
+</html>

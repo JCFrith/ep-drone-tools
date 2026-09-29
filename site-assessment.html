@@ -163,6 +163,43 @@ body{font-family:'Gotham Book', 'Montserrat',-apple-system,BlinkMacSystemFont,sa
 .type-choice .tc-title{font-weight:700;color:var(--ep-gold);font-size:0.92rem;margin-bottom:4px;}
 .type-choice .tc-desc{font-size:0.78rem;color:var(--ep-gray);line-height:1.4;}
 .type-modal .cancel-btn{background:none;border:none;color:var(--ep-gray);font-size:0.78rem;cursor:pointer;margin-top:4px;text-decoration:underline;}
+.fleet-card{border:1px solid rgba(0,162,233,0.25);background:rgba(0,162,233,0.05);border-radius:6px;padding:10px 12px;margin:-4px 0 14px;font-size:0.78rem;}
+.fleet-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:6px 14px;}
+.fleet-grid span{display:block;font-size:0.6rem;letter-spacing:0.06em;text-transform:uppercase;color:var(--ep-gray);}
+.fleet-warn{color:#ff9d8a;font-weight:700;margin-bottom:6px;}
+.fleet-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 14px;}
+.fleet-form label span{display:block;font-size:0.64rem;letter-spacing:0.05em;text-transform:uppercase;color:var(--ep-gray);margin-bottom:3px;}
+.fleet-form input,.fleet-form select{width:100%;}
+.mode-bar{font-size:0.8rem;line-height:1.5;padding:9px 12px;margin:16px 0 4px;border-left:3px solid var(--ep-gold);background:rgba(252,192,14,0.06);}
+.mode-bar a{color:var(--ep-blue);margin-left:4px;}
+.exc-item{border-bottom:1px solid rgba(255,255,255,0.06);padding:10px 0;}
+.exc-row{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;}
+.exc-text{font-size:0.84rem;line-height:1.5;flex:1;}
+.exc-btns{display:flex;gap:6px;flex:0 0 auto;}
+.exc-btn{font:inherit;font-size:0.68rem;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;padding:8px 10px;border-radius:5px;border:1px solid rgba(255,255,255,0.2);background:transparent;color:var(--ep-gray);cursor:pointer;min-width:58px;}
+.exc-btn.on{background:rgba(255,255,255,0.12);color:#fff;border-color:#fff;}
+.exc-btn.prob.on{background:rgba(229,72,77,0.25);border-color:#E5484D;color:#fff;}
+.exc-item.is-problem .exc-text{color:#ff9d8a;}
+.exc-item.is-na .exc-text{opacity:0.55;text-decoration:line-through;}
+.exc-note{margin-top:8px;}
+@media (max-width:620px){.exc-row{flex-direction:column;gap:8px;}.exc-btns{width:100%;}.exc-btn{flex:1;padding:10px;}}
+.exc-note input{width:100%;}
+.attest-box{display:flex;gap:10px;align-items:flex-start;font-size:0.86rem;line-height:1.5;padding:12px;border:1px solid rgba(252,192,14,0.4);background:rgba(252,192,14,0.06);border-radius:6px;margin-bottom:14px;cursor:pointer;}
+.attest-box input{width:auto;margin-top:4px;transform:scale(1.25);}
+.attest-sum{margin-top:8px;font-size:0.78rem;}
+.attest-sum ul{margin:4px 0 0 18px;}
+.walk-cta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0 4px;}
+.walk-ov{position:fixed;inset:0;background:rgba(5,12,18,0.92);z-index:3000;display:flex;align-items:flex-end;justify-content:center;padding:16px;}
+.walk-card{background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.35);border-radius:10px;padding:16px;width:100%;max-width:520px;}
+.walk-top{display:flex;justify-content:space-between;align-items:center;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ep-gold);margin-bottom:10px;}
+.walk-text{font-size:1rem;line-height:1.45;margin-bottom:10px;}
+.walk-thumbs{display:flex;gap:6px;margin-bottom:8px;min-height:4px;}
+.walk-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:4px;}
+.walk-meta{font-size:0.72rem;color:var(--ep-gray);margin-bottom:12px;}
+.walk-shoot{width:100%;justify-content:center;font-size:0.9rem;padding:16px;background:var(--ep-gold);color:var(--ep-navy);}
+.walk-nav{display:flex;justify-content:space-between;margin-top:12px;}
+.dictate-btn{position:fixed;right:14px;bottom:86px;z-index:2500;display:none;font:700 0.72rem 'Montserrat',sans-serif;letter-spacing:0.06em;text-transform:uppercase;padding:12px 16px;border-radius:24px;border:1px solid var(--ep-blue);background:var(--ep-dark-blue);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
+.dictate-btn.live{background:#E5484D;border-color:#E5484D;}
 .hasty-banner{background:rgba(220,80,60,0.1);border:1px solid rgba(220,80,60,0.4);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.8rem;line-height:1.5;}
 .hasty-hidden-note{padding:14px 0;color:var(--ep-gray);font-size:0.82rem;font-style:italic;}
 #rpicRecap{background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.25);border-radius:6px;padding:16px 18px;margin-top:18px;}
@@ -549,7 +586,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ============================================================
 const COW_REF = 'CoW 107W-2026-01762, effective 13 AUG 2026 to 31 JAN 2030';
 const COW_PRIOR = 'CoW 107W-2025-04534, effective 14 JAN 2026 to 31 JAN 2030';
-const TOOL_VER = '8.4';
+const TOOL_VER = '8.5';
 const BUILD_DATE = '2026-09-29';
 
 // ── INDEXEDDB ──────────────────────────────────────────────
@@ -1227,8 +1264,9 @@ const SECTIONS = [
   fields(body, opts) {
     const hasty = opts && opts.hasty;
     body.innerHTML =
+      fleetPickerHTML() +
       '<div class="field-row">' +
-        fText('acAsset', 'Asset designation', 'e.g. Alpha 1 (Parrot ANAFI UKR GOV)') +
+        (S.fields.acAircraftId ? '' : fText('acAsset', 'Asset designation (not in the fleet list)', 'e.g. Alpha 1 (Parrot ANAFI UKR GOV)')) +
         fText('acReg', 'FAA registration number') +
       '</div>' +
       '<div class="field-row">' +
@@ -1243,6 +1281,7 @@ const SECTIONS = [
       (hasty ? '<div class="hint">PRS minimum deployment height and aircraft count are completed by the RPIC.</div>' :
       '<div class="hint">No blanket MTOW ceiling in this certificate. Weight caps apply only to overflight of non-participants: 0.88 lb (Overflight of Non-Participants at or Under 0.88 lb (SP 15)), 8.8 lb non-PRS on a restricted site (Non-PRS Overflight of Non-Participants (Restricted-Access Site) (SP 13)), 10 lb PRS-equipped (PRS-Equipped Overflight of Non-Participants (SP 14)). PRS is a pathway, not a general equipment requirement. Multiple UAS Operations (SP 17) permits up to 6 aircraft on the Flight Management System named in the waiver application.</div>');
     bindFields(body);
+    bindFleetPicker();
   },
   checks: [
     { text: "Rotating component shielding fitted (prop guards or a system that prevents lacerations). Required on the Light Aircraft Overflight pathway", sp: "Light Aircraft Overflight, Rotating Component Shielding (SP 15(d))", role: 'ground' },
@@ -1441,7 +1480,12 @@ function renderRecap() {
   el.innerHTML = html;
 }
 function render() {
+  if (isAgp() && S.fields.assessmentType !== 'hasty') {
+    S.fields.assessmentType = 'hasty';
+    if (!S.fields.groundCrewStatus) S.fields.groundCrewStatus = 'in_progress';
+  }
   renderTypeToggle();
+  if (isAgp() && S.fields.groundCrewStatus === 'ground_crew_complete') { renderAgpSubmitted(); renderRecap(); return; }
   if (S.fields.assessmentType === 'hasty' && S.fields.groundCrewStatus !== 'ground_crew_complete') { renderHastyForm(); renderRecap(); return; }
   renderFullSections();
   renderRecap();
@@ -1491,9 +1535,12 @@ function renderHastyForm() {
     '<div class="map-hint">Type an address and press Find, or enter coordinates and press Show. Drag the pin to adjust. Geolocation requires HTTPS.</div><div id="faaChip"></div></div>' +
     faaBoxHTML() +
     '<div class="field-row">' + fNum('plannedAlt', 'Planned altitude (ft AGL)') + '<span></span></div>' +
-    '<div class="fg-label" style="margin-top:6px;">Site photos</div><div class="photo-upload-area" id="photos-hasty_hazard"></div>';
+    '<div class="fg-label" style="margin-top:6px;">Site photos</div><div class="photo-upload-area" id="photos-hasty_hazard"></div>' +
+    '<div class="walk-cta no-print"><button class="action-btn walk-btn" onclick="photoWalkStart()">Start photo walk</button>' +
+    '<span class="hint">Walks you through every photo this assessment needs, in order. Each photo is stamped with GPS position, time and compass heading.</span></div>';
   bindFields(body);
   faaPaint();
+  hastyAutoStart();
   const addrEl = body.querySelector('#mapAddress');
   if (addrEl) addrEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lookupAddress(); } });
   if (EXTERNAL_OK) setTimeout(initMap, 120);
@@ -1513,6 +1560,12 @@ function renderHastyForm() {
     sec.fields(fw, { hasty: true });
   });
 
+  const modeBar = document.createElement('div');
+  modeBar.className = 'mode-bar no-print';
+  modeBar.innerHTML = S.fields.hastyMode === 'exceptions'
+    ? '<b>Exceptions only.</b> Look at every item below. Tap <b>Problem</b> or <b>N/A</b> only where it applies, then sign the attestation at the bottom. <a href="#" onclick="setHastyMode(\'full\');return false;">Switch to item-by-item</a>'
+    : '<b>Item-by-item.</b> Check each item as you verify it. <a href="#" onclick="setHastyMode(\'exceptions\');return false;">Switch to exceptions only</a>';
+  body.appendChild(modeBar);
   const items = groundCrewItems();
   let lastSecId = null;
   items.forEach(({ sec, c, idx }) => {
@@ -1525,11 +1578,11 @@ function renderHastyForm() {
       }
       lastSecId = sec.id;
     }
-    renderCheckItem(body, sec, c, idx);
+    if (S.fields.hastyMode === 'exceptions') renderExceptionItem(body, sec, c, idx); else renderCheckItem(body, sec, c, idx);
   });
   const submitWrap = document.createElement('div');
   submitWrap.innerHTML =
-    '<div class="section-divider"></div>' +
+    '<div class="section-divider"></div>' + (S.fields.hastyMode === 'exceptions' ? attestBlockHTML() : '') +
     '<div class="form-group"><button class="action-btn" id="hastySubmitBtn" style="width:100%;font-size:0.95rem;padding:14px;" onclick="submitHastyToRpic()">Submit to RPIC</button>' +
     '<div class="hint" style="margin-top:8px;">This locks the ground-crew portion and sends it to the RPIC to complete the remaining sections and make the approval decision.</div></div>';
   body.appendChild(submitWrap);
@@ -1538,6 +1591,8 @@ async function submitHastyToRpic() {
   const req = ['siteName', 'assessDate', 'assessedBy', 'launchMethod', 'shieldContinuity'];
   const missing = req.filter(k => !S.fields[k]);
   if (missing.length) { showToast('Fill in every required field before submitting: ' + missing.join(', '), true); return; }
+  if (S.fields.hastyMode === 'exceptions' && !applyExceptionAttestation()) return;
+  S.agpSubmitPending = isAgp() ? true : undefined;
   S.fields.groundCrewStatus = 'ground_crew_complete';
   S.fields.groundCrewCompletedAt = new Date().toISOString();
   S.fields.groundCrewBy = S.fields.assessedBy;
@@ -1603,7 +1658,7 @@ function renderFullSections() {
   if (S.fields.assessmentType === 'hasty' && S.fields.groundCrewStatus === 'ground_crew_complete') {
     const b = document.createElement('div'); b.className = 'hasty-banner';
     b.innerHTML =
-      '<span id="hastyBannerText">Hasty assessment. Ground crew portion completed ' + esc((S.fields.groundCrewCompletedAt || '').slice(0, 16).replace('T', ' ')) + ' by ' + esc(S.fields.groundCrewBy || 'unrecorded') + '. RPIC completes the remaining sections below before approval.</span>' +
+      '<span id="hastyBannerText">Hasty assessment. Ground crew portion completed ' + esc((S.fields.groundCrewCompletedAt || '').slice(0, 16).replace('T', ' ')) + ' by ' + esc(S.fields.groundCrewBy || 'unrecorded') + '. RPIC completes the remaining sections below before approval.</span>' + attestSummaryHTML() +
       ' <button class="action-btn no-print" style="padding:4px 10px;font-size:0.72rem;margin-left:6px;" onclick="openRejectPanel()">Send back to ground crew</button>';
     main.appendChild(b);
   }
@@ -2185,6 +2240,313 @@ function faaDiscard() {
 }
 
 /* ============================================================
+   FIELD WORKFLOW: fleet registry, AGP hand-off, hasty auto-start,
+   exceptions-only attestation, photo walk, optional dictation.
+   ============================================================ */
+
+/* ---- Fleet registry (Supabase fleet_aircraft, admin-managed) ---- */
+var FLEET = (function () { try { return JSON.parse(localStorage.getItem('ep-fleet-v1') || '[]'); } catch (e) { return []; } })();
+function fleetLoad() {
+  var c = sbClient(); if (!c || !SESSION) return Promise.resolve(FLEET);
+  return c.from('fleet_aircraft').select('*').order('name').then(function (r) {
+    if (r.error) { console.warn('fleet', r.error.message); return FLEET; }
+    FLEET = r.data || [];
+    try { localStorage.setItem('ep-fleet-v1', JSON.stringify(FLEET)); } catch (e) {}
+    var sel = document.getElementById('fleetSel');
+    if (sel) { var w = sel.closest('.fleet-wrap'); if (w) { w.outerHTML = fleetPickerHTML(); bindFleetPicker(); } }
+    if (typeof ADMIN !== 'undefined' && ADMIN && ADMIN.tab === 'fleet') renderAdminBody();
+    return FLEET;
+  });
+}
+function fleetById(id) { return FLEET.filter(function (a) { return a.id === id; })[0] || null; }
+function yn(v) { return v === true ? 'Yes' : v === false ? 'No' : 'Unknown'; }
+function fleetPickerHTML() {
+  var cur = S.fields.acAircraftId || (S.fields.acAsset ? '__other' : '');
+  var opts = '<option value="">Select aircraft</option>' + FLEET.filter(function (a) { return a.status !== 'retired' || a.id === cur; }).map(function (a) {
+    var tag = a.is_test ? ' (TEST)' : a.status === 'out_of_service' ? ' (OUT OF SERVICE)' : a.status === 'retired' ? ' (RETIRED)' : '';
+    return '<option value="' + esc(a.id) + '"' + (a.id === cur ? ' selected' : '') + '>' + esc(a.name + (a.model ? ', ' + a.model : '') + tag) + '</option>';
+  }).join('') + '<option value="__other"' + (cur === '__other' ? ' selected' : '') + '>Other, not in the fleet list</option>';
+  var a = fleetById(S.fields.acAircraftId);
+  var card = '';
+  if (a) {
+    var warn = a.status !== 'active' ? '<div class="fleet-warn">This aircraft is marked ' + esc(a.status.replace(/_/g, ' ')) + '. Do not fly it.</div>'
+      : a.is_test ? '<div class="fleet-warn">Test aircraft record. Not for operational use.</div>' : '';
+    var row = function (k, v) { return v === null || v === undefined || v === '' ? '' : '<div><span>' + k + '</span>' + esc(v) + '</div>'; };
+    card = '<div class="fleet-card">' + warn + '<div class="fleet-grid">' +
+      row('Make / model', [a.make, a.model].filter(Boolean).join(' ')) + row('Serial', a.serial_number) + row('Remote ID', a.remote_id_serial) +
+      row('NDAA compliant', yn(a.ndaa_compliant)) + row('C2 platform', a.c2_platform) + row('Firmware', a.firmware_version) +
+      row('Prop guards', yn(a.prop_guards)) + row('Anti-collision lighting', yn(a.anti_collision_lighting)) + row('PRS', a.prs_equipped ? (a.prs_model || 'Yes') : 'No') +
+      '</div>' + (a.notes ? '<div class="hint" style="margin-top:6px;">' + esc(a.notes) + '</div>' : '') +
+      '<div class="hint" style="margin-top:6px;">Registration, weight and PRS below were filled from the fleet record. Correct them here if the aircraft differs today; the fleet record is changed in Admin.</div></div>';
+  }
+  var note = FLEET.length ? '' : '<div class="hint">' + (SESSION ? 'No aircraft in the fleet list yet. An admin adds them under Admin, Fleet.' : 'Sign in to load the fleet list.') + '</div>';
+  return '<div class="fleet-wrap"><div class="field-group"><label for="fleetSel">Aircraft</label><select id="fleetSel">' + opts + '</select>' + note + '</div>' + card + '</div>';
+}
+function bindFleetPicker() {
+  var sel = document.getElementById('fleetSel');
+  if (sel && !sel._bound) { sel._bound = true; sel.addEventListener('change', function () { fleetPick(sel.value); }); }
+}
+function fleetPick(id) {
+  var f = S.fields, wasOther = !f.acAircraftId;
+  if (id === '__other' || !id) { f.acAircraftId = ''; }
+  else {
+    var a = fleetById(id); if (!a) return;
+    f.acAircraftId = a.id; f.acAsset = a.name;
+    if (a.faa_registration) f.acReg = a.faa_registration;
+    if (a.mtow_lb !== null && a.mtow_lb !== undefined) f.mtow = String(a.mtow_lb);
+    if (a.prs_equipped !== null && a.prs_equipped !== undefined) f.prsEquipped = a.prs_equipped ? 'Yes' : 'No';
+    if (a.prs_min_alt_ft !== null && a.prs_min_alt_ft !== undefined) f.prsMinAlt = String(a.prs_min_alt_ft);
+  }
+  save();
+  if (wasOther !== !f.acAircraftId) { render(); return; }      // the free-text designation box appears or goes away
+  ['acReg', 'mtow', 'prsEquipped', 'prsMinAlt', 'acAsset'].forEach(function (k) {
+    document.querySelectorAll('[data-field="' + k + '"]').forEach(function (el) { el.value = f[k] || ''; });
+  });
+  var w = document.querySelector('.fleet-wrap'); if (w) { w.outerHTML = fleetPickerHTML(); bindFleetPicker(); }
+  renderDetermination(); renderApproval(); renderRecap();
+}
+
+function localStamp(iso) {
+  if (!iso) return '';
+  try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }); } catch (e) { return String(iso); }
+}
+/* ---- AGP: after submitting, the record belongs to the RPIC ---- */
+function renderAgpSubmitted() {
+  var main = document.getElementById('mainContent');
+  var ex = parseExceptions(), probs = Object.keys(ex).filter(function (k) { return ex[k] === 'problem'; }).length;
+  var photos = Object.keys(PHOTOS).reduce(function (n, k) { return n + (PHOTOS[k] || []).length; }, 0);
+  main.innerHTML = '<div class="section open"><div class="section-body" style="padding:22px;">' +
+    '<h3 style="margin-bottom:8px;">Submitted to the RPIC</h3>' +
+    '<p class="hint" style="margin-bottom:12px;">' + esc(S.fields.siteName || 'This site') + ' was submitted ' +
+    esc(localStamp(S.fields.groundCrewCompletedAt)) + ' by ' + esc(S.fields.groundCrewBy || '') +
+    '. It is locked while the RPIC completes it. If the RPIC sends it back, it reopens here after the next Sync.</p>' +
+    '<p style="margin-bottom:14px;font-size:0.85rem;">' + probs + ' problem(s) reported, ' + photos + ' photo(s) attached.' +
+    (S.agpSubmitPending || S.dirty ? ' <b>Not yet uploaded.</b> Tap Sync when you have signal.' : '') + '</p>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+    '<button class="action-btn" onclick="newAssessment()">Start a new hasty assessment</button>' +
+    '<a class="mini-btn" style="text-decoration:none;" href="launch-checklist.html?site=' + encodeURIComponent(S.fields.siteName || '') +
+    (S.fields.acAircraftId ? '&aircraft=' + encodeURIComponent(S.fields.acAircraftId) : '') + '">Open launch checklist</a>' +
+    '</div></div></div>';
+}
+
+/* ---- Hasty auto-start: location, lookup, crew name ---- */
+function hastyAutoStart() {
+  var f = S.fields;
+  if (!f.assessedBy && SESSION && SESSION.user) {
+    var md = SESSION.user.user_metadata || {};
+    f.assessedBy = md.full_name || md.display_name || SESSION.user.email;
+    var el = document.querySelector('[data-field="assessedBy"]'); if (el) el.value = f.assessedBy;
+    save();
+  }
+  if (!f.mapLat && !f.mapLng && !f.autoLocateTried && EXTERNAL_OK && navigator.geolocation && location.protocol === 'https:') {
+    f.autoLocateTried = '1'; save();
+    setTimeout(locateMe, 400);
+  }
+}
+
+/* ---- Exceptions-only ground-crew checklist ---- */
+function parseExceptions() { try { return JSON.parse(S.fields.hastyExceptions || '{}'); } catch (e) { return {}; } }
+function setHastyMode(m) { S.fields.hastyMode = m; save(); render(); }
+function setException(key, val) {
+  var ex = parseExceptions();
+  if (ex[key] === val) delete ex[key]; else ex[key] = val;
+  S.fields.hastyExceptions = JSON.stringify(ex);
+  S.fields.hastyAttest = '';
+  save();
+  var row = document.querySelector('.exc-item[data-key="' + key + '"]');
+  if (row) paintException(row, key);
+  var box = document.getElementById('hastyAttestBox'); if (box) box.checked = false;
+}
+function paintException(row, key) {
+  var v = parseExceptions()[key] || '';
+  row.classList.toggle('is-problem', v === 'problem');
+  row.classList.toggle('is-na', v === 'na');
+  row.querySelectorAll('.exc-btn').forEach(function (b) { b.classList.toggle('on', b.dataset.v === v); });
+  var n = row.querySelector('.exc-note'); if (n) n.style.display = v === 'problem' ? '' : 'none';
+}
+function renderExceptionItem(body, sec, c, idx) {
+  var key = sec.id + '-' + idx, wrap = document.createElement('div');
+  wrap.className = 'exc-item'; wrap.dataset.key = key;
+  wrap.innerHTML = '<div class="exc-row"><div class="exc-text">' + c.text + (c.sp ? '<span class="sp-ref">[' + c.sp + ']</span>' : '') + '</div>' +
+    '<div class="exc-btns no-print"><button type="button" class="exc-btn" data-v="na">N/A</button><button type="button" class="exc-btn prob" data-v="problem">Problem</button></div></div>' +
+    '<div class="exc-note" style="display:none;"><input type="text" data-field="exc-' + key + '" value="' + esc(S.fields['exc-' + key]) + '" placeholder="What is wrong?"></div>' +
+    (c.ev ? renderEv(c, key, true) : '');
+  body.appendChild(wrap);
+  wrap.querySelectorAll('.exc-btn').forEach(function (b) { b.addEventListener('click', function () { setException(key, b.dataset.v); }); });
+  bindFields(wrap);
+  paintException(wrap, key);
+  if (c.ev === 'photo') setTimeout(function () { renderPhotos(c.photoKey); }, 10);
+  if (c.ev === 'tree') setTimeout(function () { renderPhotos('trees'); }, 10);
+}
+function attestBlockHTML() {
+  return '<label class="attest-box"><input type="checkbox" id="hastyAttestBox"' + (S.fields.hastyAttest === 'yes' ? ' checked' : '') +
+    ' onchange="S.fields.hastyAttest=this.checked?\'yes\':\'\';save();"> I physically observed every item above at this site. Every item not marked Problem or N/A is acceptable.</label>';
+}
+function applyExceptionAttestation() {
+  if (S.fields.hastyAttest !== 'yes') { showToast('Sign the attestation above Submit first', true); var b = document.getElementById('hastyAttestBox'); if (b) b.scrollIntoView({ block: 'center' }); return false; }
+  var ex = parseExceptions(), probs = [], nas = [];
+  var missingNote = groundCrewItems().filter(function (it) { var k = it.sec.id + '-' + it.idx; return ex[k] === 'problem' && !(S.fields['exc-' + k] || '').trim(); });
+  if (missingNote.length) { showToast('Describe each problem before submitting (' + missingNote.length + ' missing)', true); return false; }
+  groundCrewItems().forEach(function (it) {
+    var k = it.sec.id + '-' + it.idx, v = ex[k];
+    if (v === 'problem') { S.checks[k] = ''; probs.push({ key: k, item: it.c.text.replace(/<[^>]+>/g, ''), note: S.fields['exc-' + k] || '' }); }
+    else if (v === 'na') { S.checks[k] = 'na'; nas.push(k); }
+    else S.checks[k] = 'checked';
+  });
+  S.fields.groundAttest = JSON.stringify({ by: S.fields.assessedBy || '', account: SESSION && SESSION.user ? SESSION.user.email : '', at: new Date().toISOString(), mode: 'exceptions', problems: probs, na: nas.length });
+  return true;
+}
+function attestSummaryHTML() {
+  var a; try { a = JSON.parse(S.fields.groundAttest || 'null'); } catch (e) { a = null; }
+  if (!a) return '';
+  return '<div class="attest-sum">Ground crew attested every item observed (' + esc(a.by) + (a.account && a.account !== a.by ? ', ' + esc(a.account) : '') + ', ' +
+    esc(localStamp(a.at)) + '). ' + (a.problems.length ? '<b>' + a.problems.length + ' problem(s) reported:</b><ul>' +
+    a.problems.map(function (p) { return '<li>' + esc(p.item) + ': <i>' + esc(p.note) + '</i></li>'; }).join('') + '</ul>' : 'No problems reported.') +
+    (a.na ? ' ' + a.na + ' item(s) marked N/A.' : '') + '</div>';
+}
+
+/* ---- Photo walk: guided capture with GPS, time and heading burned into each photo ---- */
+var WALK = null;
+function walkSteps() {
+  var steps = [{ key: 'hasty_hazard', text: 'Overall site: launch and recovery area, surroundings and hazards' }];
+  groundCrewItems().forEach(function (it) {
+    if (it.c.ev === 'photo' && it.c.photoKey) steps.push({ key: it.c.photoKey, text: it.c.text.replace(/<[^>]+>/g, ''), checkKey: it.sec.id + '-' + it.idx });
+    if (it.c.ev === 'tree') steps.push({ key: 'trees', text: it.c.text.replace(/<[^>]+>/g, ''), checkKey: it.sec.id + '-' + it.idx });
+  });
+  return steps;
+}
+function photoWalkStart() {
+  WALK = { i: 0, steps: walkSteps(), pos: null, heading: null, watch: null };
+  if (navigator.geolocation) WALK.watch = navigator.geolocation.watchPosition(function (p) { if (WALK) WALK.pos = p.coords; }, function () {}, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
+  var listen = function () {
+    window.addEventListener('deviceorientationabsolute', walkHeading, true);
+    window.addEventListener('deviceorientation', walkHeading, true);
+  };
+  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then(function (st) { if (st === 'granted') listen(); }).catch(function () {});
+  } else listen();
+  var ov = document.createElement('div'); ov.id = 'walkOverlay'; ov.className = 'walk-ov no-print';
+  document.body.appendChild(ov);
+  walkPaint();
+}
+function walkHeading(e) {
+  if (!WALK) return;
+  var h = null;
+  if (typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading;
+  else if (e.absolute && typeof e.alpha === 'number') h = (360 - e.alpha) % 360;
+  if (h !== null && !isNaN(h)) WALK.heading = h;
+}
+function walkPaint() {
+  var ov = document.getElementById('walkOverlay'); if (!ov || !WALK) return;
+  var st = WALK.steps[WALK.i], n = (PHOTOS[st.key] || []).length;
+  ov.innerHTML = '<div class="walk-card"><div class="walk-top"><span>Photo ' + (WALK.i + 1) + ' of ' + WALK.steps.length + '</span><button class="mini-btn" onclick="photoWalkEnd()">Close</button></div>' +
+    '<div class="walk-text">' + esc(st.text) + '</div>' +
+    '<div class="walk-thumbs">' + (PHOTOS[st.key] || []).slice(-4).map(function (d) { return '<img src="' + d + '" alt="">'; }).join('') + '</div>' +
+    '<div class="walk-meta">' + walkMetaLine() + '</div>' +
+    '<button class="action-btn walk-shoot" onclick="walkShoot()">' + (n ? 'Take another' : 'Take photo') + '</button>' +
+    '<div class="walk-nav"><button class="mini-btn" onclick="walkGo(-1)"' + (WALK.i ? '' : ' disabled') + '>Back</button>' +
+    '<button class="mini-btn" onclick="walkGo(1)">' + (WALK.i === WALK.steps.length - 1 ? 'Finish' : (n ? 'Next' : 'Skip')) + '</button></div></div>';
+}
+function walkMetaLine() {
+  var p = WALK && WALK.pos, h = WALK && WALK.heading;
+  return (p ? p.latitude.toFixed(6) + ', ' + p.longitude.toFixed(6) + ' (&plusmn;' + Math.round(p.accuracy) + ' m)' : 'Waiting for GPS') +
+    ' &middot; ' + (h === null || h === undefined ? 'heading unavailable' : 'heading ' + Math.round(h) + '&deg;');
+}
+function walkGo(d) {
+  WALK.i += d;
+  if (WALK.i >= WALK.steps.length) { photoWalkEnd(); showToast('Photo walk complete'); return; }
+  if (WALK.i < 0) WALK.i = 0;
+  walkPaint();
+}
+function photoWalkEnd() {
+  if (WALK && WALK.watch !== null && navigator.geolocation) navigator.geolocation.clearWatch(WALK.watch);
+  window.removeEventListener('deviceorientationabsolute', walkHeading, true);
+  window.removeEventListener('deviceorientation', walkHeading, true);
+  WALK = null;
+  var ov = document.getElementById('walkOverlay'); if (ov) ov.remove();
+  render();
+}
+function walkShoot() {
+  var st = WALK.steps[WALK.i];
+  var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+  inp.onchange = async function (e) {
+    var file = e.target.files && e.target.files[0]; if (!file) return;
+    var data = await compressImg(file, 1400, 0.72); if (!data) { showToast('Could not read that photo', true); return; }
+    var p = WALK && WALK.pos, h = WALK && WALK.heading, now = new Date();
+    var comp = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    var lines = [
+      (S.fields.siteName || 'Site') + '  |  ' + now.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }),
+      (p ? p.latitude.toFixed(6) + ', ' + p.longitude.toFixed(6) + '  +/-' + Math.round(p.accuracy) + ' m' : 'GPS unavailable') +
+        '  |  ' + (h === null || h === undefined ? 'Heading unavailable' : 'Heading ' + Math.round(h) + '° ' + comp[Math.round(h / 45) % 8]),
+      st.text.length > 90 ? st.text.slice(0, 87) + '...' : st.text
+    ];
+    var stamped = await stampImage(data, lines);
+    if (!PHOTOS[st.key]) PHOTOS[st.key] = [];
+    PHOTOS[st.key].push(stamped);
+    await photoPut(st.key);
+    if (st.checkKey && S.fields.hastyMode !== 'exceptions' && !S.checks[st.checkKey]) { S.checks[st.checkKey] = 'checked'; save(); }
+    walkPaint();
+  };
+  inp.click();
+}
+function stampImage(dataUrl, lines) {
+  return new Promise(function (res) {
+    var img = new Image();
+    img.onload = function () {
+      var c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+      var g = c.getContext('2d'); g.drawImage(img, 0, 0);
+      var fs = Math.max(14, Math.round(img.width / 55)), pad = Math.round(fs * 0.6), bh = lines.length * (fs + 6) + pad * 2;
+      g.fillStyle = 'rgba(9,21,32,0.72)'; g.fillRect(0, img.height - bh, img.width, bh);
+      g.fillStyle = '#FFFFFF'; g.font = '600 ' + fs + 'px Montserrat, Arial, sans-serif'; g.textBaseline = 'top';
+      lines.forEach(function (t, i) { g.fillText(t, pad, img.height - bh + pad + i * (fs + 6), img.width - pad * 2); });
+      res(c.toDataURL('image/jpeg', 0.8));
+    };
+    img.onerror = function () { res(dataUrl); };
+    img.src = dataUrl;
+  });
+}
+
+/* ---- Optional dictation: a Dictate button appears while a text box has focus. Typing still works. ---- */
+(function () {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  var btn = null, target = null, rec = null, hideTO = null;
+  function enabled() { try { return localStorage.getItem('ep-dictate') !== 'off'; } catch (e) { return true; } }
+  function eligible(el) { return el && el.dataset && el.dataset.field && ((el.tagName === 'INPUT' && el.type === 'text') || el.tagName === 'TEXTAREA'); }
+  function ensure() {
+    if (btn) return btn;
+    btn = document.createElement('button'); btn.type = 'button'; btn.className = 'dictate-btn no-print'; btn.textContent = 'Dictate';
+    btn.addEventListener('mousedown', function (e) { e.preventDefault(); });
+    btn.addEventListener('touchstart', function (e) { e.preventDefault(); start(); }, { passive: false });
+    btn.addEventListener('click', start);
+    document.body.appendChild(btn); return btn;
+  }
+  function start() {
+    if (!target) return;
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false; rec.continuous = false;
+    btn.classList.add('live'); btn.textContent = 'Listening, tap to stop';
+    var el = target;
+    rec.onresult = function (e) {
+      var t = Array.from(e.results).map(function (r) { return r[0].transcript; }).join(' ').trim();
+      if (!t) return;
+      el.value = (el.value ? el.value.replace(/\s+$/, '') + ' ' : '') + t;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    rec.onerror = function (e) { showToast('Dictation: ' + (e.error || 'error'), true); };
+    rec.onend = function () { rec = null; if (btn) { btn.classList.remove('live'); btn.textContent = 'Dictate'; } };
+    try { rec.start(); } catch (e) { rec = null; }
+  }
+  document.addEventListener('focusin', function (e) {
+    if (!enabled() || !eligible(e.target)) return;
+    clearTimeout(hideTO); target = e.target; ensure().style.display = 'block';
+  });
+  document.addEventListener('focusout', function () {
+    hideTO = setTimeout(function () { if (!rec && btn) btn.style.display = 'none'; }, 250);
+  });
+})();
+
+/* ============================================================
    SUPABASE SYNC
    IndexedDB stays the source of truth on the device. Sync pushes
    local changes up and pulls remote assessments down on demand.
@@ -2211,7 +2573,9 @@ function myRole() {
   try { return (SESSION && SESSION.user && SESSION.user.app_metadata && SESSION.user.app_metadata.role) || 'viewer'; }
   catch (e) { return 'viewer'; }
 }
-function canWrite() { return myRole() === 'admin' || myRole() === 'pilot'; }
+function canWrite() { return myRole() === 'admin' || myRole() === 'pilot' || myRole() === 'agp'; }
+/* Authorized Ground Personnel: hasty assessments only. The database enforces the same limits. */
+function isAgp() { return myRole() === 'agp'; }
 
 /* ---- status mapping ---- */
 function statusEnum() {
@@ -2263,6 +2627,8 @@ function doSignIn() {
     SESSION = r.data.session; closeSignIn(); renderAuthBar();
     showToast('Signed in as ' + myRole());
     if (!canWrite()) showToast('Role is viewer. You can read but not upload.', true);
+    render();
+    fleetLoad();
     syncNow();
   });
 }
@@ -2315,6 +2681,14 @@ async function pushOne(rec) {
     res = await c.from('site_assessments').update(row).eq('id', rec.remote_id).select('id,updated_at').single();
     // The row may have been deleted by an admin. Do not silently recreate it:
     // drop the link and keep the work local so nothing is lost.
+    if (res.error && (res.error.code === 'PGRST116' || /0 rows|not found/i.test(res.error.message || '')) && isAgp()) {
+      // Ground personnel cannot edit a hasty assessment after submitting it, so the update matches
+      // no row. The RPIC owns it now: keep the link and stop retrying.
+      rec.dirty = false; delete rec.agpSubmitPending;
+      await idbPut('assessments', JSON.parse(JSON.stringify(rec)));
+      if (rec.id === S.id) { S.dirty = false; delete S.agpSubmitPending; }
+      return rec;
+    }
     if (res.error && (res.error.code === 'PGRST116' || /0 rows|not found/i.test(res.error.message || ''))) {
       delete rec.remote_id; rec.dirty = true;
       await idbPut('assessments', JSON.parse(JSON.stringify(rec)));
@@ -2328,8 +2702,9 @@ async function pushOne(rec) {
   if (res.error) throw res.error;
   rec.remote_id = res.data.id;
   rec.synced_at = res.data.updated_at;
-  rec.dirty = false;
+  rec.dirty = false; delete rec.agpSubmitPending;
   await idbPut('assessments', JSON.parse(JSON.stringify(rec)));
+  if (rec.id === S.id) delete S.agpSubmitPending;
   // Mirror onto the live object, otherwise the next save drops remote_id and the
   // following sync inserts a duplicate instead of updating.
   if (rec.id === S.id) { S.remote_id = rec.remote_id; S.synced_at = rec.synced_at; S.dirty = false; }
@@ -2462,6 +2837,7 @@ async function syncNow() {
         var rec = all[i];
         if (!rec.dirty && rec.remote_id) continue;
         if (!(rec.fields && rec.fields.siteName)) { skipped++; continue; }
+        if (isAgp() && (rec.fields.assessmentType !== 'hasty' || (rec.remote_id && rec.fields.groundCrewStatus === 'ground_crew_complete' && !rec.agpSubmitPending))) { skipped++; continue; }
         try { await pushOne(rec); pushed++; } catch (e) { failed++; console.warn('push failed', rec.id, e.message); }
       }
     }
@@ -2506,9 +2882,10 @@ function initSync() {
   c.auth.getSession().then(function (r) {
     SESSION = (r && r.data && r.data.session) || null;
     renderAuthBar();
+    if (SESSION) { render(); fleetLoad(); }
     if (SESSION && navigator.onLine) syncNow();
   });
-  c.auth.onAuthStateChange(function (_e, s) { SESSION = s; renderAuthBar(); });
+  c.auth.onAuthStateChange(function (_e, s) { var was = myRole(); SESSION = s; renderAuthBar(); if (myRole() !== was) render(); });
   window.addEventListener('online', function () { renderAuthBar(); if (SESSION) syncNow(); });
   window.addEventListener('offline', renderAuthBar);
 }
@@ -2527,6 +2904,7 @@ function openAdmin() {
   if (myRole() !== 'admin') { showToast('Admin role required. You are ' + myRole() + '.', true); return; }
   document.getElementById('adminPanel').classList.add('open');
   loadAdmin();
+  fleetLoad();
 }
 function closeAdmin() { document.getElementById('adminPanel').classList.remove('open'); }
 function adminTab(t) { ADMIN.tab = t; renderAdmin(); }
@@ -2579,7 +2957,8 @@ function renderAdmin() {
   var tabs = document.getElementById('adminTabs');
   tabs.innerHTML =
     '<button class="adm-tab' + (ADMIN.tab === 'assessments' ? ' on' : '') + '" onclick="adminTab(\'assessments\')">Site Assessments</button>' +
-    '<button class="adm-tab' + (ADMIN.tab === 'reports' ? ' on' : '') + '" onclick="adminTab(\'reports\')">AAR Reports</button>';
+    '<button class="adm-tab' + (ADMIN.tab === 'reports' ? ' on' : '') + '" onclick="adminTab(\'reports\')">AAR Reports</button>' +
+    '<button class="adm-tab' + (ADMIN.tab === 'fleet' ? ' on' : '') + '" onclick="adminTab(\'fleet\')">Fleet</button>';
   renderAdminBody();
 }
 
@@ -2591,6 +2970,7 @@ function renderAdminBody() {
   var q = ADMIN.q;
   var hit = function (vals) { return !q || vals.join(' ').toLowerCase().indexOf(q) >= 0; };
 
+  if (ADMIN.tab === 'fleet') { el.innerHTML = head + fleetAdminHTML(); return; }
   if (ADMIN.tab === 'assessments') {
     var rows = ADMIN.assessments.filter(function (x) {
       return hit([x.site_name, x.client_name, x.assessed_by, x.rpic_reviewing, x.governing_provision, x.status]);
@@ -2632,6 +3012,64 @@ function renderAdminBody() {
       '<p class="adm-msg">AAR reports are read only here. Edit them in the AAR tool.</p>';
   }
 }
+
+/* ---- Admin: fleet registry editor ---- */
+var FLEET_FIELDS = [
+  ['name', 'Name (shown in the dropdown)', 'text'], ['make', 'Make', 'text'], ['model', 'Model', 'text'],
+  ['serial_number', 'Serial number', 'text'], ['faa_registration', 'FAA registration', 'text'], ['remote_id_serial', 'Remote ID serial', 'text'],
+  ['mtow_lb', 'Max takeoff weight, all attachments (lb)', 'number'], ['prs_equipped', 'PRS equipped', 'bool'], ['prs_model', 'PRS model', 'text'],
+  ['prs_min_alt_ft', 'PRS minimum deployment height (ft AGL)', 'number'], ['prop_guards', 'Prop guards', 'bool'], ['anti_collision_lighting', 'Anti-collision lighting', 'bool'],
+  ['ndaa_compliant', 'NDAA compliant', 'bool'], ['c2_platform', 'C2 platform', 'text'], ['firmware_version', 'Firmware version', 'text'],
+  ['status', 'Status', 'status'], ['is_test', 'Test record', 'bool'], ['notes', 'Notes', 'text']
+];
+function fleetAdminHTML() {
+  if (ADMIN.fleetEdit) {
+    var a = ADMIN.fleetEdit;
+    return '<div class="fleet-form">' + FLEET_FIELDS.map(function (fd) {
+      var k = fd[0], v = a[k], inp;
+      if (fd[2] === 'bool') inp = '<select data-ff="' + k + '"><option value=""' + (v === null || v === undefined ? ' selected' : '') + '>Unknown</option><option value="true"' + (v === true ? ' selected' : '') + '>Yes</option><option value="false"' + (v === false ? ' selected' : '') + '>No</option></select>';
+      else if (fd[2] === 'status') inp = '<select data-ff="status">' + ['active', 'out_of_service', 'retired'].map(function (o) { return '<option value="' + o + '"' + ((v || 'active') === o ? ' selected' : '') + '>' + o.replace(/_/g, ' ') + '</option>'; }).join('') + '</select>';
+      else inp = '<input data-ff="' + k + '" type="' + (fd[2] === 'number' ? 'number' : 'text') + '" step="any" value="' + esc(v === null || v === undefined ? '' : v) + '">';
+      return '<label><span>' + esc(fd[1]) + '</span>' + inp + '</label>';
+    }).join('') + '</div><div style="display:flex;gap:8px;margin-top:10px;"><button class="action-btn" onclick="fleetSave()">Save aircraft</button><button class="mini-btn" onclick="ADMIN.fleetEdit=null;renderAdminBody();">Cancel</button></div>';
+  }
+  var rows = FLEET.filter(function (x) { var q = ADMIN.q; return !q || [x.name, x.make, x.model, x.serial_number, x.faa_registration].join(' ').toLowerCase().indexOf(q) >= 0; });
+  return '<div style="margin-bottom:10px;"><button class="action-btn" onclick="fleetEdit(null)">Add aircraft</button></div>' +
+    (rows.length ? '<div class="adm-scroll"><table class="adm-table"><thead><tr><th>Name</th><th>Make / model</th><th>Registration</th><th>MTOW</th><th>PRS</th><th>NDAA</th><th>Status</th><th>Updated</th><th></th></tr></thead><tbody>' +
+    rows.map(function (x) {
+      return '<tr><td><b>' + esc(x.name) + '</b>' + (x.is_test ? ' <span class="adm-warn">test</span>' : '') + '</td><td>' + esc([x.make, x.model].filter(Boolean).join(' ')) + '</td><td>' + esc(x.faa_registration || '') +
+        '</td><td>' + (x.mtow_lb != null ? esc(x.mtow_lb) + ' lb' : '') + '</td><td>' + yn(x.prs_equipped) + '</td><td>' + yn(x.ndaa_compliant) + '</td><td>' + esc((x.status || '').replace(/_/g, ' ')) +
+        '</td><td>' + esc(shortDate(x.updated_at)) + '</td><td class="adm-act"><button class="mini-btn" onclick="fleetEdit(\'' + esc(x.id) + '\')">Edit</button></td></tr>';
+    }).join('') + '</tbody></table></div>' : '<p class="adm-msg">No aircraft yet.</p>') +
+    '<p class="adm-msg">Retire an aircraft instead of deleting it, so past assessments still show what was flown.</p>';
+}
+function fleetEdit(id) {
+  var a = id ? fleetById(id) : null;
+  ADMIN.fleetEdit = a ? JSON.parse(JSON.stringify(a)) : { status: 'active', is_test: false };
+  renderAdminBody();
+}
+async function fleetSave() {
+  var c = sbClient(); if (!c) return;
+  var a = ADMIN.fleetEdit, row = {};
+  FLEET_FIELDS.forEach(function (fd) {
+    var el = document.querySelector('[data-ff="' + fd[0] + '"]'); if (!el) return;
+    var v = el.value.trim();
+    if (fd[2] === 'bool') row[fd[0]] = v === '' ? null : v === 'true';
+    else if (fd[2] === 'number') row[fd[0]] = v === '' ? null : Number(v);
+    else row[fd[0]] = v === '' ? null : v;
+  });
+  if (!row.name) { showToast('Name is required', true); return; }
+  if (row.is_test === null) row.is_test = false;
+  if (!row.status) row.status = 'active';
+  var res = a.id ? await c.from('fleet_aircraft').update(row).eq('id', a.id).select().single()
+                 : await c.from('fleet_aircraft').insert(row).select().single();
+  if (res.error) { showToast('Save failed: ' + res.error.message, true); return; }
+  ADMIN.fleetEdit = null;
+  await fleetLoad();
+  renderAdminBody();
+  showToast('Aircraft saved');
+}
+
 async function adminDelete(id, name) {
   if (myRole() !== 'admin') { showToast('Admin role required', true); return; }
   var c = sbClient(); if (!c) { showToast('Not connected', true); return; }
@@ -2793,18 +3231,22 @@ function openAssessment(id) {
 }
 function newAssessment() {
   S = blankAssessment();
-  S.fields.assessmentType = 'fixed';
+  S.fields.assessmentType = isAgp() ? 'hasty' : 'fixed';
+  if (isAgp()) { S.fields.groundCrewStatus = 'in_progress'; S.fields.hastyMode = 'exceptions'; }
   PHOTOS = {};
   idbPut('assessments', JSON.parse(JSON.stringify(S)))
-    .then(() => { localStorage.setItem('ep-sa-current', S.id); render(); refreshPicker(); showToast('New assessment started. Fixed by default, use the toggle above to switch to Hasty.'); });
+    .then(() => { localStorage.setItem('ep-sa-current', S.id); render(); refreshPicker();
+      showToast(isAgp() ? 'New hasty assessment started' : 'New assessment started. Fixed by default, use the toggle above to switch to Hasty.'); });
 }
 /* Persistent type toggle at the top of the page. Switching is non-destructive: nothing already
    entered is deleted, it only changes which items render (render()'s dispatcher already decides
    full-sections vs the hasty ground-crew form from assessmentType + groundCrewStatus). */
 function setAssessmentType(type) {
   if (S.fields.assessmentType === type) return;
+  if (isAgp() && type !== 'hasty') { showToast('Ground personnel accounts complete hasty assessments only', true); return; }
   S.fields.assessmentType = type;
   if (type === 'hasty' && !S.fields.groundCrewStatus) S.fields.groundCrewStatus = 'in_progress';
+  if (type === 'hasty' && !S.fields.hastyMode) S.fields.hastyMode = 'exceptions';
   save();
   render(); refreshPicker(); renderTypeToggle();
   showToast(type === 'hasty' ? 'Switched to Hasty Assessment' : 'Switched to Fixed Site Assessment');
@@ -2813,6 +3255,7 @@ function renderTypeToggle() {
   const el = document.getElementById('typeToggle');
   if (!el) return;
   const t = S.fields.assessmentType === 'hasty' ? 'hasty' : 'fixed';
+  el.style.display = isAgp() ? 'none' : '';
   el.querySelectorAll('.type-toggle-btn').forEach(function (btn) {
     btn.classList.toggle('active', btn.dataset.type === t);
   });
