@@ -147,12 +147,12 @@
     }
     var layerCtl = L.control.layers(bases, overlays, { collapsed: opts.collapsed !== false, position: opts.position || 'topright' }).addTo(map);
 
-    var status = L.control({ position: 'bottomleft' });
+    var status = L.control({ position: opts.statusPosition || 'bottomleft' });
     status.onAdd = function () { this._div = L.DomUtil.create('div', 'epm-status'); L.DomEvent.disableClickPropagation(this._div); return this._div; };
     status.addTo(map);
     var legend = null;
     if (opts.legend !== false) {
-      legend = L.control({ position: 'bottomright' });
+      legend = L.control({ position: opts.legendPosition || 'bottomright' });
       legend.onAdd = function () {
         var d = L.DomUtil.create('div', 'epm-legend');
         d.innerHTML = '<details' + (opts.legendOpen ? ' open' : '') + '><summary>Airspace key</summary>' +

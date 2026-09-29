@@ -1935,7 +1935,7 @@ function initMap() {
   const has = S.fields.mapLat && S.fields.mapLng;
   lMap = L.map('locationMap', { center: [lat, lng], zoom: has ? 17 : 10, attributionControl: true });
   const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(lMap);
-  if (window.EPFAAMap) lMapFaa = EPFAAMap.attach(lMap, { base: osm, collapsed: true, legend: true });
+  if (window.EPFAAMap) lMapFaa = EPFAAMap.attach(lMap, { base: osm, collapsed: true, legend: true, legendPosition: 'bottomleft', statusPosition: 'topleft' });
   if (has) { lMarker = L.marker([lat, lng], { draggable: true, icon: mkIc() }).addTo(lMap); bDrag(); }
   lMap.on('click', e => {
     if (!lMarker) { lMarker = L.marker([e.latlng.lat, e.latlng.lng], { draggable: true, icon: mkIc() }).addTo(lMap); bDrag(); }
