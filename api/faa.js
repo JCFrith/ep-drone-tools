@@ -3,7 +3,43 @@
    this function instead. It is not an open proxy: the upstream URLs are fixed, the only input is a
    bounding box, and responses are cached at the edge.
      GET /api/faa?src=tfr&bbox=minLng,minLat,maxLng,maxLat    TFR shapes (FAA tfr.faa.gov) touching the box
-     GET /api/faa?src=metar&bbox=minLng,minLat,maxLng,maxLat  Current METARs (aviationweather.gov) in the box */
+     GET /api/faa?src=metar&bbox=minLng,minLat,maxLng,maxLat  Current METARs (aviationweather.gov) in the box
+     GET /api/faa?src=layer&layer=KEY&z=Z&x=X&y=Y              One map tile of an FAA airspace layer as GeoJSON
+   Map layers go through here as fixed tiles so the edge cache serves repeat views. The FAA ArcGIS services
+   allow about 6,000 request units per minute per client; drawing the map straight from the browser used
+   that up and starved the pin lookup. */
+const ARC = 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/';
+const TILE_LAYERS = {
+  uasfm: { z: 12, svcs: ['FAA_UAS_FacilityMap_Data'], fields: 'OBJECTID,CEILING', precision: 5 },
+  cls:   { z: 7, svcs: ['Class_Airspace'], fields: 'OBJECTID,NAME,CLASS,LOCAL_TYPE,LOWER_VAL,LOWER_CODE',
+           where: "CLASS IN ('B','C','D') OR LOCAL_TYPE IN ('CLASS_E2','CLASS_E3','CLASS_E4')", offset: 0.0004 },
+  sua:   { z: 7, svcs: ['Special_Use_Airspace'], fields: 'OBJECTID,NAME,TYPE_CODE,LOWER_VAL,UPPER_VAL', offset: 0.0006 },
+  nsr:   { z: 7, svcs: ['DoD_Mar_13', 'Part_Time_National_Security_UAS_Flight_Restrictions', 'Prohibited_Areas', 'National_Defense_Airspace_TFR_Areas'],
+           fields: '*', offset: 0.0002 },
+  stad:  { z: 7, svcs: ['Stadiums'], fields: 'OBJECTID,NAME', points: true },
+  apt:   { z: 9, svcs: ['US_Airport'], fields: 'OBJECTID,IDENT,NAME,TYPE_CODE', points: true }
+};
+function tileBbox(z, x, y) {
+  const n = Math.pow(2, z);
+  const lon = v => v / n * 360 - 180;
+  const lat = v => Math.atan(Math.sinh(Math.PI * (1 - 2 * v / n))) * 180 / Math.PI;
+  return [lon(x), lat(y + 1), lon(x + 1), lat(y)];
+}
+async function arcTile(def, bbox) {
+  const out = [];
+  for (const svc of def.svcs) {
+    const p = new URLSearchParams({
+      where: def.where || '1=1', geometry: bbox.map(n => n.toFixed(6)).join(','), geometryType: 'esriGeometryEnvelope',
+      inSR: '4326', spatialRel: 'esriSpatialRelIntersects', outFields: def.fields, returnGeometry: 'true', outSR: '4326',
+      geometryPrecision: String(def.precision || 5), resultRecordCount: '2000', f: 'geojson'
+    });
+    if (def.offset) p.set('maxAllowableOffset', String(def.offset));
+    const j = await getJson(ARC + svc + '/FeatureServer/0/query?' + p.toString(), 15000);
+    if (j && j.error) { const e = new Error(j.error.message || 'ArcGIS error'); e.code = j.error.code; throw e; }
+    (j && j.features || []).forEach(f => { f.id = svc + ':' + (f.id != null ? f.id : (f.properties && f.properties.OBJECTID)); out.push(f); });
+  }
+  return out;
+}
 const TFR_URL = 'https://tfr.faa.gov/geoserver/TFR/ows?service=WFS&version=1.1.0&request=GetFeature' +
   '&typeName=TFR:V_TFR_LOC&outputFormat=application/json&srsname=EPSG:4326' +
   '&propertyName=NOTAM_KEY,TITLE,STATE,LEGAL,CNS_LOCATION_ID,LAST_MODIFICATION_DATETIME,SHAPE';
@@ -40,6 +76,24 @@ async function getJson(url, ms) {
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   const src = String(req.query.src || '');
+  if (src === 'layer') {
+    const def = TILE_LAYERS[String(req.query.layer || '')];
+    const z = parseInt(req.query.z, 10), x = parseInt(req.query.x, 10), y = parseInt(req.query.y, 10), n = Math.pow(2, z);
+    if (!def || z !== def.z || !(x >= 0 && x < n && y >= 0 && y < n)) {
+      res.statusCode = 400;
+      return res.end(JSON.stringify({ error: 'Unknown layer or tile. Layers: ' + Object.keys(TILE_LAYERS).join(', ') }));
+    }
+    try {
+      const features = await arcTile(def, tileBbox(z, x, y));
+      res.setHeader('Cache-Control', 'public, s-maxage=43200, stale-while-revalidate=86400');
+      return res.end(JSON.stringify({ type: 'FeatureCollection', features }));
+    } catch (e) {
+      res.statusCode = e && e.code === 429 ? 503 : 502;
+      res.setHeader('Cache-Control', 'no-store');
+      if (e && e.code === 429) res.setHeader('Retry-After', '60');
+      return res.end(JSON.stringify({ error: 'FAA layer did not respond: ' + (e && e.message ? e.message : 'unknown') }));
+    }
+  }
   const bbox = parseBbox(req.query.bbox);
   if (!bbox || (src !== 'tfr' && src !== 'metar')) {
     res.statusCode = 400;

@@ -122,8 +122,9 @@
         if (!j || !Array.isArray(j.features)) throw new Error('unexpected response');
         return j.features;
       }).catch(function (e) {
-        if (n >= 2) throw e;
-        return new Promise(function (res) { setTimeout(res, n === 0 ? 1500 : 4000); }).then(function () { return attempt(n + 1); });
+        var limited = /rate limited/.test(e && e.message || '');
+        if (n >= (limited ? 3 : 2)) throw e;
+        return new Promise(function (res) { setTimeout(res, [1500, 4000, 15000][n]); }).then(function () { return attempt(n + 1); });
       });
     };
     return attempt(0);

@@ -8,29 +8,22 @@
    Usage:  var ctl = EPFAAMap.attach(leafletMap, { relay: '/api/faa' });   ctl.remove() to detach. */
 (function () {
   'use strict';
-  var BASE = 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/';
   var NM_M = 1852;
   var SECTIONAL = 'https://tiles.arcgis.com/tiles/ssFJjBXIUyZDrSYZ/arcgis/rest/services/VFR_Sectional/MapServer/tile/{z}/{y}/{x}';
 
+  // tz: tile zoom the relay serves this layer at (see api/faa.js). minZoom: map zoom it starts showing.
   var DEFS = [
-    { key: 'uasfm', name: 'UASFM grid (ft AGL)', svc: 'FAA_UAS_FacilityMap_Data', minZoom: 12, on: true,
-      fields: 'CEILING', simplify: false },
-    { key: 'cls', name: 'Controlled airspace at the surface', svc: 'Class_Airspace', minZoom: 8, on: true,
-      fields: 'NAME,CLASS,LOCAL_TYPE,LOWER_VAL,LOWER_CODE,UPPER_VAL',
-      where: "CLASS IN ('B','C','D') OR LOCAL_TYPE IN ('CLASS_E2','CLASS_E3','CLASS_E4')" },
-    { key: 'sua', name: 'Special use airspace', svc: 'Special_Use_Airspace', minZoom: 7, on: true,
-      fields: 'NAME,TYPE_CODE,LOWER_VAL,UPPER_VAL' },
-    { key: 'nsr', name: 'National security, prohibited, defense', minZoom: 7, on: true, multi: [
-      { svc: 'DoD_Mar_13', fields: 'Facility' },
-      { svc: 'Part_Time_National_Security_UAS_Flight_Restrictions', fields: 'Facility' },
-      { svc: 'Prohibited_Areas', fields: 'NAME' },
-      { svc: 'National_Defense_Airspace_TFR_Areas', fields: 'NAME' }
-    ] },
-    { key: 'stad', name: 'Stadium 3 NM rings', svc: 'Stadiums', minZoom: 8, on: true, fields: 'NAME', points: true },
-    { key: 'tfr', name: 'TFRs', relay: true, minZoom: 6, on: true },
-    { key: 'apt', name: 'Airports and heliports', svc: 'US_Airport', minZoom: 10, on: false,
-      fields: 'IDENT,NAME,TYPE_CODE', points: true }
+    { key: 'uasfm', name: 'UASFM grid (ft AGL)', tz: 12, minZoom: 13, on: true },
+    { key: 'cls', name: 'Controlled airspace at the surface', tz: 7, minZoom: 8, on: true },
+    { key: 'sua', name: 'Special use airspace', tz: 7, minZoom: 7, on: true },
+    { key: 'nsr', name: 'National security, prohibited, defense', tz: 7, minZoom: 7, on: true },
+    { key: 'stad', name: 'Stadium 3 NM rings', tz: 7, minZoom: 8, on: true },
+    { key: 'tfr', name: 'TFRs', bbox: true, minZoom: 6, on: true },
+    { key: 'apt', name: 'Airports and heliports', tz: 9, minZoom: 10, on: false }
   ];
+  var MAX_TILES = 30;
+  var TILE_CACHE = {};                 // shared by every map on the page: 'layer/x/y' -> features
+  var COOLDOWN_UNTIL = 0;              // set when the FAA services throttle us
 
   function gridColor(c) {
     c = Number(c);
@@ -59,30 +52,26 @@
     if (key === 'tfr') return { color: '#E5484D', weight: 2, dashArray: '6 4', fillColor: '#E5484D', fillOpacity: 0.12, interactive: false };
     return { interactive: false };
   }
-  function degPerPx(z) { return 360 / (256 * Math.pow(2, z)); }
+  function lon2x(lon, n) { return Math.floor((lon + 180) / 360 * n); }
+  function lat2y(lat, n) { var r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * n); }
+  function tilesFor(view, z) {
+    var n = Math.pow(2, z), out = [];
+    var x0 = Math.max(0, lon2x(view[0], n)), x1 = Math.min(n - 1, lon2x(view[2], n));
+    var y0 = Math.max(0, lat2y(Math.min(85, view[3]), n)), y1 = Math.min(n - 1, lat2y(Math.max(-85, view[1]), n));
+    for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) out.push(x + '/' + y);
+    return out;
+  }
   function pad(b, f) {
     var dx = (b[2] - b[0]) * f, dy = (b[3] - b[1]) * f;
     return [Math.max(-180, b[0] - dx), Math.max(-85, b[1] - dy), Math.min(180, b[2] + dx), Math.min(85, b[3] + dy)];
   }
   function contains(o, i) { return o && i[0] >= o[0] && i[1] >= o[1] && i[2] <= o[2] && i[3] <= o[3]; }
-  function fetchJson(url, tries) {
-    return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (j) { if (j && j.error) throw new Error(j.error.message || 'error'); return j; })
-      .catch(function (e) {
-        if ((tries || 0) >= 1) throw e;
-        return new Promise(function (res) { setTimeout(res, 1800); }).then(function () { return fetchJson(url, 1); });
-      });
-  }
-  function arcUrl(svc, fields, where, bbox, z, points) {
-    var p = [
-      'where=' + encodeURIComponent(where || '1=1'),
-      'geometry=' + encodeURIComponent(bbox.map(function (n) { return n.toFixed(5); }).join(',')),
-      'geometryType=esriGeometryEnvelope', 'inSR=4326', 'spatialRel=esriSpatialRelIntersects',
-      'outFields=' + encodeURIComponent(fields || ''), 'returnGeometry=true', 'outSR=4326',
-      'geometryPrecision=5', 'resultRecordCount=2000', 'f=geojson'
-    ];
-    if (!points && z !== null) p.push('maxAllowableOffset=' + (degPerPx(z) * 0.8).toFixed(7));
-    return BASE + svc + '/FeatureServer/0/query?' + p.join('&');
+  function getJson(url) {
+    return fetch(url).then(function (r) {
+      if (r.status === 503 || r.status === 429) { COOLDOWN_UNTIL = Date.now() + 60000; throw new Error('FAA rate limit'); }
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
   }
 
   var CSS = '.epm-status{background:rgba(9,21,32,.88);color:#fff;font:12px/1.35 Montserrat,system-ui,sans-serif;padding:6px 9px;border-radius:6px;max-width:260px;}' +
@@ -105,9 +94,9 @@
     if (!map.getPane('epAirspace')) { map.createPane('epAirspace'); map.getPane('epAirspace').style.zIndex = 390; map.getPane('epAirspace').style.pointerEvents = 'none'; }
     var state = {}, overlays = {}, timer = null, dead = false;
     DEFS.forEach(function (d) {
-      if (d.relay && !relay) return;
+      if (!relay) return;                                   // layers need the EP relay (served site only)
       var g = L.layerGroup();
-      state[d.key] = { def: d, group: g, box: null, z: null, busy: false, err: '' };
+      state[d.key] = { def: d, group: g, box: null, busy: false, err: '', drawnKey: '', tooMany: false };
       overlays[d.name] = g;
       if (d.on && opts[d.key] !== false) g.addTo(map);
     });
@@ -149,8 +138,8 @@
         var st = state[k];
         if (!map.hasLayer(st.group)) return;
         if (st.busy) busy = true;
-        if (z < st.def.minZoom) msgs.push('Zoom in to show ' + st.def.name.toLowerCase());
-        else if (st.err) msgs.push('<span class="warn">' + st.def.name + ' did not load</span>');
+        if (z < st.def.minZoom || st.tooMany) msgs.push('Zoom in to show ' + st.def.name.toLowerCase());
+        else if (st.err) msgs.push('<span class="warn">' + st.def.name + (Date.now() < COOLDOWN_UNTIL ? ': FAA rate limit, retrying shortly' : ' did not fully load') + '</span>');
       });
       var hide = !busy && !msgs.length;
       status._div.style.display = hide ? 'none' : '';
@@ -190,39 +179,70 @@
       }
     }
 
+    // Small shared queue so the map never fires more than three tile requests at once.
+    var inflight = 0, waiting = [];
+    function pump() {
+      while (inflight < 3 && waiting.length) {
+        var job = waiting.shift(); inflight++;
+        job().then(done, done);
+      }
+    }
+    function done() { inflight--; pump(); }
+    function enqueue(fn) { waiting.push(fn); pump(); }
+
     function loadLayer(st, view, z) {
       var d = st.def;
       if (!map.hasLayer(st.group)) return;
-      if (z < d.minZoom) { st.group.clearLayers(); st.box = null; st.err = ''; return; }
-      var zoomStale = st.z === null || (!d.points && Math.abs(z - st.z) >= 2) || (d.key === 'uasfm' && (st.z < 14) !== (z < 14)) || (d.key === 'apt' && (st.z < 12) !== (z < 12));
-      if (contains(st.box, view) && !zoomStale) return;
-      var box = pad(view, d.key === 'uasfm' ? 0.35 : 0.6);
-      var zq = Math.round(z);
-      st.busy = true; st.err = ''; setStatus();
-      var p;
-      if (d.relay) {
-        p = fetchJson(relay + '?src=tfr&bbox=' + box.map(function (n) { return n.toFixed(4); }).join(','));
-      } else if (d.multi) {
-        p = Promise.all(d.multi.map(function (m) { return fetchJson(arcUrl(m.svc, m.fields, null, box, zq, false)); }))
-          .then(function (arr) { return { type: 'FeatureCollection', features: [].concat.apply([], arr.map(function (a) { return a.features || []; })) }; });
-      } else {
-        p = fetchJson(arcUrl(d.svc, d.fields, d.where, box, d.simplify === false ? null : zq, d.points));
+      if (z < d.minZoom) { st.group.clearLayers(); st.drawnKey = ''; st.box = null; st.err = ''; st.tooMany = false; return; }
+      if (d.bbox) {                                            // TFRs: one bbox request through the relay
+        if (contains(st.box, view) && !st.err) return;
+        var box = pad(view, 0.5);
+        st.busy = true; st.err = '';
+        enqueue(function () {
+          return getJson(relay + '?src=tfr&bbox=' + box.map(function (n) { return n.toFixed(4); }).join(',')).then(function (gj) {
+            if (dead) return; st.busy = false; st.box = box; draw(st, gj, z); setStatus();
+          }, function (e) { if (dead) return; st.busy = false; st.err = e.message; st.box = null; setStatus(); });
+        });
+        return;
       }
-      p.then(function (gj) {
+      var need = tilesFor(pad(view, 0.15), d.tz);
+      st.tooMany = need.length > MAX_TILES;
+      if (st.tooMany) { setStatus(); return; }
+      var missing = need.filter(function (k) { var c = TILE_CACHE[d.key + '/' + k]; return !c || (c.err && !c.busy); });
+      var redraw = function () {
         if (dead) return;
-        st.busy = false; st.box = box; st.z = zq;
-        draw(st, gj, zq); setStatus();
-      }, function (e) {
-        if (dead) return;
-        st.busy = false; st.err = e && e.message ? e.message : 'failed'; st.box = null; setStatus();
+        var seen = {}, feats = [];
+        need.forEach(function (k) {
+          var c = TILE_CACHE[d.key + '/' + k];
+          (c && c.features || []).forEach(function (f) { var id = f.id || JSON.stringify(f.properties); if (!seen[id]) { seen[id] = 1; feats.push(f); } });
+        });
+        var key = need.join('|') + '#' + feats.length + '#' + (z >= 14 ? 1 : 0) + (z >= 12 ? 1 : 0);
+        if (key !== st.drawnKey) { st.drawnKey = key; draw(st, { type: 'FeatureCollection', features: feats }, z); }
+        st.busy = need.some(function (k) { var c = TILE_CACHE[d.key + '/' + k]; return c && c.busy; });
+        st.err = need.some(function (k) { var c = TILE_CACHE[d.key + '/' + k]; return c && c.err; }) ? 'some tiles failed' : '';
+        setStatus();
+      };
+      if (Date.now() < COOLDOWN_UNTIL && missing.length) { redraw(); return; }
+      missing.forEach(function (k) {
+        var ck = d.key + '/' + k, xy = k.split('/');
+        TILE_CACHE[ck] = { busy: true };
+        enqueue(function () {
+          if (Date.now() < COOLDOWN_UNTIL) { TILE_CACHE[ck] = { err: 'rate limit' }; redraw(); return Promise.resolve(); }
+          return getJson(relay + '?src=layer&layer=' + d.key + '&z=' + d.tz + '&x=' + xy[0] + '&y=' + xy[1]).then(function (gj) {
+            TILE_CACHE[ck] = { features: gj.features || [] }; redraw();
+          }, function (e) { TILE_CACHE[ck] = { err: e.message }; redraw(); });
+        });
       });
+      redraw();
     }
 
+    var cooldownTimer = null;
     function refresh() {
       if (dead) return;
       var b = map.getBounds(), view = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], z = map.getZoom();
       Object.keys(state).forEach(function (k) { loadLayer(state[k], view, z); });
       setStatus();
+      if (Date.now() < COOLDOWN_UNTIL && !cooldownTimer) cooldownTimer = setTimeout(function () { cooldownTimer = null; refresh(); }, COOLDOWN_UNTIL - Date.now() + 500);
     }
     function queue() { clearTimeout(timer); timer = setTimeout(refresh, 450); }
     map.on('moveend', queue);
