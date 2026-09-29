@@ -12,7 +12,9 @@
   'use strict';
   var BASE = 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/';
   var EPQS = 'https://epqs.nationalmap.gov/v1/json';
+  var OPEN_METEO = 'https://api.open-meteo.com/v1/elevation';
   var TIMEOUT_MS = 12000;
+  var ELEV_TIMEOUT_MS = 6000;
   var PIN_TOL_DEG = 0.0003;           // about 33 m: a pin this close to a boundary counts as inside
   var FAC_RADIUS_MI = 3;              // SP 19(d) states 3 miles, not nautical miles
   var LOWLEVEL_RADIUS_MI = 1;         // EP practice: low-level operations within 1 SM
@@ -36,7 +38,7 @@
     nda: { svc: 'National_Defense_Airspace_TFR_Areas', label: 'National defense airspace',
       fields: 'NAME,TYPE_CODE,LOCAL_TYPE,WKHR_CODE,WKHR_RMK' },
     apt: { svc: 'US_Airport', label: 'Airports and heliports', points: true,
-      fields: 'IDENT,NAME,TYPE_CODE,PRIVATEUSE,MIL_CODE,OPERSTATUS' },
+      fields: 'IDENT,NAME,TYPE_CODE,PRIVATEUSE,MIL_CODE,OPERSTATUS,ELEVATION' },
     stad: { svc: 'Stadiums', label: 'Stadiums', points: true,
       fields: 'NAME,CITY,STATE,STATUS_CODE' }
   };
@@ -57,9 +59,9 @@
     var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * r) * Math.cos(lat2 * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
   }
-  function withTimeout(url) {
+  function withTimeout(url, ms) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    var t = setTimeout(function () { if (ctl) ctl.abort(); }, TIMEOUT_MS);
+    var t = setTimeout(function () { if (ctl) ctl.abort(); }, ms || TIMEOUT_MS);
     return fetch(url, ctl ? { signal: ctl.signal } : {}).then(function (r) {
       clearTimeout(t);
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -84,12 +86,21 @@
       return (j && j.features) || [];
     });
   }
+  /* Ground elevation in ft MSL. Two free sources raced; the first valid answer wins. USGS EPQS is the
+     authoritative US source but often takes 20 s or more; Open-Meteo (Copernicus 90 m DEM) usually
+     answers in under a second and is close enough to convert airspace floors from MSL to AGL. */
   function elevation(lat, lng) {
-    return withTimeout(EPQS + '?x=' + lng.toFixed(6) + '&y=' + lat.toFixed(6) + '&units=Feet&wkid=4326&includeDate=false')
-      .then(function (j) {
-        var v = j && Number(j.value);
-        return (isFinite(v) && v > -1000 && v < 30000) ? Math.round(v) : null;
-      });
+    var ok = function (v) { return isFinite(v) && v > -1000 && v < 30000; };
+    var usgs = withTimeout(EPQS + '?x=' + lng.toFixed(6) + '&y=' + lat.toFixed(6) + '&units=Feet&wkid=4326&includeDate=false', ELEV_TIMEOUT_MS)
+      .then(function (j) { var v = j && Number(j.value); if (!ok(v)) throw new Error('no value'); return { ft: Math.round(v), src: 'USGS 3DEP' }; });
+    var om = withTimeout(OPEN_METEO + '?latitude=' + lat.toFixed(6) + '&longitude=' + lng.toFixed(6), ELEV_TIMEOUT_MS)
+      .then(function (j) { var m = j && j.elevation && Number(j.elevation[0]); if (!ok(m)) throw new Error('no value'); return { ft: Math.round(m * 3.28084), src: 'Copernicus DEM via Open-Meteo' }; });
+    return new Promise(function (resolve) {
+      var left = 2, done = false;
+      var win = function (r) { if (!done) { done = true; resolve(r); } };
+      var lose = function () { if (--left === 0) win(null); };
+      usgs.then(win, lose); om.then(win, lose);
+    });
   }
 
   /* Floor of an airspace volume in ft AGL, or null when it cannot be resolved. */
@@ -100,7 +111,11 @@
     if (!isFinite(v)) return null;
     if (v <= 0) return 0;
     if (c === 'SFC' || c === 'AGL') return v;
-    if (c === 'MSL') return elev === null ? null : v - elev;
+    if (c === 'STD') v = v * 100;                      // flight level
+    if (c === 'MSL' || c === 'STD') {
+      if (elev !== null) return v - elev;
+      return v > 15000 ? v : null;                     // above any US terrain plus 400 ft: clearly out of the band
+    }
     return null;
   }
   function altText(val, code) {
@@ -110,14 +125,27 @@
     if (!isFinite(v)) return raw || 'unknown';
     if (v <= -9000) return 'unlimited';
     if (v <= 0) return 'surface';
+    if (c === 'STD') return 'FL' + v;
     return v.toLocaleString('en-US') + ' ft ' + (c === 'SFC' ? 'AGL' : (c || 'MSL'));
   }
   function relevant(fl) { return fl === null || fl <= OPS_CEILING_AGL; }
 
-  function analyze(lat, lng, raw, elev, errors) {
+  function analyze(lat, lng, raw, elevR, errors) {
+    // Nearest airport or heliport within 3 miles is the last-resort elevation source.
+    var elev = elevR ? elevR.ft : null, elevSrc = elevR ? elevR.src : '';
+    if (elev === null) {
+      var nearest = null;
+      (raw.apt || []).forEach(function (f) {
+        var g = f.geometry, e = f.attributes && Number(f.attributes.ELEVATION);
+        if (!g || !isFinite(e)) return;
+        var d = distMi(lat, lng, g.y, g.x);
+        if (d <= FAC_RADIUS_MI && (!nearest || d < nearest.d)) nearest = { d: d, e: e, id: s(f.attributes.IDENT) };
+      });
+      if (nearest) { elev = Math.round(nearest.e); elevSrc = 'field elevation of ' + nearest.id + ', ' + nearest.d.toFixed(1) + ' mi away'; }
+    }
     var R = {
       v: 1, lat: +lat.toFixed(6), lng: +lng.toFixed(6), at: new Date().toISOString(),
-      elevFt: elev, grid: null, classes: [], controlled: false, classOption: '',
+      elevFt: elev, elevSrc: elevSrc, grid: null, classes: [], controlled: false, classOption: '',
       sua: [], prohibited: [], nsufr: [], nsufrPartTime: [], nda: [], stadiums: [], facilities: [],
       errors: errors, flags: [], status: 'ok'
     };
@@ -234,7 +262,7 @@
       flag('warn', 'Inside ' + x.type + ' ' + x.name + ' (' + x.floor + ' to ' + x.ceiling + (x.times ? ', ' + x.times : '') + '). Clear it with ' + (x.agency || 'the controlling agency') + ' or keep the site not approved.');
     });
     R.stadiums.forEach(function (x) {
-      flag('warn', x.name + (x.city ? ', ' + x.city : '') + ' is ' + x.nm + ' NM away. The stadium TFR (3 NM, up to 3,000 ft AGL) applies from 1 hour before to 1 hour after qualifying events.');
+      flag('warn', x.name + (x.city ? ', ' + x.city : '') + (x.nm < 0.1 ? ' is at the pin.' : ' is ' + x.nm.toFixed(1) + ' NM away.') + ' The stadium TFR (3 NM, up to 3,000 ft AGL) applies from 1 hour before to 1 hour after qualifying events.');
     });
     var near = R.facilities.filter(function (x) { return x.mi <= LOWLEVEL_RADIUS_MI; });
     flag('info', R.facilities.length
@@ -284,7 +312,7 @@
     h += row('Airspace class', esc(R.classOption));
     h += row('UASFM grid height', R.grid ? esc(R.grid.ceiling + ' ft AGL') : (R.controlled ? 'None published' : 'Not applicable (Class G)'));
     if (R.grid && R.grid.airports.length) h += row('Grid airport', esc(R.grid.airports.map(function (a) { return a.id + (a.name ? ' ' + a.name : ''); }).join(', ')));
-    h += row('Ground elevation', R.elevFt === null ? 'Unavailable' : esc(R.elevFt.toLocaleString('en-US') + ' ft MSL'));
+    h += row('Ground elevation', R.elevFt === null ? 'Unavailable' : esc(R.elevFt.toLocaleString('en-US') + ' ft MSL') + (R.elevSrc ? '<div class="faa-src">' + esc(R.elevSrc) + '</div>' : ''));
     h += '</div>';
     if (R.classes.length) {
       h += '<div class="faa-sub">Controlled airspace in the operating band</div><ul class="faa-list">' + R.classes.map(function (c) {
@@ -300,7 +328,7 @@
         }).join('') + '</tbody></table></details>';
     }
     h += '<div class="faa-src">Source: FAA Aeronautical Information Services and UAS Data Delivery System open data' +
-      (R.grid && R.grid.mapEff ? ', UASFM effective ' + esc(R.grid.mapEff) : '') + '; USGS elevation. Pulled ' + esc(fmtTime(R.at)) +
+      (R.grid && R.grid.mapEff ? ', UASFM effective ' + esc(R.grid.mapEff) : '') + '; ground elevation ' + esc(R.elevSrc || 'unavailable') + '. Pulled ' + esc(fmtTime(R.at)) +
       ' for ' + R.lat.toFixed(5) + ', ' + R.lng.toFixed(5) + '. TFRs and NOTAMs are not covered. The RPIC confirms every value.</div>';
     return h;
   }
