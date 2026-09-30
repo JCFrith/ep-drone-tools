@@ -11,6 +11,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="ep-faa-airspace.js"></script>
 <script src="ep-faa-map.js"></script>
+<script src="ep-flight-wx.js"></script>
 <style>
   :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-white:#FFFFFF;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-warn:#F5A524;--ep-block:#E5484D;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -166,98 +167,50 @@ function locateMe(){
 }
 
 /* ---- Panel ---- */
+function getAlt(){ try{ var v=parseFloat(localStorage.getItem('ep-aw-alt')); return isNaN(v)?null:v; }catch(e){ return null; } }
+function setAlt(v){ try{ if(v==='') localStorage.removeItem('ep-aw-alt'); else localStorage.setItem('ep-aw-alt', v); }catch(e){} if(PT&&PT.W) renderWx(); }
 function renderShell(){
-  var lim=getLimit();
+  var lim=getLimit(), alt=getAlt();
   document.getElementById('panel').innerHTML =
-    '<div class="card"><div class="loc"><b>'+PT.lat.toFixed(5)+', '+PT.lng.toFixed(5)+'</b><div class="hint" id="addr"></div></div></div>' +
+    '<div class="card"><div class="loc"><b>'+PT.lat.toFixed(5)+', '+PT.lng.toFixed(5)+'</b><div class="hint" id="addr"></div></div>'+
+    '<div class="row-inline" style="margin:10px 0 0;">Wind limit <input type="number" min="0" step="1" id="wlim" value="'+(lim==null?'':lim)+'" placeholder="mph"> mph &nbsp; Planned altitude <input type="number" min="0" step="10" id="walt" value="'+(alt==null?'':alt)+'" placeholder="ft"> ft AGL</div></div>' +
+    card('cGo','Conditions check','indicators only, the RPIC decides') +
     card('cAir','Airspace at the pin') +
     card('cNow','Weather now') +
-    '<div class="card" id="cHours"><h2>Next 12 hours<small>local time at the pin</small></h2><div class="row-inline">Aircraft wind limit <input type="number" min="0" step="1" id="wlim" value="'+(lim==null?'':lim)+'" placeholder="mph"> mph <span>Hours with wind or gusts at or above the limit turn red.</span></div><div class="body"><div class="empty">Loading</div></div></div>' +
+    card('cHours','Next 12 hours','local time at the pin') +
     card('cSun','Sun','civil twilight bounds night operations') +
     card('cAlerts','Weather alerts','National Weather Service') +
     card('cMetar','Nearest airport observations','METAR');
   document.getElementById('wlim').addEventListener('input',function(){ setLimit(this.value); });
+  document.getElementById('walt').addEventListener('input',function(){ setAlt(this.value); });
 }
 function runAll(P){
-  // Address (display only)
   fetch('https://nominatim.openstreetmap.org/reverse?format=json&zoom=17&lat='+P.lat+'&lon='+P.lng,{headers:{'Accept-Language':'en'}})
     .then(function(r){return r.json();}).then(function(d){ if(P!==PT) return; var el=document.getElementById('addr'); if(el&&d&&d.display_name) el.textContent=d.display_name; }).catch(function(){});
-  // Airspace
   if(window.EPFAA){
-    EPFAA.lookup(P.lat,P.lng).then(function(R){ if(P!==PT) return;
+    EPFAA.lookup(P.lat,P.lng).then(function(R){ if(P!==PT) return; P.R=R;
       setBody('cAir', EPFAA.renderHTML(R) + '<div class="faa-btns" style="margin-top:8px;"><a class="faa-btn" href="'+EPFAA.links.notam+'" target="_blank" rel="noopener">Check NOTAMs</a><a class="faa-btn" href="'+EPFAA.links.tfr+'" target="_blank" rel="noopener">tfr.faa.gov</a></div>');
+      renderGo();
     }, function(e){ if(P!==PT) return; setBody('cAir','<div class="empty">FAA airspace lookup failed: '+esc(e.message)+'. Check B4UFLY or the sectional.</div>'); });
   }
-  // Forecast
-  var u='https://api.open-meteo.com/v1/forecast?latitude='+P.lat.toFixed(4)+'&longitude='+P.lng.toFixed(4)+
-    '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,precipitation'+
-    '&hourly=temperature_2m,dew_point_2m,precipitation_probability,precipitation,weather_code,cloud_cover_low,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m'+
-    '&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=auto&forecast_days=2';
-  fetch(u).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ if(P!==PT) return; P.wx=j; renderWx(); renderSun(); })
-    .catch(function(e){ if(P!==PT) return; setBody('cNow','<div class="empty">Forecast unavailable: '+esc(e.message)+'</div>'); setBody('cHours','<div class="empty">Forecast unavailable.</div>'); renderSun(); });
-  // NWS alerts
-  fetch('https://api.weather.gov/alerts/active?point='+P.lat.toFixed(4)+','+P.lng.toFixed(4),{headers:{Accept:'application/geo+json'}})
-    .then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ if(P!==PT) return;
-      var f=(j.features||[]).map(function(x){return x.properties||{};});
-      setBody('cAlerts', f.length ? f.map(function(a){
-        var sev=/Extreme|Severe/.test(a.severity||'');
-        return '<div class="alert'+(sev?' sev':'')+'"><b>'+esc(a.event)+'</b>'+(a.severity?' ('+esc(a.severity)+')':'')+'<div class="hint">'+esc(a.headline||'')+'</div></div>';
-      }).join('') : '<div class="empty">No active alerts for this point.</div>');
-    }).catch(function(){ if(P!==PT) return; setBody('cAlerts','<div class="empty">National Weather Service alerts unavailable (US locations only).</div>'); });
-  // METARs through the relay
-  var d=0.75, bb=[P.lng-d/Math.cos(P.lat*Math.PI/180),P.lat-d,P.lng+d/Math.cos(P.lat*Math.PI/180),P.lat+d].map(function(n){return n.toFixed(3);}).join(',');
-  fetch('/api/faa?src=metar&bbox='+bb).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(j){ if(P!==PT) return;
-    var m=(j.metars||[]).map(function(x){ x._mi=EPFAA.distMi(P.lat,P.lng,x.lat,x.lon); return x; }).sort(function(a,b){return a._mi-b._mi;}).slice(0,3);
-    setBody('cMetar', m.length ? m.map(function(x){
-      var age=Math.round((Date.now()/1000-x.obsTime)/60);
-      return '<div class="metar"><b>'+esc(x.icaoId)+'</b> '+esc(x.name||'')+' <span class="hint">'+x._mi.toFixed(1)+' mi, '+age+' min old</span>'+(x.fltCat?'<span class="fc '+esc(x.fltCat)+'">'+esc(x.fltCat)+'</span>':'')+'<code>'+esc(x.rawOb)+'</code></div>';
-    }).join('') : '<div class="empty">No reporting station within about 50 miles.</div>');
-  }).catch(function(){ if(P!==PT) return; setBody('cMetar','<div class="empty">METARs unavailable right now. Check aviationweather.gov.</div>'); });
+  EPWX.fetchAll(P.lat,P.lng).then(function(W){ if(P!==PT) return; P.W=W; renderWx(); });
+}
+function renderGo(){
+  if(!PT||!PT.W) return;
+  var items=EPWX.evaluate(PT.W,{plannedAltFt:getAlt(),windLimit:getLimit()});
+  if(PT.R){ var st=PT.R.status; items.unshift({label:'Airspace',level:st==='stop'||st==='partial'?'no':st==='warn'?'warn':'ok',value:EPFAA.summaryLine(PT.R),detail:PT.R.tfrs&&PT.R.tfrs.some(function(t){return t.inside;})?'Inside a TFR: read the NOTAM.':''}); }
+  var worst=items.some(function(x){return x.level==='no';})?'no':items.some(function(x){return x.level==='warn';})?'warn':'ok';
+  setBody('cGo','<div class="faa-status faa-'+(worst==='no'?'stop':worst)+'"><span class="dot"></span>'+(worst==='no'?'NO-GO indicated':worst==='warn'?'Caution: review the flagged items':'No limiting conditions found')+'</div>'+EPWX.itemsHTML(items));
 }
 function renderWx(){
-  var j=PT&&PT.wx; if(!j) return;
-  var lim=getLimit(), c=j.current||{}, H=j.hourly||{}, off=j.utc_offset_seconds||0;
-  var lvl=function(v){ return (lim!=null && v!=null && v>=lim) ? 'bad' : ''; };
-  var vis=function(m){ return m==null?'':(m/1609.34>=10?'10+':(m/1609.34).toFixed(1)); };
-  // Current conditions
-  var nowIdx=0, nowIso=new Date(Date.now()+off*1000).toISOString().slice(0,13);
-  for(var i=0;i<(H.time||[]).length;i++){ if(H.time[i].slice(0,13)>=nowIso){ nowIdx=i; break; } }
-  var w120=H.wind_speed_120m?H.wind_speed_120m[nowIdx]:null, w80=H.wind_speed_80m?H.wind_speed_80m[nowIdx]:null;
-  setBody('cNow','<div class="tiles">'+
-    '<div class="tile"><div class="k">Conditions</div><div class="v" style="font-size:.86rem">'+esc(WMO[c.weather_code]||'')+'</div><div class="s">'+Math.round(c.temperature_2m)+'&deg;F, '+c.relative_humidity_2m+'% RH</div></div>'+
-    '<div class="tile '+lvl(c.wind_speed_10m)+'"><div class="k">Wind 10 m</div><div class="v">'+Math.round(c.wind_speed_10m)+' mph</div><div class="s">from '+compass(c.wind_direction_10m)+arrow(c.wind_direction_10m)+'</div></div>'+
-    '<div class="tile '+lvl(c.wind_gusts_10m)+'"><div class="k">Gusts</div><div class="v">'+Math.round(c.wind_gusts_10m)+' mph</div><div class="s">surface</div></div>'+
-    '<div class="tile '+lvl(w80)+'"><div class="k">Wind 80 m</div><div class="v">'+(w80==null?'':Math.round(w80)+' mph')+'</div><div class="s">about 260 ft</div></div>'+
-    '<div class="tile '+lvl(w120)+'"><div class="k">Wind 120 m</div><div class="v">'+(w120==null?'':Math.round(w120)+' mph')+'</div><div class="s">about 390 ft</div></div>'+
-    '<div class="tile '+((c.visibility!=null&&c.visibility<4828)?'warn':'')+'"><div class="k">Visibility</div><div class="v">'+vis(c.visibility)+' mi</div><div class="s">low cloud '+c.cloud_cover_low+'%</div></div>'+
-    '</div><div class="src">Forecast model data from Open-Meteo for this point, not an observation. Use the METARs below for what is being reported now.</div>');
-  // Hourly
-  var rows='';
-  for(var k=nowIdx;k<Math.min(nowIdx+12,(H.time||[]).length);k++){
-    var t=H.time[k], hh=parseInt(t.slice(11,13),10);
-    var dayEv=sunEvent(PT.lat,PT.lng,+t.slice(0,4),+t.slice(5,7),+t.slice(8,10),-6);
-    var tUtc=Date.parse(t+':00Z')-off*1000, night=dayEv?(tUtc<dayEv.rise.getTime()||tUtc>dayEv.set.getTime()):false;
-    var wmax=Math.max(H.wind_speed_10m[k]||0,H.wind_gusts_10m[k]||0,H.wind_speed_80m[k]||0,H.wind_speed_120m[k]||0);
-    rows+='<tr><td class="'+(night?'night':'')+'">'+hourLabel(t)+(night?' &#9790;':'')+'</td>'+
-      '<td>'+esc(WMO[H.weather_code[k]]||'')+'</td>'+
-      '<td>'+Math.round(H.temperature_2m[k])+'&deg;</td>'+
-      '<td class="'+(H.precipitation_probability[k]>=50?'warn':'')+'">'+H.precipitation_probability[k]+'%</td>'+
-      '<td class="'+lvl(H.wind_speed_10m[k])+'">'+Math.round(H.wind_speed_10m[k])+arrow(H.wind_direction_10m[k])+'</td>'+
-      '<td class="'+lvl(H.wind_gusts_10m[k])+'">'+Math.round(H.wind_gusts_10m[k])+'</td>'+
-      '<td class="'+lvl(H.wind_speed_80m[k])+'">'+Math.round(H.wind_speed_80m[k])+arrow(H.wind_direction_80m[k])+'</td>'+
-      '<td class="'+lvl(H.wind_speed_120m[k])+'">'+Math.round(H.wind_speed_120m[k])+arrow(H.wind_direction_120m[k])+'</td>'+
-      '<td class="'+((H.visibility[k]!=null&&H.visibility[k]<4828)?'warn':'')+'">'+vis(H.visibility[k])+'</td>'+
-      '<td>'+H.cloud_cover_low[k]+'%</td></tr>';
-  }
-  setBody('cHours','<div class="wx-scroll"><table class="wx"><thead><tr><th>Hour</th><th>Sky</th><th>Temp</th><th>Rain</th><th>Wind 10 m</th><th>Gust</th><th>80 m</th><th>120 m</th><th>Vis mi</th><th>Low cld</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-    '<div class="src">Winds in mph; the arrow points where the wind is blowing. &#9790; marks hours outside civil twilight. Wind limits vary by aircraft: set yours above.</div>');
-}
-function renderSun(){
-  var off=(PT.wx&&PT.wx.utc_offset_seconds!=null)?PT.wx.utc_offset_seconds:-new Date().getTimezoneOffset()*60;
-  var loc=new Date(Date.now()+off*1000), y=loc.getUTCFullYear(), m=loc.getUTCMonth()+1, d=loc.getUTCDate();
-  var sr=sunEvent(PT.lat,PT.lng,y,m,d,-0.833), cv=sunEvent(PT.lat,PT.lng,y,m,d,-6);
-  setBody('cSun','<div class="sun"><div><span>Civil dawn</span>'+fmtLocal(cv&&cv.rise,off)+'</div><div><span>Sunrise</span>'+fmtLocal(sr&&sr.rise,off)+'</div><div><span>Sunset</span>'+fmtLocal(sr&&sr.set,off)+'</div><div><span>Civil dusk</span>'+fmtLocal(cv&&cv.set,off)+'</div></div>'+
-    '<div class="src">Computed for the pin, today, local time. Operations outside civil twilight need anti-collision lighting visible for 3 statute miles (14 CFR 107.29).</div>');
+  var W=PT&&PT.W; if(!W) return;
+  var lim=getLimit();
+  setBody('cNow', EPWX.tilesHTML(W,lim,getAlt())+'<div class="src">Forecast model data from Open-Meteo for this point, not an observation. Use the METARs below for what is being reported now.</div>');
+  setBody('cHours', EPWX.hoursHTML(W,lim,12));
+  setBody('cSun', EPWX.sunHTML(W));
+  setBody('cAlerts', EPWX.alertsHTML(W));
+  setBody('cMetar', EPWX.metarsHTML(W));
+  renderGo();
 }
 initMap();
 </script>
