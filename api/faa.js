@@ -47,6 +47,18 @@ const TFR_URL = 'https://tfr.faa.gov/geoserver/TFR/ows?service=WFS&version=1.1.0
   '&propertyName=NOTAM_KEY,TITLE,STATE,LEGAL,CNS_LOCATION_ID,LAST_MODIFICATION_DATETIME,SHAPE';
 const METAR_URL = 'https://aviationweather.gov/api/data/metar?format=json&bbox=';
 const UA = 'EnhancedPatrol-SiteTools/1.0 (ep-drone-tools.vercel.app)';
+// Open-Meteo: the free endpoint is licensed for non-commercial use only. Set OPEN_METEO_API_KEY in the
+// Vercel project to use the paid customer endpoint (commercial licence, reserved capacity).
+const OM_KEY_RAW = process.env.OPEN_METEO_API_KEY || '';
+const OM_HOST = OM_KEY_RAW ? 'https://customer-api.open-meteo.com' : 'https://api.open-meteo.com';
+const OM_KEY = OM_KEY_RAW ? 'apikey=' + encodeURIComponent(OM_KEY_RAW) + '&' : '';
+async function retry(fn, waits) {
+  let last;
+  for (let i = 0; i <= waits.length; i++) {
+    try { return await fn(); } catch (e) { last = e; if (i < waits.length) await new Promise(r => setTimeout(r, waits[i])); }
+  }
+  throw last;
+}
 const TFR_TTL_MS = 5 * 60 * 1000;
 let tfrCache = { t: 0, features: null };
 
@@ -83,12 +95,12 @@ module.exports = async (req, res) => {
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
       res.statusCode = 400; return res.end(JSON.stringify({ error: 'lat and lng required' }));
     }
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(3) + '&longitude=' + lng.toFixed(3) +
+    const url = OM_HOST + '/v1/forecast?' + OM_KEY + 'latitude=' + lat.toFixed(3) + '&longitude=' + lng.toFixed(3) +
       '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,precipitation' +
       '&hourly=temperature_2m,dew_point_2m,precipitation_probability,precipitation,weather_code,cloud_cover_low,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m' +
       '&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=auto&forecast_days=2';
     try {
-      const j = await getJson(url, 12000);
+      const j = await retry(function () { return getJson(url, 10000); }, [1200, 3500]);
       if (!j || !j.hourly) throw new Error('unexpected forecast response');
       res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=300');
       return res.end(JSON.stringify(j));
@@ -96,6 +108,18 @@ module.exports = async (req, res) => {
       console.error('forecast failed', e && e.message);
       res.statusCode = 502; res.setHeader('Cache-Control', 'no-store');
       return res.end(JSON.stringify({ error: 'Forecast did not respond: ' + (e && e.message ? e.message : 'unknown') }));
+    }
+  }
+  if (src === 'elev') {
+    const lat = Number(req.query.lat), lng = Number(req.query.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) { res.statusCode = 400; return res.end(JSON.stringify({ error: 'lat and lng required' })); }
+    try {
+      const j = await retry(function () { return getJson(OM_HOST + '/v1/elevation?' + OM_KEY + 'latitude=' + lat.toFixed(5) + '&longitude=' + lng.toFixed(5), 8000); }, [1000]);
+      res.setHeader('Cache-Control', 'public, s-maxage=2592000');
+      return res.end(JSON.stringify(j));
+    } catch (e) {
+      res.statusCode = 502; res.setHeader('Cache-Control', 'no-store');
+      return res.end(JSON.stringify({ error: 'Elevation did not respond' }));
     }
   }
   if (src === 'layer') {

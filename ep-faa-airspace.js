@@ -136,7 +136,7 @@
     var ok = function (v) { return isFinite(v) && v > -1000 && v < 30000; };
     var usgs = withTimeout(EPQS + '?x=' + lng.toFixed(6) + '&y=' + lat.toFixed(6) + '&units=Feet&wkid=4326&includeDate=false', ELEV_TIMEOUT_MS)
       .then(function (j) { var v = j && Number(j.value); if (!ok(v)) throw new Error('no value'); return { ft: Math.round(v), src: 'USGS 3DEP' }; });
-    var om = withTimeout(OPEN_METEO + '?latitude=' + lat.toFixed(6) + '&longitude=' + lng.toFixed(6), ELEV_TIMEOUT_MS)
+    var om = withTimeout(RELAY ? RELAY + '?src=elev&lat=' + lat.toFixed(5) + '&lng=' + lng.toFixed(5) : OPEN_METEO + '?latitude=' + lat.toFixed(6) + '&longitude=' + lng.toFixed(6), ELEV_TIMEOUT_MS)
       .then(function (j) { var m = j && j.elevation && Number(j.elevation[0]); if (!ok(m)) throw new Error('no value'); return { ft: Math.round(m * 3.28084), src: 'Copernicus DEM via Open-Meteo' }; });
     return new Promise(function (resolve) {
       var left = 2, done = false;
