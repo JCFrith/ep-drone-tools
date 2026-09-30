@@ -54,7 +54,7 @@
     var d = 0.75, k = Math.cos(lat * Math.PI / 180);
     var bb = [lng - d / k, lat - d, lng + d / k, lat + d].map(function (n) { return n.toFixed(3); }).join(',');
     return Promise.all([
-      timed(fcUrl).then(function (j) { W.fc = j; }, function (e) { W.errors.fc = e.message || 'failed'; }),
+      timed(fcUrl, 10000).catch(function () { return timed(fcUrl, 25000); }).then(function (j) { W.fc = j; }, function (e) { W.errors.fc = e.message || 'failed'; }),
       timed('https://api.weather.gov/alerts/active?point=' + lat.toFixed(4) + ',' + lng.toFixed(4), 12000, { headers: { Accept: 'application/geo+json' } })
         .then(function (j) { W.alerts = (j.features || []).map(function (f) { var p = f.properties || {}; return { event: p.event, severity: p.severity, headline: p.headline, ends: p.ends || p.expires }; }); },
           function (e) { W.errors.alerts = e.message || 'failed'; }),
