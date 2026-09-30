@@ -5,6 +5,8 @@
      GET /api/faa?src=tfr&bbox=minLng,minLat,maxLng,maxLat    TFR shapes (FAA tfr.faa.gov) touching the box
      GET /api/faa?src=metar&bbox=minLng,minLat,maxLng,maxLat  Current METARs (aviationweather.gov) in the box
      GET /api/faa?src=layer&layer=KEY&z=Z&x=X&y=Y              One map tile of an FAA airspace layer as GeoJSON
+     GET /api/faa?src=forecast&lat=LAT&lng=LNG                 Open-Meteo point forecast (fixed fields), cached 10 min.
+       Browsers on some networks wait 20 s or more for a cold connection to Open-Meteo; the edge does not.
    Map layers go through here as fixed tiles so the edge cache serves repeat views. The FAA ArcGIS services
    allow about 6,000 request units per minute per client; drawing the map straight from the browser used
    that up and starved the pin lookup. */
@@ -76,6 +78,26 @@ async function getJson(url, ms) {
 module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   const src = String(req.query.src || '');
+  if (src === 'forecast') {
+    const lat = Number(req.query.lat), lng = Number(req.query.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+      res.statusCode = 400; return res.end(JSON.stringify({ error: 'lat and lng required' }));
+    }
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(3) + '&longitude=' + lng.toFixed(3) +
+      '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,precipitation' +
+      '&hourly=temperature_2m,dew_point_2m,precipitation_probability,precipitation,weather_code,cloud_cover_low,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m' +
+      '&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=auto&forecast_days=2';
+    try {
+      const j = await getJson(url, 12000);
+      if (!j || !j.hourly) throw new Error('unexpected forecast response');
+      res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=300');
+      return res.end(JSON.stringify(j));
+    } catch (e) {
+      console.error('forecast failed', e && e.message);
+      res.statusCode = 502; res.setHeader('Cache-Control', 'no-store');
+      return res.end(JSON.stringify({ error: 'Forecast did not respond: ' + (e && e.message ? e.message : 'unknown') }));
+    }
+  }
   if (src === 'layer') {
     const def = TILE_LAYERS[String(req.query.layer || '')];
     const z = parseInt(req.query.z, 10), x = parseInt(req.query.x, 10), y = parseInt(req.query.y, 10), n = Math.pow(2, z);
