@@ -214,6 +214,22 @@ body{font-family:'Gotham Book', 'Montserrat',-apple-system,BlinkMacSystemFont,sa
 .gng-log{margin-top:10px;font-size:0.78rem;} .gng-log div{padding:5px 8px;border-left:3px solid #30A46C;margin-bottom:4px;background:rgba(255,255,255,0.03);} .gng-log div.nogo{border-color:#E5484D;}
 .gng-chip{font-size:0.62rem;font-weight:700;letter-spacing:0.08em;padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:2px;}
 .gng-chip.ok{background:#30A46C;color:#fff;} .gng-chip.warn{background:#F5A524;color:#091520;} .gng-chip.no{background:#E5484D;color:#fff;}
+.layout-bar{font-size:0.78rem;color:var(--ep-gray);margin:0 0 12px;}
+.layout-bar a{color:var(--ep-blue);margin-left:6px;}
+.part-sub{font-size:0.66rem;letter-spacing:0;text-transform:none;color:var(--ep-gray);font-family:'Montserrat',sans-serif;font-weight:400;margin-top:2px;}
+.part-head{font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ep-gold);font-weight:700;margin:18px 0 8px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);}
+.section-body > .part-head:first-child{border-top:none;margin-top:0;padding-top:0;}
+.part-notes{margin-top:16px;} .part-notes summary{cursor:pointer;color:var(--ep-blue);font-size:0.82rem;font-weight:700;}
+.co-group{margin-bottom:18px;}
+.co-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.co-count{font-size:0.72rem;color:var(--ep-gray);}
+.co-why{font-size:0.72rem;color:var(--ep-gray);margin:-4px 0 8px 36px;line-height:1.45;}
+.co-sec{display:inline-block;font-size:0.6rem;letter-spacing:0.05em;text-transform:uppercase;color:#7fa7c9;margin-right:4px;}
+.co-auto{font-size:0.6rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;background:rgba(0,162,233,0.18);color:var(--ep-blue);padding:1px 5px;border-radius:3px;}
+.co-why a{color:var(--ep-blue);}
+details > .co-group{margin-top:8px;}
+#checkoffBody details summary,.co-auto-list summary{cursor:pointer;font-weight:700;font-size:0.84rem;color:var(--ep-blue);padding:6px 0;}
+.co-auto-list{margin:10px 0;} .co-auto-row{font-size:0.8rem;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06);} .co-auto-row .co-why{margin:2px 0 0;}
 .hasty-banner{background:rgba(220,80,60,0.1);border:1px solid rgba(220,80,60,0.4);border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:0.8rem;line-height:1.5;}
 .hasty-hidden-note{padding:14px 0;color:var(--ep-gray);font-size:0.82rem;font-style:italic;}
 #rpicRecap{background:var(--ep-navy-card);border:1px solid rgba(252,192,14,0.25);border-radius:6px;padding:16px 18px;margin-top:18px;}
@@ -600,7 +616,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ============================================================
 const COW_REF = 'CoW 107W-2026-01762, effective 13 AUG 2026 to 31 JAN 2030';
 const COW_PRIOR = 'CoW 107W-2025-04534, effective 14 JAN 2026 to 31 JAN 2030';
-const TOOL_VER = '8.6';
+const TOOL_VER = '8.7';
 const BUILD_DATE = '2026-09-30';
 
 // ── INDEXEDDB ──────────────────────────────────────────────
@@ -753,6 +769,7 @@ function addPhoto(key) {
     }
     await photoPut(key);
     renderPhotos(key);
+    refreshAuto();
     showToast(files.length + ' photo(s) added');
   };
   i.click();
@@ -762,6 +779,7 @@ async function removePhoto(key, idx) {
   PHOTOS[key].splice(idx, 1);
   await photoPut(key);
   renderPhotos(key);
+  refreshAuto();
 }
 function renderPhotos(key) {
   const c = document.getElementById('photos-' + key);
@@ -1577,26 +1595,50 @@ function renderHastyForm() {
     sec.fields(fw, { hasty: true });
   });
 
+  if (applyAuto()) save();
+  const items = groundCrewItems();
+  const autoMap = parseAuto();
+  const isAutoKey = k => autoMap[k] && autoMap[k] !== 'x';
+  const ins = items.filter(it => isInputItem(it.c) && autoMap[it.sec.id + '-' + it.idx] !== 'na');
+  const plain = items.filter(it => !isInputItem(it.c) && !isAutoKey(it.sec.id + '-' + it.idx));
+  const autod = items.filter(it => (!isInputItem(it.c) && isAutoKey(it.sec.id + '-' + it.idx)) || (isInputItem(it.c) && autoMap[it.sec.id + '-' + it.idx] === 'na'));
+  let lastSecId = null;
+  const head = (sec) => {
+    if (sec.id === lastSecId) return;
+    const h = document.createElement('div'); h.className = 'role-heading role-ground'; h.style.marginTop = '16px';
+    h.innerHTML = '<span class="role-badge">FILL IN</span> ' + esc(sec.title); body.appendChild(h); lastSecId = sec.id;
+  };
+  ins.forEach(({ sec, c, idx }) => { head(sec); if (S.fields.hastyMode === 'exceptions') renderExceptionItem(body, sec, c, idx); else renderCheckItem(body, sec, c, idx, true); });
+  const coHead = document.createElement('div'); coHead.className = 'part-head'; coHead.style.marginTop = '22px'; coHead.textContent = 'Check off';
+  body.appendChild(coHead);
   const modeBar = document.createElement('div');
   modeBar.className = 'mode-bar no-print';
   modeBar.innerHTML = S.fields.hastyMode === 'exceptions'
     ? '<b>Exceptions only.</b> Look at every item below. Tap <b>Problem</b> or <b>N/A</b> only where it applies, then sign the attestation at the bottom. <a href="#" onclick="setHastyMode(\'full\');return false;">Switch to item-by-item</a>'
-    : '<b>Item-by-item.</b> Check each item as you verify it. <a href="#" onclick="setHastyMode(\'exceptions\');return false;">Switch to exceptions only</a>';
+    : '<b>Item-by-item.</b> Check each item, or use Check all. <a href="#" onclick="setHastyMode(\'exceptions\');return false;">Switch to exceptions only</a>';
   body.appendChild(modeBar);
-  const items = groundCrewItems();
-  let lastSecId = null;
-  items.forEach(({ sec, c, idx }) => {
-    if (sec.id !== lastSecId) {
-      if (sec.id !== 'class' && sec.id !== 'equip') {
-        const h = document.createElement('div'); h.className = 'role-heading role-ground';
-        h.style.marginTop = '16px';
-        h.innerHTML = '<span class="role-badge">GROUND CREW</span> ' + esc(sec.title);
-        body.appendChild(h);
-      }
-      lastSecId = sec.id;
-    }
+  if (S.fields.hastyMode !== 'exceptions' && plain.length) {
+    const ca = document.createElement('div'); ca.style.margin = '8px 0';
+    ca.innerHTML = '<button class="mini-btn no-print">Check all ' + plain.length + '</button>';
+    ca.querySelector('button').addEventListener('click', () => { plain.forEach(it => { const k = it.sec.id + '-' + it.idx; if (!S.checks[k]) { S.checks[k] = 'checked'; markManual(k); } }); save(); render(); showToast('Checked'); });
+    body.appendChild(ca);
+  }
+  plain.forEach(({ sec, c, idx }) => {
     if (S.fields.hastyMode === 'exceptions') renderExceptionItem(body, sec, c, idx); else renderCheckItem(body, sec, c, idx);
+    const why = autoEval(sec.id + '-' + idx);
+    if (why && why.why) { const w = document.createElement('div'); w.className = 'co-why'; w.textContent = why.why; body.lastElementChild.appendChild(w); }
   });
+  if (autod.length) {
+    const det = document.createElement('details'); det.className = 'co-auto-list';
+    det.innerHTML = '<summary>' + autod.length + ' item(s) set from data or not applicable</summary>';
+    autod.forEach(({ sec, c, idx }) => {
+      const k = sec.id + '-' + idx, r = autoEval(k), st = autoMap[k];
+      const d = document.createElement('div'); d.className = 'co-auto-row';
+      d.innerHTML = '<b>' + (st === 'na' ? 'N/A' : 'Verified') + '</b> ' + c.text.replace(/<[^>]+>/g, '') + (r && r.why ? '<div class="co-why">' + esc(r.why) + '</div>' : '');
+      det.appendChild(d);
+    });
+    body.appendChild(det);
+  }
   const submitWrap = document.createElement('div');
   submitWrap.innerHTML =
     '<div class="section-divider"></div>' + (S.fields.hastyMode === 'exceptions' ? attestBlockHTML() : '') +
@@ -1680,6 +1722,15 @@ function renderFullSections() {
     main.appendChild(b);
   }
   if (!isAgp()) { main.appendChild(gngSectionEl()); setTimeout(function () { gngFetch(false); }, 50); }
+  if (layoutMode() === 'streamlined') {
+    renderStreamlined(main);
+    buildOwners(); renderVersionStamp(); renderLegacyBanner(); updateProgress(); renderDetermination(); renderApproval();
+    return;
+  }
+  const lb = document.createElement('div'); lb.className = 'layout-bar no-print';
+  lb.innerHTML = 'Showing every item by section. <a href="#" onclick="setLayout(\'streamlined\');return false;">Fill-in first, check-offs at the bottom</a>';
+  main.appendChild(lb);
+  if (applyAuto()) save();
   SECTIONS.forEach(sec => {
     const div = document.createElement('div');
     div.className = 'section' + (sec.open ? ' open' : '');
@@ -1743,7 +1794,7 @@ function renderFullSections() {
   renderApproval();
 }
 
-function renderCheckItem(body, sec, c, idx) {
+function renderCheckItem(body, sec, c, idx, showEv) {
   const key = sec.id + '-' + idx;
   const val = S.checks[key] || '';
   const wrap = document.createElement('div');
@@ -1751,12 +1802,13 @@ function renderCheckItem(body, sec, c, idx) {
     '<div class="check-item"><div class="check-box ' + val + '" data-key="' + key + '" role="checkbox" tabindex="0" aria-label="' + esc(c.text) + '"></div>' +
     '<div class="check-text' + (val === 'checked' ? ' done' : '') + '">' + c.text +
     (c.sp ? '<span class="sp-ref">[' + c.sp + ']</span>' : '') + '</div></div>' +
-    renderEv(c, key, val === 'checked');
+    renderEv(c, key, showEv || val === 'checked');
   const box = wrap.querySelector('.check-box');
   box.addEventListener('click', () => cycleCheck(key, c));
   box.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); cycleCheck(key, c); } });
   body.appendChild(wrap);
-  if (val === 'checked') {
+  if (showEv) { bindFields(wrap); const evp = wrap.querySelector('[data-evfor]'); if (evp) evp.dataset.always = '1'; }
+  if (val === 'checked' || showEv) {
     if (c.ev === 'photo') setTimeout(() => renderPhotos(c.photoKey), 10);
     if (c.ev === 'tree') setTimeout(() => renderPhotos('trees'), 10);
   }
@@ -1783,6 +1835,7 @@ function renderEv(c, key, visible) {
 }
 
 function cycleCheck(key, c) {
+  markManual(key);
   const cur = S.checks[key] || '';
   S.checks[key] = cur === '' ? 'checked' : (cur === 'checked' ? 'na' : '');
   save();
@@ -1795,7 +1848,7 @@ function cycleCheck(key, c) {
   }
   const ep = document.querySelector('[data-evfor="' + key + '"]');
   if (ep) {
-    const show = S.checks[key] === 'checked';
+    const show = S.checks[key] === 'checked' || ep.dataset.always === '1';
     ep.classList.toggle('visible', show);
     if (show) {
       bindFields(ep);
@@ -1832,7 +1885,7 @@ function updateProgress() {
 function bindFields(c) {
   c.querySelectorAll('[data-field]').forEach(el => {
     if (el._bound) return; el._bound = true;
-    const h = () => { S.fields[el.dataset.field] = el.value; if (FAA_WATCH[el.dataset.field]) faaRecheck(); save(); renderDetermination(); clearTimeout(window._apprTO); window._apprTO = setTimeout(renderApproval, 180); };
+    const h = () => { S.fields[el.dataset.field] = el.value; if (FAA_WATCH[el.dataset.field]) faaRecheck(); save(); refreshAuto(); renderDetermination(); clearTimeout(window._apprTO); window._apprTO = setTimeout(renderApproval, 180); };
     el.addEventListener('input', h); el.addEventListener('change', h);
   });
 }
@@ -2236,9 +2289,9 @@ function faaPaint() {
   if (rb) { rb.disabled = FAA_BUSY || !EXTERNAL_OK; rb.textContent = FAA_BUSY ? 'Querying' : (R ? 'Re-run lookup' : 'Run lookup'); }
   var db = document.getElementById('faaDiscardBtn'); if (db) db.style.display = R && !FAA_BUSY ? '' : 'none';
   document.querySelectorAll('#faaChip').forEach(function (chip) {
-    var onFull = !!document.getElementById('body-airspace');
+    var onFull = !!document.getElementById('body-airspace') || !!(document.getElementById('faaBox') && !document.getElementById('hastyBody'));
     chip.className = (R || FAA_BUSY) ? 'faa-chip' : '';
-    chip.innerHTML = FAA_BUSY ? 'FAA airspace: querying' : (R && window.EPFAA ? 'FAA airspace: <b>' + esc(EPFAA.summaryLine(R)) + '</b>' + (onFull ? '. Details in Section 3.' : '.') : '');
+    chip.innerHTML = FAA_BUSY ? 'FAA airspace: querying' : (R && window.EPFAA ? 'FAA airspace: <b>' + esc(EPFAA.summaryLine(R)) + '</b>' + (onFull ? (document.getElementById('body-airspace') ? '. Details in Section 3.' : '. Details in the FAA airspace lookup below.') : '.') : '');
   });
   faaRecheck();
 }
@@ -2249,6 +2302,7 @@ function faaAfter() {
   });
   faaPaint();
   renderDetermination(); renderApproval(); updateProgress(); renderRecap();
+  refreshAuto(true);
 }
 function faaUseValues() {
   faaApply(true); save(); faaAfter(); showToast('FAA values applied');
@@ -2323,6 +2377,7 @@ function fleetPick(id) {
   });
   var w = document.querySelector('.fleet-wrap'); if (w) { w.outerHTML = fleetPickerHTML(); bindFleetPicker(); }
   renderDetermination(); renderApproval(); renderRecap();
+  refreshAuto(true);
 }
 
 function localStamp(iso) {
@@ -2407,7 +2462,8 @@ function applyExceptionAttestation() {
   var missingNote = groundCrewItems().filter(function (it) { var k = it.sec.id + '-' + it.idx; return ex[k] === 'problem' && !(S.fields['exc-' + k] || '').trim(); });
   if (missingNote.length) { showToast('Describe each problem before submitting (' + missingNote.length + ' missing)', true); return false; }
   groundCrewItems().forEach(function (it) {
-    var k = it.sec.id + '-' + it.idx, v = ex[k];
+    var k = it.sec.id + '-' + it.idx, v = ex[k], au = parseAuto()[k];
+    if (au && au !== 'x' && v !== 'problem') return;
     if (v === 'problem') { S.checks[k] = ''; probs.push({ key: k, item: it.c.text.replace(/<[^>]+>/g, ''), note: S.fields['exc-' + k] || '' }); }
     else if (v === 'na') { S.checks[k] = 'na'; nas.push(k); }
     else S.checks[k] = 'checked';
@@ -2671,6 +2727,244 @@ function gngSectionEl() {
     '<div class="section-title">Go / No-Go: flight conditions now <span id="gngChip" class="gng-chip"></span></div><div class="section-toggle">&#9662;</div></div>' +
     '<div class="section-body" id="gngBody"></div>';
   return d;
+}
+
+/* ============================================================
+   AUTO-FILL AND STREAMLINED LAYOUT
+   Items the data can settle are set automatically and shown with
+   the evidence: FAA lookup, fleet record, classification, C2 table,
+   launch method. Items that do not apply are set N/A with the reason.
+   Items with a value to enter tick themselves once filled.
+   Anything the user changes by hand stays as they set it.
+   Layout: what needs filling in at the top (ground crew, then RPIC),
+   every remaining check-off at the bottom with Check all per role.
+   ============================================================ */
+function parseAuto() { try { return JSON.parse(S.fields.autoChecks || '{}'); } catch (e) { return {}; } }
+function isInputItem(c) { return !!c.ev; }
+function layoutMode() { try { return localStorage.getItem('ep-sa-layout') || 'streamlined'; } catch (e) { return 'streamlined'; } }
+function setLayout(m) { try { localStorage.setItem('ep-sa-layout', m); } catch (e) {} render(); }
+function hasValue(c, key) {
+  var f = S.fields;
+  if (c.ev === 'photo') return !!(PHOTOS[c.photoKey] && PHOTOS[c.photoKey].length);
+  if (c.ev === 'tree') return !!(PHOTOS.trees && PHOTOS.trees.length);
+  if (c.ev === 'contact') return !!String(f.pocName || '').trim() && !!String(f.pocPhone || f.pocEmail || '').trim();
+  if (c.ev === 'number') return String(f[c.fieldKey || ('ev-' + key)] || '') !== '';
+  return !!String(f['ev-' + key] || '').trim();
+}
+/* What the data says about one item: {state:'checked'|'na'|null, why:'', block:bool} or null. */
+function autoEval(key) {
+  var f = S.fields, R = faaData(), d = classify(), a = (typeof fleetById === 'function') ? fleetById(f.acAircraftId) : null;
+  var fresh = R && f.faaCheck !== 'stale' && f.faaCheck !== 'mismatch';
+  var shielded = f.shieldContinuity === 'continuous', nonShielded = !!f.shieldContinuity && !shielded;
+  var tactical = f.launchMethod === 'Tactical deployment', vo = parseInt(f.voCount, 10) || 0;
+  var NA = function (why) { return { state: 'na', why: why }; }, OK = function (why) { return { state: 'checked', why: why }; }, INFO = function (why) { return { state: null, why: why }; };
+  switch (key) {
+    case 'class-2': return shielded ? NA('Continuous shielding recorded in Section 1, so no segment reclassifies.') : null;
+    case 'equip-0': if (d.ready && d.oonp && d.oonp.indexOf('(SP 15)') < 0) return NA('Not on the 0.88 lb overflight pathway (' + d.oonp + ').');
+      return a ? INFO('Fleet record: prop guards ' + yn(a.prop_guards) + '.') : null;
+    case 'equip-1': return a ? INFO('Fleet record: anti-collision lighting ' + yn(a.anti_collision_lighting) + '.') : null;
+    case 'equip-2': return f.prsEquipped === 'No' ? NA('No PRS fitted.') : (a && a.prs_model ? INFO('Fleet record: ' + a.prs_model + '.') : null);
+    case 'airspace-0': return (fresh && f['ev-airspace-0'] && f['ev-airspace-0'] === R.classOption) ? OK('FAA data: ' + R.classOption + ', looked up ' + localStamp(R.at) + '.') : null;
+    case 'airspace-1':
+      if (!fresh) return null;
+      if (!R.controlled) return OK('Class G: no airspace authorization required.');
+      if (R.grid && R.grid.ceiling > 0 && f.uasfmOps === 'Yes') return OK(R.classOption + ': UASFM Grid Operations (SP 16) at or below the ' + R.grid.ceiling + ' ft grid, NOTAM required. LAANC may not be used.');
+      return null;
+    case 'airspace-2': return (fresh && !R.controlled) ? NA('Class G, no UASFM grid.') : null;
+    case 'airspace-3': return R ? INFO(R.facilities.length ? 'FAA data within 3 miles: ' + EPFAA.facilitiesText(R, 3) + '. Agricultural operations and military installations are not in the data.' : 'FAA data: no airport or heliport within 3 miles. Agricultural operations and military installations are not in the data.') : null;
+    case 'airspace-6':
+      if (!fresh || !R.tfrChecked) return null;
+      var inT = (R.tfrs || []).filter(function (t) { return t.inside; });
+      return inT.length ? INFO('Inside TFR ' + inT.map(function (t) { return t.notam + ' (' + t.title + ')'; }).join('; ') + '. Read the NOTAM.') : OK('FAA data: no TFR at the site, ' + localStamp(R.at) + '. Re-check on flight day.');
+    case 'airspace-8':
+      if (!fresh || R.status === 'partial') return null;
+      return (R.sua.length || R.nsufr.length || R.prohibited.length || R.nda.length || (R.nsufrPartTime || []).length) ? INFO('FAA data shows special use or restricted airspace. See Section 3.')
+        : OK('FAA data: no special use, prohibited, national security or national defense airspace at the site.');
+    case 'airspace-11': return (f.uasfmOps && f.uasfmOps !== 'Yes') ? NA('Not relying on UASFM Grid Operations (SP 16).') : null;
+    case 'shield-0': case 'shield-2': case 'shield-3': return nonShielded ? NA('Non-shielded site.') : null;
+    case 'shield-1': return nonShielded ? NA('Non-shielded site.') : null;
+    case 'shield-4':
+      if (nonShielded) return NA('Non-shielded site.');
+      if (shielded && fresh && d.ready) return OK(R.grid ? 'UASFM grid ' + R.grid.ceiling + ' ft applied; computed ceiling ' + d.agl + ' ft.' : 'Site is outside any UASFM grid; computed ceiling ' + d.agl + ' ft.');
+      return null;
+    case 'ground-2': case 'ground-3': case 'rf-1': case 'rf-4': return tactical ? NA('Tactical deployment only, no dock.') : null;
+    case 'rf-0': var roll = c2Rollup(); return roll.level === 'green' ? OK('C2 table: every route segment designated green.') : (roll.level ? INFO('C2 table: ' + roll.text + '.') : null);
+    case 'rf-7': case 'docs-8': return vo === 0 ? NA('No VOs assigned.') : null;
+    case 'rf-11': return (shielded || !f.daaStatus || f.daaStatus === 'none') ? NA('DAA not relied on at this site.') : null;
+    case 'geopath-4':
+      var p = num(f.plannedAlt);
+      if (p !== null && d.ready && d.agl !== null && p > d.agl) return { state: null, why: 'Planned ' + p + ' ft is above the computed ceiling of ' + d.agl + ' ft.', block: true };
+      return (p !== null && d.ready && d.agl !== null) ? OK('Planned ' + p + ' ft, within the computed ceiling of ' + d.agl + ' ft.') : null;
+    default: return null;
+  }
+}
+/* Apply to every item. auto[key]: the state set automatically, or 'x' where the user took over. */
+function applyAuto() {
+  var auto = parseAuto(), changed = false, f = S.fields, d = classify();
+  if (f.shieldContinuity === 'continuous' && d.ready && d.agl !== null && (!f.shieldMaxAGL || f.shieldMaxAGL === f.autoShieldMax)) {
+    if (f.shieldMaxAGL !== String(d.agl)) { f.shieldMaxAGL = String(d.agl); f.autoShieldMax = f.shieldMaxAGL; changed = true; }
+  }
+  SECTIONS.forEach(function (sec) { (sec.checks || []).forEach(function (c, i) {
+    var key = sec.id + '-' + i, cur = S.checks[key] || '';
+    if (auto[key] === 'x') return;
+    var r = autoEval(key), want = null;
+    if (r && r.state) want = r.state;
+    else if (!(r && r.block) && isInputItem(c) && hasValue(c, key)) want = 'checked';
+    if (want) {
+      if (!cur || auto[key]) {
+        if (cur !== want) { S.checks[key] = want; changed = true; }
+        if (auto[key] !== want) { auto[key] = want; changed = true; }
+      }
+    } else if (auto[key]) {
+      if (cur === auto[key]) S.checks[key] = '';
+      delete auto[key]; changed = true;
+    }
+  }); });
+  if (changed) f.autoChecks = JSON.stringify(auto);
+  return changed;
+}
+function markManual(key) { var a = parseAuto(); a[key] = 'x'; S.fields.autoChecks = JSON.stringify(a); }
+function releaseAuto(key) { var a = parseAuto(); delete a[key]; S.fields.autoChecks = JSON.stringify(a); save(); refreshAuto(true); }
+function paintChecks() {
+  document.querySelectorAll('.check-box[data-key]').forEach(function (b) {
+    var v = S.checks[b.dataset.key] || '';
+    b.className = 'check-box ' + v;
+    var t = b.nextElementSibling; if (t) t.className = 'check-text' + (v === 'checked' ? ' done' : '');
+  });
+}
+var _autoTO = null;
+function refreshAuto(force) {
+  clearTimeout(_autoTO);
+  _autoTO = setTimeout(function () {
+    var ch = applyAuto();
+    if (ch) save();
+    if (ch || force) {
+      paintChecks();
+      var ae = document.activeElement, inPanel = ae && ae.closest && ae.closest('#checkoffBody');
+      if (!inPanel && document.getElementById('checkoffBody')) buildCheckoff(document.getElementById('checkoffBody'));
+      updateProgress(); renderApproval();
+    }
+  }, 200);
+}
+
+/* ---- Check-off panel (bottom) ---- */
+function checkoffGroups() {
+  var auto = parseAuto(), g = { verified: [], na: [], ground: [], rpic: [] };
+  var hasty = S.fields.assessmentType === 'hasty';
+  SECTIONS.forEach(function (sec) { (sec.checks || []).forEach(function (c, idx) {
+    if (hasty && c.regularOnly) return;
+    if (isInputItem(c) && parseAuto()[sec.id + '-' + idx] !== 'na') return;     // fill-in items stay at the top unless not applicable
+    var key = sec.id + '-' + idx, r = autoEval(key), it = { sec: sec, c: c, idx: idx, key: key, why: r ? r.why : '' };
+    if (auto[key] === 'checked') g.verified.push(it);
+    else if (auto[key] === 'na') g.na.push(it);
+    else if (c.role === 'rpic') g.rpic.push(it); else g.ground.push(it);
+  }); });
+  return g;
+}
+function buildCheckoff(body) {
+  body.innerHTML = '';
+  var g = checkoffGroups();
+  var group = function (title, sub, items, opts) {
+    if (!items.length) return;
+    var w = document.createElement('div'); w.className = 'co-group' + (opts.cls ? ' ' + opts.cls : '');
+    var done = items.filter(function (it) { var v = S.checks[it.key]; return v === 'checked' || v === 'na'; }).length;
+    w.innerHTML = '<div class="co-head"><div><b>' + title + '</b> <span class="co-count">' + done + '/' + items.length + '</span><div class="hint">' + sub + '</div></div>' +
+      (opts.all ? '<button class="mini-btn no-print" data-all="' + opts.all + '">Check all</button>' : '') + '</div>';
+    var list = document.createElement('div'); list.className = 'co-list';
+    items.forEach(function (it) {
+      renderCheckItem(list, it.sec, it.c, it.idx);
+      var last = list.lastElementChild;
+      var tag = '<span class="co-sec">' + esc(it.sec.num + '. ' + it.sec.title) + '</span>';
+      var auto = parseAuto()[it.key];
+      if (it.why || auto) {
+        var ev = document.createElement('div'); ev.className = 'co-why';
+        ev.innerHTML = tag + (it.why ? ' ' + esc(it.why) : '') + (auto && auto !== 'x' ? ' <span class="co-auto">auto</span>' : '') +
+          (auto === 'x' ? ' <a href="#" class="no-print" onclick="releaseAuto(\'' + it.key + '\');return false;">Let the data set this again</a>' : '');
+        last.appendChild(ev);
+      } else { var t = document.createElement('div'); t.className = 'co-why'; t.innerHTML = tag; last.appendChild(t); }
+    });
+    w.appendChild(list);
+    if (opts.collapsed) { var det = document.createElement('details'); det.innerHTML = '<summary>' + title + ' (' + items.length + ')</summary>'; det.appendChild(w); body.appendChild(det); }
+    else body.appendChild(w);
+    var btn = w.querySelector('[data-all]');
+    if (btn) btn.addEventListener('click', function () { checkAll(opts.all, items); });
+  };
+  group('Verified from data', 'Set automatically from the FAA lookup, fleet record, classification and C2 table. Uncheck any that do not hold.', g.verified, { cls: 'co-auto-g', collapsed: g.verified.length > 6 });
+  group('Not applicable to this site', 'Set N/A automatically from the site inputs. The reason is shown on each.', g.na, { cls: 'co-na-g', collapsed: true });
+  group('Ground crew check-offs', 'Confirm each at the site, then Check all. Leave any that does not hold unchecked, or tap it twice for N/A.', g.ground, { all: 'ground' });
+  group('RPIC check-offs', 'Confirm each, then Check all. Leave any that does not hold unchecked, or tap it twice for N/A.', g.rpic, { all: 'rpic' });
+}
+function checkAll(role, items) {
+  var n = 0;
+  items.forEach(function (it) { if (!S.checks[it.key]) { S.checks[it.key] = 'checked'; markManual(it.key); n++; } });
+  var log; try { log = JSON.parse(S.fields.bulkChecks || '[]'); } catch (e) { log = []; }
+  log.push({ role: role, n: n, at: new Date().toISOString(), by: (SESSION && SESSION.user ? SESSION.user.email : '') || S.fields.rpicReviewing || S.fields.assessedBy || '' });
+  S.fields.bulkChecks = JSON.stringify(log.slice(-30));
+  save(); paintChecks(); buildCheckoff(document.getElementById('checkoffBody')); updateProgress(); renderDetermination(); renderApproval();
+  showToast(n + ' item(s) checked');
+}
+
+/* ---- Streamlined full layout ---- */
+function partEl(id, num, title, sub) {
+  var d = document.createElement('div');
+  d.className = 'section open part-' + id; d.dataset.id = 'part-' + id;
+  d.innerHTML = '<div class="section-header" onclick="this.parentNode.classList.toggle(\'open\')" role="button" tabindex="0"><div class="section-num">' + num + '</div>' +
+    '<div class="section-title">' + title + (sub ? '<div class="part-sub">' + sub + '</div>' : '') + '</div><div class="section-toggle">&#9662;</div></div><div class="section-body"></div>';
+  return d;
+}
+function subHead(body, sec) { var h = document.createElement('div'); h.className = 'part-head'; h.textContent = sec.num + '. ' + sec.title; body.appendChild(h); }
+function renderInputItem(body, sec, c, idx) {
+  renderCheckItem(body, sec, c, idx, true);
+}
+function renderStreamlined(main) {
+  if (applyAuto()) save();
+  var bar = document.createElement('div'); bar.className = 'layout-bar no-print';
+  bar.innerHTML = 'Fill-in items first, check-offs at the bottom. <a href="#" onclick="setLayout(\'sections\');return false;">Show by section instead</a>';
+  main.appendChild(bar);
+  var P1 = partEl('ground', 'A', 'Ground crew: fill in', 'Site data, classification inputs, aircraft, and every item that needs a value or photo');
+  var P2 = partEl('rpic', 'B', 'RPIC: fill in', 'Values, shielding, C2 validation and records the RPIC completes');
+  var P3 = partEl('checkoff', 'C', 'Check off', 'Everything left that is a yes or no, with Check all per role');
+  main.appendChild(P1); main.appendChild(P2); main.appendChild(P3);
+  var b1 = P1.querySelector('.section-body'), b2 = P2.querySelector('.section-body'), b3 = P3.querySelector('.section-body');
+  b3.id = 'checkoffBody';
+  var groundFieldSecs = ['site', 'class', 'equip', 'airspace'];
+  var approvalSec = null, notes = [];
+  SECTIONS.forEach(function (sec) {
+    if (sec.custom === 'approval') { approvalSec = sec; return; }
+    var hasty = S.fields.assessmentType === 'hasty';
+    var autoNow = parseAuto();
+    var inputs = (sec.checks || []).map(function (c, idx) { return [c, idx]; }).filter(function (x) { return isInputItem(x[0]) && !(hasty && x[0].regularOnly) && autoNow[sec.id + '-' + x[1]] !== 'na'; });
+    var gIn = inputs.filter(function (x) { return x[0].role !== 'rpic'; }), rIn = inputs.filter(function (x) { return x[0].role === 'rpic'; });
+    var fieldsTo = sec.fields ? (groundFieldSecs.indexOf(sec.id) >= 0 ? b1 : b2) : null;
+    if (fieldsTo || gIn.length) {
+      var t1 = fieldsTo === b1 || gIn.length ? b1 : null;
+      if (t1) { subHead(b1, sec); if (fieldsTo === b1) { var fw = document.createElement('div'); b1.appendChild(fw); sec.fields(fw); } gIn.forEach(function (x) { renderInputItem(b1, sec, x[0], x[1]); }); }
+    }
+    if (fieldsTo === b2 || rIn.length || sec.custom === 'c2validation') {
+      subHead(b2, sec);
+      if (fieldsTo === b2) { var fw2 = document.createElement('div'); b2.appendChild(fw2); sec.fields(fw2); }
+      rIn.forEach(function (x) { renderInputItem(b2, sec, x[0], x[1]); });
+      if (sec.custom === 'c2validation') buildC2(b2);
+    }
+    if (sec.notes) notes.push(sec);
+  });
+  if (notes.length) {
+    var det = document.createElement('details'); det.className = 'part-notes'; det.innerHTML = '<summary>Section notes</summary>';
+    notes.forEach(function (sec) {
+      var nd = document.createElement('div'); nd.className = 'section-notes';
+      nd.innerHTML = '<label for="n-' + sec.id + '">' + esc(sec.num + '. ' + (sec.notesLabel || sec.title)) + '</label><textarea id="n-' + sec.id + '" data-note="' + sec.id + '" placeholder="Enter notes">' + esc(S.notes[sec.id]) + '</textarea>';
+      nd.querySelector('textarea').addEventListener('input', function () { S.notes[sec.id] = this.value; save(); });
+      det.appendChild(nd);
+    });
+    b2.appendChild(det);
+  }
+  buildCheckoff(b3);
+  if (approvalSec) {
+    var div = document.createElement('div'); div.className = 'section open'; div.dataset.id = approvalSec.id;
+    div.innerHTML = '<div class="section-header" onclick="toggleSection(\'' + approvalSec.id + '\')" role="button" tabindex="0"><div class="section-num">' + approvalSec.num + '</div><div class="section-title">' + approvalSec.title + '</div><div class="section-toggle">&#9662;</div></div><div class="section-body" id="body-' + approvalSec.id + '"></div>';
+    main.appendChild(div);
+    buildApproval(div.querySelector('.section-body'));
+  }
 }
 
 /* ============================================================
