@@ -168,8 +168,9 @@
 
     .tools-grid {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
         gap: 24px;
+        max-width: 860px; margin: 0 auto;
     }
 
     .tool-card {
@@ -430,34 +431,11 @@
                 </div>
             </div>
 
-            <!-- Site Classification Wizard -->
-            <div class="tool-card">
-                <div class="tool-card-body">
-                    <div class="tool-icon">🛡️</div>
-                    <div class="tool-tag">Step 2: Waiver Compliance</div>
-                    <div class="tool-name">Site Classification Wizard</div>
-                    <p class="tool-desc">Determine the governing provision, Shielded Operations (SP 11) or Non-Shielded Operations (SP 12), altitude ceiling, VO or DAA requirement, and overflight pathway, Non-PRS Overflight (SP 13), PRS-Equipped Overflight (SP 14), or Light Aircraft Overflight (SP 15), for any site under CoW 107W-2026-01762. Grounded in the actual Special Provisions.</p>
-                    <ul class="tool-features">
-                        <li>Shielded vs. non-shielded determination</li>
-                        <li>Altitude ceiling calculation with formula</li>
-                        <li>VO or DAA requirement, Non-Shielded Operations (SP 12) logic applied</li>
-                        <li>UASFM grid height and UASFM Grid Operations / NOTAM Requirement (SP 16) check</li>
-                        <li>Overflight pathway by weight and PRS, Non-PRS Overflight (SP 13), PRS-Equipped Overflight (SP 14) or Light Aircraft Overflight (SP 15)</li>
-                    </ul>
-                </div>
-                <div class="tool-card-footer">
-                    <a href="ep-site-classification-wizard.html" class="btn-tool">
-                        Launch Tool
-                        <svg width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/></svg>
-                    </a>
-                </div>
-            </div>
-
             <!-- Pricing Calculator -->
             <div class="tool-card">
                 <div class="tool-card-body">
                     <div class="tool-icon">💲</div>
-                    <div class="tool-tag">Step 3: Program Pricing</div>
+                    <div class="tool-tag">Step 2: Program Pricing</div>
                     <div class="tool-name">DaaS Pricing Calculator</div>
                     <p class="tool-desc">Build a detailed Drone-as-a-Service quote. Configure dock type, aircraft, patrol schedules, staffing, and financing options. Outputs a line-item cost breakdown ready for client review.</p>
                     <ul class="tool-features">
@@ -498,33 +476,11 @@
                 </div>
             </div>
 
-            <!-- Launch Checklist -->
-            <div class="tool-card">
-                <div class="tool-card-body">
-                    <div class="tool-icon">🚀</div>
-                    <div class="tool-tag">Flight Day: Launch</div>
-                    <div class="tool-name">Live Launch Checklist</div>
-                    <p class="tool-desc">The Attachment G launch checklist shared live between the AGP at the site and the RPIC at the ROC. Each crew member marks only their own items, and every mark is recorded with the account and time.</p>
-                    <ul class="tool-features">
-                        <li>6 character launch code to join from any phone</li>
-                        <li>AGP and RPIC items separated, enforced by the database</li>
-                        <li>GO locks until sections 1 to 4 are complete; any NO-GO aborts</li>
-                        <li>AGP manual and dock launch variants</li>
-                    </ul>
-                </div>
-                <div class="tool-card-footer">
-                    <a href="launch-checklist.html" class="btn-tool">
-                        Launch Tool
-                        <svg width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/></svg>
-                    </a>
-                </div>
-            </div>
-
             <!-- AAR Generator -->
             <div class="tool-card">
                 <div class="tool-card-body">
                     <div class="tool-icon">📝</div>
-                    <div class="tool-tag">Step 4: Post-Mission</div>
+                    <div class="tool-tag">Step 3: Post-Mission</div>
                     <div class="tool-name">AAR Generator</div>
                     <p class="tool-desc">Generate a mission After Action Report from a DroneSense flight record. Auto-extracts flight data, prompts for mission details, builds the narrative, and exports an EP-branded PDF.</p>
                     <ul class="tool-features">

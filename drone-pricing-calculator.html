@@ -888,6 +888,14 @@
 .admin-table select{min-width:96px;}
 #adminPanel h3{margin:18px 0 8px;font-size:0.95rem;color:var(--ep-gold);}
 #adminPanel h3 .kit-contents{display:block;font-weight:normal;color:var(--ep-gray);margin-top:4px;}
+
+/* All tools button (hub link), shared across EP tools */
+.ep-hub-left{display:flex;align-items:center;gap:16px;min-width:0;}
+.ep-hub-btn{display:inline-flex;align-items:center;gap:6px;font-family:'Montserrat',-apple-system,sans-serif;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;text-decoration:none;border:1px solid #FCC00E;background:transparent;padding:7px 12px;border-radius:4px;white-space:nowrap;line-height:1.2;transition:background .2s,color .2s;}
+.ep-hub-btn:hover{background:#FCC00E;color:#0B1923;}
+.ep-hub-btn .chev{font-size:1rem;line-height:1;margin-top:-1px;}
+@media(max-width:520px){.ep-hub-left{gap:10px;}.ep-hub-left .header-logo img{width:130px;}.ep-hub-btn{padding:6px 9px;font-size:.64rem;letter-spacing:.5px;}}
+@media print{.ep-hub-btn{display:none!important;}}
 </style>
 </head>
 <body>
@@ -908,6 +916,7 @@
         </div>
         <div id="loginError" class="auth-error"></div>
         <button type="button" id="loginBtn" class="auth-btn">Sign In</button>
+        <div style="text-align:center;margin-top:14px;"><a class="ep-hub-btn" href="index.html" title="Back to all EP drone tools"><span class="chev">&#8249;</span>All tools</a></div>
     </div>
 </div>
 
@@ -918,6 +927,7 @@
         <p class="auth-title">Access Restricted</p>
         <p class="auth-sub">Your account isn't authorized to view pricing. Contact your administrator if this is unexpected.</p>
         <button type="button" id="signOutBtnNotAuth" class="auth-btn">Sign Out</button>
+        <div style="text-align:center;margin-top:14px;"><a class="ep-hub-btn" href="index.html" title="Back to all EP drone tools"><span class="chev">&#8249;</span>All tools</a></div>
     </div>
 </div>
 
@@ -926,9 +936,9 @@
 <!-- HEADER -->
 <header id="site-header">
     <div class="header-inner">
-        <a href="https://enhancedpatrol.com" class="header-logo">
+        <div class="ep-hub-left"><a href="https://enhancedpatrol.com" class="header-logo">
             <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
-        </a>
+        </a><a class="ep-hub-btn" href="index.html" title="Back to all EP drone tools"><span class="chev">&#8249;</span>All tools</a></div>
 
         <nav>
             <ul class="header-nav">
