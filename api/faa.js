@@ -122,7 +122,7 @@ function tzOffsetSec(tz, d) {
   try {
     const p = Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })
       .formatToParts(d).map(x => [x.type, x.value]));
-    return Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - d.getTime()) / 1000);
+    return Math.round((Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(d.getTime() / 1000) * 1000) / 60000) * 60;
   } catch (e) { return 0; }
 }
 /* WMO-style weather code from the NWS weather list and sky cover, so the tools keep one vocabulary. */
