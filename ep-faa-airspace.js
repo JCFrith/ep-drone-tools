@@ -1,6 +1,7 @@
 /* Enhanced Patrol: FAA airspace lookup for a single point.
-   Data comes from the FAA's own public open data services (Aeronautical Information Services
-   and the UAS Data Delivery System, hosted on ArcGIS Online) plus USGS ground elevation.
+   Data comes from the FAA Aeronautical Data Delivery Service (ADDS, adds-faa.opendata.arcgis.com),
+   published by FAA Aeronautical Information Services on ArcGIS Online, plus TFRs from tfr.faa.gov
+   and USGS ground elevation. Every result records the source and the time it was pulled.
    No API key, no vendor. The lookup informs the assessment; the RPIC confirms every value.
 
    What it answers:  UASFM grid ceiling, controlled airspace at the surface, special use airspace,
@@ -14,6 +15,7 @@
   var BASE = 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/';
   var EPQS = 'https://epqs.nationalmap.gov/v1/json';
   var TIMEOUT_MS = 12000;
+  var ADDS_PORTAL = 'https://adds-faa.opendata.arcgis.com';   // public page for the FAA services queried below (org ssFJjBXIUyZDrSYZ, owner AeronauticalInformationServices_FAA)
   var ELEV_TIMEOUT_MS = 10000;
   var PIN_TOL_DEG = 0.0003;           // about 33 m: a pin this close to a boundary counts as inside
   var FAC_RADIUS_MI = 3;              // SP 19(d) states 3 miles, not nautical miles
@@ -187,6 +189,9 @@
     }
     var R = {
       v: 1, lat: +lat.toFixed(6), lng: +lng.toFixed(6), at: new Date().toISOString(),
+      source: { name: 'FAA Aeronautical Data Delivery Service (ADDS)', publisher: 'FAA Aeronautical Information Services', portal: ADDS_PORTAL,
+        datasets: ['FAA_UAS_FacilityMap_Data', 'Class_Airspace', 'Special_Use_Airspace', 'Prohibited_Areas', 'DoD_Mar_13', 'Part_Time_National_Security_UAS_Flight_Restrictions',
+          'National_Defense_Airspace_TFR_Areas', 'Stadiums', 'US_Airport'], tfr: 'tfr.faa.gov', elevation: 'USGS 3DEP' },
       elevFt: elev, elevSrc: elevSrc, grid: null, classes: [], controlled: false, classOption: '',
       sua: [], prohibited: [], nsufr: [], nsufrPartTime: [], nda: [], stadiums: [], facilities: [], tfrs: [], tfrChecked: !!raw.tfr,
       errors: errors, flags: [], status: 'ok'
@@ -406,7 +411,7 @@
             '</td><td>' + x.mi.toFixed(2) + ' mi</td></tr>';
         }).join('') + '</tbody></table></details>';
     }
-    h += '<div class="faa-src">Source: FAA Aeronautical Information Services and UAS Data Delivery System open data' +
+    h += '<div class="faa-src">Source: <a href="' + ADDS_PORTAL + '" target="_blank" rel="noopener">FAA Aeronautical Data Delivery Service (ADDS)</a>, published by FAA Aeronautical Information Services' +
       (R.grid && R.grid.mapEff ? ', UASFM effective ' + esc(R.grid.mapEff) : '') + '; ground elevation ' + esc(R.elevSrc || 'unavailable') + '. Pulled ' + esc(fmtTime(R.at)) +
       ' for ' + R.lat.toFixed(5) + ', ' + R.lng.toFixed(5) + '. ' + (R.tfrChecked ? 'TFR shapes from tfr.faa.gov; NOTAM text is not covered.' : 'TFRs and NOTAMs are not covered.') + ' The RPIC confirms every value.</div>';
     return h;
