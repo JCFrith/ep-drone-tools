@@ -79,6 +79,18 @@
   .savestate{font-size:.7rem;color:var(--ep-gray);}
   details.more summary{cursor:pointer;font-size:.78rem;color:var(--ep-blue);margin-top:10px;}
   .blk{margin-top:12px;}
+  .found{margin-bottom:6px;}
+  .fgrp{display:grid;grid-template-columns:170px 1fr;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06);font-size:.84rem;}
+  .flbl{font-weight:700;}
+  .none{color:var(--ep-ok);font-weight:600;}
+  .hit{padding:8px 10px;border-radius:6px;margin-bottom:6px;font-size:.82rem;line-height:1.45;}
+  .hit.open{background:rgba(229,72,77,.1);border-left:3px solid var(--ep-block);}
+  .hit.stop{background:rgba(229,72,77,.16);border-left:3px solid var(--ep-block);}
+  .hit.acked{background:rgba(245,165,36,.08);border-left:3px solid var(--ep-warn);}
+  .ackrow{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+  .ackrow input{flex:1 1 200px;min-width:0;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:5px;padding:7px 9px;font:inherit;font-size:.8rem;}
+  .ackline{margin-top:4px;font-size:.76rem;color:#f3d9a6;}
+  @media (max-width:640px){ .fgrp{grid-template-columns:1fr;gap:4px;} }
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ep-navy-card);border:1px solid var(--ep-blue);border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:9999;display:none;max-width:90vw;}
   .faa-btn{display:inline-block;font-size:.72rem;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:5px;color:#fff;text-decoration:none;margin:8px 6px 0 0;}
   @media (max-width:640px){ .grid2,.grid3{grid-template-columns:1fr;} #map{height:300px;} .topbar h1{font-size:1.35rem;} .ep-hub-btn{padding:6px 9px;font-size:.64rem;letter-spacing:.5px;} }
@@ -117,9 +129,7 @@ var CHECKS = [
   { sec: 'ac', key: 'ac_guards', text: 'Rotating component shielding fitted (prop guards or equivalent)', ref: 'Light Aircraft Overflight, Rotating Component Shielding (SP 15(d)). Required on that pathway' },
   { sec: 'ac', key: 'ac_prs', text: 'PRS operational and compliant with ASTM F3322-18 as revised', ref: 'PRS-Equipped Overflight, PRS Operational Status (SP 14(e))',
     auto: function () { var a = aircraft(); var prs = a ? a.prs_equipped : REC.fields.prsEquipped === 'Yes'; return prs ? null : 'No PRS on this aircraft'; } },
-  { sec: 'air', key: 'air_tfr', text: 'TFRs reviewed, none impacting operations', ref: 'Shapes shown in the FAA lookup are from lookup time. Read each NOTAM.' },
-  { sec: 'air', key: 'air_notam', text: 'NOTAMs reviewed, none affecting operations', ref: 'FAA NOTAM Search' },
-  { sec: 'air', key: 'air_sua', text: 'No restricted, prohibited or special-use airspace conflict', ref: 'FAA lookup lists special use, prohibited and national security airspace at the pin' },
+  { sec: 'air', key: 'air_notam', text: 'NOTAMs reviewed, none affecting operations', ref: 'NOTAM text is not pulled automatically. Search the site and the nearest airports in FAA NOTAM Search.' },
   { sec: 'air', key: 'air_sp16', text: 'SP 16 NOTAM filed 24 to 72 hours prior and verified issued before flight', ref: 'UASFM Grid Operations, NOTAM Filing (SP 16(a)), 1-877-487-6867',
     auto: function () { var R = REC.faa; if (R && !R.controlled) return 'Class G at the pin, no SP 16 NOTAM'; return null; } }
 ];
@@ -133,7 +143,7 @@ function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
 function stamp(iso){ try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
 function aircraft(){ return REC && REC.fields.aircraftId ? FLEET.filter(function (a) { return a.id === REC.fields.aircraftId; })[0] || null : null; }
 function linked(){ return REC && REC.fields.assessmentId ? ASSESS.filter(function (a) { return a.id === REC.fields.assessmentId; })[0] || REC.fields.assessmentSnap || null : null; }
-function newRec(){ return { id: null, fields: { rpic: SESSION ? SESSION.user.email : '', launchMethod: 'Tactical deployment' }, checks: {}, faa: null, log: [], avwx: null }; }
+function newRec(){ return { id: null, fields: { rpic: SESSION ? SESSION.user.email : '', launchMethod: 'Tactical deployment' }, checks: {}, acks: {}, faa: null, log: [], avwx: null }; }
 
 /* ---------------- Auth ---------------- */
 function renderWho(){
@@ -178,7 +188,7 @@ function openRecord(id){
   return sb.from('go_nogo_checks').select('*').eq('id', id).single().then(function (r) {
     if (r.error || !r.data) { toast('Could not open that check'); REC = newRec(); render(); return; }
     var p = r.data.payload || {};
-    REC = { id: r.data.id, fields: p.fields || {}, checks: p.checks || {}, faa: p.faa || null, log: p.log || [], avwx: p.avwx || null };
+    REC = { id: r.data.id, fields: p.fields || {}, checks: p.checks || {}, acks: p.acks || {}, faa: p.faa || null, log: p.log || [], avwx: p.avwx || null };
     W = null; WKEY = '';
     history.replaceState(null, '', '?id=' + REC.id);
     render(); refreshWx(false);
@@ -193,7 +203,7 @@ function rowFromRec(){
     aircraft_id: f.aircraftId || null, aircraft_label: a ? a.name : (f.acAsset || null),
     planned_alt_ft: num(f.plannedAlt) != null ? Math.round(num(f.plannedAlt)) : null,
     decision: last ? last.decision : null, decided_at: last ? last.at : null, decided_by: last ? last.by : null,
-    payload: { fields: f, checks: REC.checks, faa: REC.faa, log: REC.log, avwx: REC.avwx, v: 1 }
+    payload: { fields: f, checks: REC.checks, acks: REC.acks, faa: REC.faa, log: REC.log, avwx: REC.avwx, v: 2 }
   };
 }
 function save(now){
@@ -383,14 +393,69 @@ function paintAir(){
   var body = R && window.EPFAA ? '<div class="blk">' + EPFAA.renderHTML(R) + '</div>' +
     '<div class="acinfo"><div style="grid-column:1/-1"><span>Authorization basis</span>' + (R.controlled ? 'At or below the UASFM grid: SP 16 with a NOTAM. Above it: separate ATC authorization (LAANC may not be used for waivered operations)' : 'Class G, none required') + '</div></div>' +
     '<div class="no-print"><a class="faa-btn" href="' + EPFAA.links.notam + '" target="_blank" rel="noopener">NOTAM search</a><a class="faa-btn" href="' + EPFAA.links.tfr + '" target="_blank" rel="noopener">TFR list</a></div>' : '';
-  el.innerHTML = head + body + '<div class="sub">Flight-day checks</div>' + checksHTML('air');
-  bindChecks(el);
+  el.innerHTML = head + (R ? foundHTML(R) : '') + body + '<div class="sub">Flight-day checks</div>' + checksHTML('air');
+  bindChecks(el); bindAcks(el);
 }
 function runFaa(){
   var f = REC.fields; if (!window.EPFAA || !f.lat) return;
   FAABUSY = true; FAAERR = ''; paintAir();
   EPFAA.lookup(Number(f.lat), Number(f.lng)).then(function (R) { REC.faa = R; save(); }, function (e) { FAAERR = e.message || 'failed'; })
     .then(function () { FAABUSY = false; paintAir(); paintAll(); });
+}
+
+/* ---- Found at the pin: TFRs, restricted and special use airspace, stadiums ----
+   Listed straight from the FAA lookup, or "None found". A hit that may not apply at flight time
+   (a TFR, special use airspace, a part-time restriction, a stadium) needs the RPIC to acknowledge it
+   with a note before GO. Prohibited, national security and national defense airspace cannot be
+   acknowledged here; the airspace indicator stays red. */
+function hits(R){
+  var out = [];
+  if (!R) return out;
+  (R.tfrs || []).filter(function (t) { return t.inside; }).forEach(function (t) {
+    out.push({ group: 'tfr', key: 'tfr:' + t.notam, ack: true, title: 'TFR ' + t.notam + (t.type ? ' (' + t.type + ')' : ''), text: t.title, need: 'Read the NOTAM. Confirm it is not active, or does not restrict UAS, for this flight.' });
+  });
+  (R.prohibited || []).forEach(function (x) { out.push({ group: 'sua', key: 'pro:' + x.name, ack: false, title: 'Prohibited area ' + x.name, text: x.floor + ' to ' + x.ceiling + '. 14 CFR 73.83.' }); });
+  (R.nsufr || []).forEach(function (x) { out.push({ group: 'sua', key: 'nsufr:' + x.facility, ack: false, title: 'National Security UAS Flight Restriction', text: x.facility + ' (' + (x.floor || 'surface') + ' to ' + (x.ceiling || '400 ft AGL') + '). 14 CFR 99.7.' }); });
+  (R.nda || []).forEach(function (x) { out.push({ group: 'sua', key: 'nda:' + x.name, ack: false, title: 'National defense airspace', text: x.name + (x.hours ? ' (' + x.hours + ')' : '') }); });
+  (R.nsufrPartTime || []).forEach(function (x) { out.push({ group: 'sua', key: 'nspt:' + x.facility, ack: true, title: 'Part-time National Security UAS Flight Restriction', text: x.facility, need: 'Confirm it is not active during the flight.' }); });
+  (R.sua || []).forEach(function (x) { out.push({ group: 'sua', key: 'sua:' + x.name, ack: true, title: x.type + ' ' + x.name, text: x.floor + ' to ' + x.ceiling + (x.times ? ', ' + x.times : '') + (x.agency ? '. Controlling agency ' + x.agency : ''), need: 'Confirm it is cleared with the controlling agency or not active.' }); });
+  (R.stadiums || []).forEach(function (x) { out.push({ group: 'stad', key: 'stad:' + x.name, ack: true, title: 'Stadium ' + x.name, text: (x.nm < 0.1 ? 'At the pin' : x.nm.toFixed(1) + ' NM away') + '. Event TFR: 3 NM, up to 3,000 ft AGL, 1 hour before to 1 hour after qualifying events.', need: 'Confirm no qualifying event during the flight.' }); });
+  return out;
+}
+function ackHTML(h){
+  var a = REC.acks[h.key];
+  if (!h.ack) return '<div class="hit stop"><b>' + esc(h.title) + '</b><div>' + esc(h.text) + '</div><div class="hint">No UAS operations. This cannot be acknowledged here.</div></div>';
+  if (a) return '<div class="hit acked"><b>' + esc(h.title) + '</b><div>' + esc(h.text) + '</div><div class="ackline">Acknowledged by ' + esc(a.by) + ', ' + esc(stamp(a.at)) + ': ' + esc(a.note) +
+    ' <button class="btn sm no-print" data-unack="' + esc(h.key) + '">Undo</button></div></div>';
+  return '<div class="hit open"><b>' + esc(h.title) + '</b><div>' + esc(h.text) + '</div><div class="hint">' + esc(h.need) + '</div>' +
+    '<div class="ackrow no-print"><input type="text" data-acknote="' + esc(h.key) + '" placeholder="Note, e.g. not active 1400 to 1800Z"><button class="btn sm primary" data-ack="' + esc(h.key) + '">Acknowledge</button></div></div>';
+}
+function foundHTML(R){
+  var H = hits(R), g = function (k) { return H.filter(function (h) { return h.group === k; }); };
+  var near = (R.tfrs || []).filter(function (t) { return !t.inside; });
+  var tfr = !R.tfrChecked ? '<div class="hit stop"><b>TFR check did not complete.</b><div class="hint">Run the lookup again before flight.</div></div>'
+    : g('tfr').length ? g('tfr').map(ackHTML).join('') : '<div class="none">None found at the site.</div>';
+  if (R.tfrChecked && near.length) tfr += '<div class="hint" style="margin-top:4px;">Nearby, not at the site: ' + near.map(function (t) { return esc(t.notam) + ' (' + t.nm + ' NM, ' + esc(t.title) + ')'; }).join('; ') + '</div>';
+  var sua = g('sua').length ? g('sua').map(ackHTML).join('') : '<div class="none">None found at the pin.</div>';
+  var stad = g('stad').length ? g('stad').map(ackHTML).join('') : '<div class="none">None within 3 NM.</div>';
+  return '<div class="found"><div class="sub" style="margin-top:4px;">Found at the pin</div>' +
+    '<div class="fgrp"><div class="flbl">TFRs</div><div>' + tfr + '</div></div>' +
+    '<div class="fgrp"><div class="flbl">Restricted and special use airspace</div><div>' + sua + '</div></div>' +
+    '<div class="fgrp"><div class="flbl">Stadiums</div><div>' + stad + '</div></div>' +
+    '<div class="fgrp"><div class="flbl">NOTAMs</div><div><div class="hint">Not pulled automatically. Use the NOTAM check below.</div></div></div></div>';
+}
+function bindAcks(root){
+  root.querySelectorAll('[data-ack]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.dataset.ack, inp = root.querySelector('[data-acknote="' + CSS.escape(k) + '"]'), note = inp ? inp.value.trim() : '';
+      if (!note) { toast('Add a note: why it does not affect this flight'); if (inp) inp.focus(); return; }
+      REC.acks[k] = { by: SESSION.user.email, at: new Date().toISOString(), note: note };
+      save(); paintAir(); paintAll();
+    });
+  });
+  root.querySelectorAll('[data-unack]').forEach(function (b) {
+    b.addEventListener('click', function () { delete REC.acks[b.dataset.unack]; save(); paintAir(); paintAll(); });
+  });
 }
 
 /* ---- Checks ---- */
@@ -436,9 +501,15 @@ function gngItems(){
     var moved = f.lat && EPFAA.distMi(Number(f.lat), Number(f.lng), R.lat, R.lng) > 0.02;
     var st = R.status, lv = moved ? 'no' : (st === 'stop' || st === 'partial') ? 'no' : st === 'warn' ? 'warn' : 'ok';
     items.push({ key: 'faa', label: 'Airspace', level: lv, value: EPFAA.summaryLine(R), detail: moved ? 'The pin moved after the lookup. Run it again.' : st === 'partial' ? 'The lookup was incomplete. Run it again.' : 'Looked up ' + stamp(R.at) + '.' });
-    var inT = (R.tfrs || []).filter(function (t) { return t.inside; });
-    items.push({ key: 'tfr', label: 'TFRs', level: !R.tfrChecked ? 'warn' : inT.length ? 'warn' : 'ok', value: !R.tfrChecked ? 'Not checked' : inT.length ? 'Inside ' + inT.map(function (t) { return t.notam; }).join(', ') : 'None at the site',
-      detail: inT.length ? 'Read each NOTAM for times, altitudes and whether UAS are restricted.' : '' });
+    var H = hits(R), tf = H.filter(function (h) { return h.group === 'tfr'; }), rs = H.filter(function (h) { return h.group !== 'tfr'; });
+    var open = function (L) { return L.filter(function (h) { return !h.ack || !REC.acks[h.key]; }); };
+    if (!R.tfrChecked) items.push({ key: 'tfr', label: 'TFRs', level: 'no', value: 'Check did not complete', detail: 'Run the FAA lookup again in part 3.' });
+    else items.push({ key: 'tfr', label: 'TFRs', level: !tf.length ? 'ok' : open(tf).length ? 'no' : 'warn',
+      value: !tf.length ? 'None found at the site' : 'Inside ' + tf.map(function (h) { return h.title.replace(/^TFR /, ''); }).join(', '),
+      detail: !tf.length ? '' : open(tf).length ? 'Acknowledge each TFR in part 3 after reading the NOTAM.' : 'Acknowledged in part 3.' });
+    items.push({ key: 'restrict', label: 'Restricted airspace', level: !rs.length ? 'ok' : open(rs).length ? 'no' : 'warn',
+      value: !rs.length ? 'None found at the pin' : rs.map(function (h) { return h.title; }).join(', '),
+      detail: !rs.length ? 'No special use, prohibited, national security airspace or stadium within 3 NM.' : open(rs).length ? (rs.some(function (h) { return !h.ack; }) ? 'No UAS operations here.' : 'Acknowledge each one in part 3.') : 'Acknowledged in part 3.' });
   }
   // Aircraft
   if (a) items.push({ key: 'ac', label: 'Aircraft', level: a.status !== 'active' ? 'no' : a.is_test ? 'warn' : 'ok', value: a.name + (a.model ? ', ' + a.model : ''),
@@ -480,6 +551,7 @@ function record(decision){
   REC.log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(), by: SESSION.user.email, alt: num(REC.fields.plannedAlt), windLimit: windLimit(),
     aircraft: (aircraft() || {}).name || REC.fields.acAsset || '',
     metar: W && W.metars && W.metars[0] ? W.metars[0].rawOb || '' : '', taf: W && W.tafs && W.tafs[0] ? W.tafs[0].rawTAF || '' : '',
+    acks: JSON.parse(JSON.stringify(REC.acks || {})),
     items: items.map(function (x) { return { label: x.label, level: x.level, value: x.value }; }) });
   save(true); paintGng(); toast(decision + ' recorded');
 }
@@ -498,7 +570,7 @@ function refreshWx(force){
 }
 function keepAvwx(w){
   if (w.metars === null || w.tafs === null) return;
-  var snap = EPWX.avwxSnapshot(w), prev = REC.avwx;
+  var snap = EPWX.avwxSnapshot(w, 1), prev = REC.avwx;
   var sig = function (x) { return x ? (x.metars || []).map(function (m) { return m.raw; }).join('|') + '#' + (x.tafs || []).map(function (t) { return t.raw; }).join('|') : ''; };
   if (sig(snap) !== sig(prev)) { REC.avwx = snap; save(); }
 }
@@ -508,7 +580,7 @@ function paintWx(){
   if (!f.lat) { el.innerHTML = el2.innerHTML = '<p class="hint">Set the pin in part 1 to load the weather.</p>'; return; }
   if (!W) {
     el.innerHTML = '<p class="hint">' + (WBUSY ? 'Loading weather' : WERR ? 'Weather failed: ' + esc(WERR) : 'Not loaded') + refresh + '</p>';
-    el2.innerHTML = REC.avwx ? '<p class="hint">Showing the reports saved with this check on ' + esc(stamp(REC.avwx.at)) + '.' + refresh + '</p>' + EPWX.avwxSnapshotHTML(REC.avwx) : el.innerHTML;
+    el2.innerHTML = REC.avwx ? '<p class="hint">Showing the report saved with this check on ' + esc(stamp(REC.avwx.at)) + '.' + refresh + '</p>' + EPWX.avwxSnapshotHTML(REC.avwx) : el.innerHTML;
     return;
   }
   var lim = windLimit(), alt = num(f.plannedAlt);
@@ -517,9 +589,9 @@ function paintWx(){
     '<div class="blk"><div class="sub">Next 12 hours</div>' + EPWX.hoursHTML(W, lim, 12) + '</div>' +
     '<div class="blk"><div class="sub">Weather alerts</div>' + EPWX.alertsHTML(W) + '</div>' +
     '<div class="blk"><div class="sub">Sun</div>' + EPWX.sunHTML(W) + '</div>';
-  el2.innerHTML = '<div class="row" style="justify-content:space-between;"><span class="hint">Nearest reporting airports to the pin.</span>' + refresh + '</div>' +
-    '<div class="blk"><div class="sub">METAR: observed now</div>' + EPWX.metarsHTML(W) + '</div>' +
-    '<div class="blk"><div class="sub">TAF: terminal forecast</div>' + EPWX.tafsHTML(W) + '</div>' +
+  el2.innerHTML = '<div class="row" style="justify-content:space-between;"><span class="hint">Nearest reporting airport to the pin for each.</span>' + refresh + '</div>' +
+    '<div class="blk"><div class="sub">METAR: observed now</div>' + EPWX.metarsHTML(W, 1) + '</div>' +
+    '<div class="blk"><div class="sub">TAF: terminal forecast</div>' + EPWX.tafsHTML(W, 1) + '</div>' +
     '<p class="hint" style="margin-top:8px;">The raw METAR and TAF text is saved with this check whenever it changes.</p>';
 }
 function paintAll(){ paintGng(); paintWx(); }

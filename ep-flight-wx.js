@@ -331,20 +331,20 @@
     if (x.altim != null) cells.push(['Altimeter', (x.altim > 100 ? (x.altim * 0.02953).toFixed(2) : Number(x.altim).toFixed(2)) + ' inHg']);
     return '<div class="wx-dec">' + cells.map(function (c) { return '<div><span>' + c[0] + '</span>' + c[1] + '</div>'; }).join('') + '</div>';
   }
-  function metarsHTML(W) {
+  function metarsHTML(W, limit) {
     if (W.metars === null) return '<div class="wx-empty">METARs unavailable right now.</div>';
     if (!W.metars.length) return '<div class="wx-empty">No reporting station within about 50 miles.</div>';
-    return W.metars.map(function (x) {
+    return W.metars.slice(0, limit || W.metars.length).map(function (x) {
       var m = metarInfo(x);
       return '<div class="wx-metar"><b>' + esc(m.id) + '</b> ' + esc(m.name || '') + ' <span class="wx-src" style="display:inline">' + m.mi.toFixed(1) + ' mi' + (m.ageMin != null ? ', ' + m.ageMin + ' min old' : '') + '</span>' +
         (m.fltCat ? '<span class="wx-fc ' + esc(m.fltCat) + '">' + esc(m.fltCat) + '</span>' : '') + metarDecoded(x) + '<code>' + esc(m.raw) + '</code></div>';
     }).join('');
   }
-  function tafsHTML(W) {
+  function tafsHTML(W, limit) {
     if (W.tafs === null || W.tafs === undefined) return '<div class="wx-empty">TAFs unavailable right now' + (W.errors && W.errors.taf ? ': ' + esc(W.errors.taf) : '') + '.</div>';
     if (!W.tafs.length) return '<div class="wx-empty">No TAF issued within about 100 miles.</div>';
     var off = offsetOf(W), now = Date.now() / 1000;
-    return W.tafs.map(function (t) {
+    return W.tafs.slice(0, limit || W.tafs.length).map(function (t) {
       var rows = tafPeriods(t).filter(function (p) { return p.to > now; }).map(function (p) {
         var cur = p.from <= now && p.to > now;
         return '<tr class="' + (cur ? 'cur' : '') + (p.temp ? ' tmp' : '') + '"><td>' + esc(p.kind) + '<div class="wx-mute">' + tzLabel(p.from, off) + ' to ' + tzLabel(p.to, off) + '<br>' + zLabel(p.from) + ' to ' + zLabel(p.to) + '</div></td>' +
@@ -364,10 +364,10 @@
       'The highlighted row is in effect now; shaded rows are temporary or probable changes. Periods without a value carry the prior one forward.</div>';
   }
   /* Raw METAR and TAF text kept with a record, so the reports read later are exactly what was shown. */
-  function avwxSnapshot(W) {
+  function avwxSnapshot(W, limit) {
     return { at: W.at, lat: W.lat, lng: W.lng,
-      metars: (W.metars || []).map(function (m) { return { id: m.icaoId, name: m.name || '', mi: Math.round(m._mi * 10) / 10, cat: m.fltCat || '', raw: m.rawOb || '' }; }),
-      tafs: (W.tafs || []).map(function (t) { return { id: t.icaoId, name: t.name || '', mi: Math.round(t._mi * 10) / 10, issued: t.issueTime || '', raw: t.rawTAF || '' }; }) };
+      metars: (W.metars || []).slice(0, limit || 99).map(function (m) { return { id: m.icaoId, name: m.name || '', mi: Math.round(m._mi * 10) / 10, cat: m.fltCat || '', raw: m.rawOb || '' }; }),
+      tafs: (W.tafs || []).slice(0, limit || 99).map(function (t) { return { id: t.icaoId, name: t.name || '', mi: Math.round(t._mi * 10) / 10, issued: t.issueTime || '', raw: t.rawTAF || '' }; }) };
   }
   function avwxSnapshotHTML(snap) {
     if (!snap) return '';
