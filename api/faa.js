@@ -4,6 +4,7 @@
    bounding box, and responses are cached at the edge.
      GET /api/faa?src=tfr&bbox=minLng,minLat,maxLng,maxLat    TFR shapes (FAA tfr.faa.gov) touching the box
      GET /api/faa?src=metar&bbox=minLng,minLat,maxLng,maxLat  Current METARs (aviationweather.gov) in the box
+     GET /api/faa?src=taf&bbox=minLng,minLat,maxLng,maxLat    Current TAFs (aviationweather.gov) in the box
      GET /api/faa?src=layer&layer=KEY&z=Z&x=X&y=Y              One map tile of an FAA airspace layer as GeoJSON
      GET /api/faa?src=forecast&lat=LAT&lng=LNG                 Open-Meteo point forecast (fixed fields), cached 10 min.
        Browsers on some networks wait 20 s or more for a cold connection to Open-Meteo; the edge does not.
@@ -46,6 +47,7 @@ const TFR_URL = 'https://tfr.faa.gov/geoserver/TFR/ows?service=WFS&version=1.1.0
   '&typeName=TFR:V_TFR_LOC&outputFormat=application/json&srsname=EPSG:4326' +
   '&propertyName=NOTAM_KEY,TITLE,STATE,LEGAL,CNS_LOCATION_ID,LAST_MODIFICATION_DATETIME,SHAPE';
 const METAR_URL = 'https://aviationweather.gov/api/data/metar?format=json&bbox=';
+const TAF_URL = 'https://aviationweather.gov/api/data/taf?format=json&bbox=';
 const UA = 'EnhancedPatrol-SiteTools/1.0 (ep-drone-tools.vercel.app)';
 // Open-Meteo: the free endpoint is licensed for non-commercial use only. Set OPEN_METEO_API_KEY in the
 // Vercel project to use the paid customer endpoint (commercial licence, reserved capacity).
@@ -142,9 +144,9 @@ module.exports = async (req, res) => {
     }
   }
   const bbox = parseBbox(req.query.bbox);
-  if (!bbox || (src !== 'tfr' && src !== 'metar')) {
+  if (!bbox || (src !== 'tfr' && src !== 'metar' && src !== 'taf')) {
     res.statusCode = 400;
-    return res.end(JSON.stringify({ error: 'Use src=tfr or src=metar with bbox=minLng,minLat,maxLng,maxLat (at most 12 by 8 degrees).' }));
+    return res.end(JSON.stringify({ error: 'Use src=tfr, src=metar or src=taf with bbox=minLng,minLat,maxLng,maxLat (at most 12 by 8 degrees).' }));
   }
   try {
     if (src === 'tfr') {
@@ -162,6 +164,11 @@ module.exports = async (req, res) => {
       return res.end(JSON.stringify({ type: 'FeatureCollection', fetched: new Date(tfrCache.t).toISOString(), total: tfrCache.features.length, features: hits }));
     }
     const [x0, y0, x1, y1] = bbox;
+    if (src === 'taf') {
+      const t = await getJson(TAF_URL + [y0, x0, y1, x1].map(n => n.toFixed(3)).join(','), 12000);
+      res.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=300');
+      return res.end(JSON.stringify({ fetched: new Date().toISOString(), tafs: Array.isArray(t) ? t : [] }));
+    }
     const j = await getJson(METAR_URL + [y0, x0, y1, x1].map(n => n.toFixed(3)).join(','), 12000);
     res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=60');
     return res.end(JSON.stringify({ fetched: new Date().toISOString(), metars: Array.isArray(j) ? j : [] }));

@@ -103,7 +103,7 @@
 'use strict';
 /* Flight-day airspace and weather check. Sources: FAA open data (airspace, UASFM, TFR through /api/faa),
    Open-Meteo forecast (winds at 10 m, 80 m and 120 m), National Weather Service alerts, and
-   aviationweather.gov METARs (through /api/faa). Nothing is stored except the wind limit on this device. */
+   aviationweather.gov METARs and TAFs (through /api/faa). Nothing is stored except the wind limit on this device. */
 var map, pin = null, PT = null, seq = 0;
 var WMO = {0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Fog',48:'Freezing fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',56:'Freezing drizzle',57:'Freezing drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',66:'Freezing rain',67:'Freezing rain',71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Showers',81:'Showers',82:'Heavy showers',85:'Snow showers',86:'Snow showers',95:'Thunderstorms',96:'Thunderstorms, hail',99:'Thunderstorms, hail'};
 
@@ -188,7 +188,8 @@ function renderShell(){
     card('cHours','Next 12 hours','local time at the pin') +
     card('cSun','Sun','civil twilight bounds night operations') +
     card('cAlerts','Weather alerts','National Weather Service') +
-    card('cMetar','Nearest airport observations','METAR');
+    card('cMetar','Nearest airport observations','METAR, observed now') +
+    card('cTaf','Terminal forecasts','TAF, nearest airports');
   document.getElementById('wlim').addEventListener('input',function(){ setLimit(this.value); });
   document.getElementById('walt').addEventListener('input',function(){ setAlt(this.value); });
 }
@@ -218,6 +219,7 @@ function renderWx(){
   setBody('cSun', EPWX.sunHTML(W));
   setBody('cAlerts', EPWX.alertsHTML(W));
   setBody('cMetar', EPWX.metarsHTML(W));
+  setBody('cTaf', EPWX.tafsHTML(W));
   renderGo();
 }
 initMap();

@@ -624,8 +624,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ============================================================
 const COW_REF = 'CoW 107W-2026-01762, effective 13 AUG 2026 to 31 JAN 2030';
 const COW_PRIOR = 'CoW 107W-2025-04534, effective 14 JAN 2026 to 31 JAN 2030';
-const TOOL_VER = '8.7';
-const BUILD_DATE = '2026-09-30';
+const TOOL_VER = '8.8';
+const BUILD_DATE = '2026-10-01';
 
 // ── INDEXEDDB ──────────────────────────────────────────────
 let _db = null;
@@ -1729,7 +1729,7 @@ function renderFullSections() {
       ' <button class="action-btn no-print" style="padding:4px 10px;font-size:0.72rem;margin-left:6px;" onclick="openRejectPanel()">Send back to ground crew</button>';
     main.appendChild(b);
   }
-  if (!isAgp()) { main.appendChild(gngSectionEl()); setTimeout(function () { gngFetch(false); }, 50); }
+  if (!isAgp()) { main.appendChild(gngSectionEl()); main.appendChild(avwxSectionEl()); setTimeout(function () { gngFetch(false); }, 50); }
   if (layoutMode() === 'streamlined') {
     renderStreamlined(main);
     buildOwners(); renderVersionStamp(); renderLegacyBanner(); updateProgress(); renderDetermination(); renderApproval();
@@ -2677,11 +2677,10 @@ function gngHTML() {
     (a && a.wind_limit_mph != null ? ' &middot; Wind limit <b>' + a.wind_limit_mph + ' mph</b> (fleet record)'
       : ' &middot; Wind limit <input type="number" min="0" step="1" data-field="gngWindLimit" value="' + esc(S.fields.gngWindLimit) + '" placeholder="mph" style="width:72px;padding:4px 6px;"> mph') + '</div>';
   var body = EPWX.itemsHTML(items);
-  var more = GNG.W ? '<details class="gng-more"><summary>Weather now, next 12 hours, alerts, METARs, sun</summary>' +
+  var more = GNG.W ? '<details class="gng-more"><summary>Weather now, next 12 hours, alerts, sun</summary>' +
     '<div class="gng-block">' + EPWX.tilesHTML(GNG.W, gngWindLimit(), gngAlt()) + '</div>' +
     '<div class="gng-block">' + EPWX.hoursHTML(GNG.W, gngWindLimit(), 12) + '</div>' +
     '<div class="gng-block"><div class="fg-label">Weather alerts</div>' + EPWX.alertsHTML(GNG.W) + '</div>' +
-    '<div class="gng-block"><div class="fg-label">Nearest airport observations</div>' + EPWX.metarsHTML(GNG.W) + '</div>' +
     '<div class="gng-block"><div class="fg-label">Sun</div>' + EPWX.sunHTML(GNG.W) + '</div></details>' : '';
   var dec = '<div class="gng-decide no-print"><button class="action-btn gng-go" onclick="gngRecord(\'GO\')"' + (o === 'no' || !GNG.W ? ' disabled title="Clear every red item first"' : '') + '>Record GO</button>' +
     '<button class="action-btn gng-nogo" onclick="gngRecord(\'NO-GO\')">Record NO-GO</button>' +
@@ -2700,6 +2699,7 @@ function gngPaint() {
   el.innerHTML = gngHTML();
   bindFields(el);
   if (focus !== null) { var r = document.getElementById('gngReason'); if (r) { r.value = focus; r.focus(); } }
+  var ab = document.getElementById('avwxBody'); if (ab) ab.innerHTML = avwxHTML();
   var chip = document.getElementById('gngChip');
   if (chip) { var o = S.fields.mapLat ? gngOverall(gngItems()) : ''; chip.className = 'gng-chip ' + o; chip.textContent = !o ? '' : o === 'no' ? 'NO-GO' : o === 'warn' ? 'CAUTION' : 'CLEAR'; }
 }
@@ -2709,7 +2709,7 @@ function gngFetch(force) {
   var fresh = GNG.W && GNG.key === key && Date.now() - Date.parse(GNG.W.at) < 10 * 60 * 1000;
   if ((fresh && !force) || GNG.busy) { gngPaint(); return; }
   GNG.busy = true; GNG.err = ''; gngPaint();
-  EPWX.fetchAll(lat, lng).then(function (W) { GNG.W = W; GNG.key = key; }, function (e) { GNG.err = e.message || 'failed'; })
+  EPWX.fetchAll(lat, lng).then(function (W) { GNG.W = W; GNG.key = key; avwxKeep(W); }, function (e) { GNG.err = e.message || 'failed'; })
     .then(function () { GNG.busy = false; gngPaint(); });
   clearInterval(GNG.timer);
   GNG.timer = setInterval(function () { if (document.getElementById('gngBody')) gngFetch(true); else clearInterval(GNG.timer); }, 10 * 60 * 1000);
@@ -2723,10 +2723,52 @@ function gngRecord(decision) {
   log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(),
     by: (SESSION && SESSION.user ? SESSION.user.email : '') || S.fields.rpicReviewing || 'unrecorded',
     alt: gngAlt(), windLimit: gngWindLimit(), aircraft: S.fields.acAsset || '',
+    metar: GNG.W && GNG.W.metars && GNG.W.metars[0] ? GNG.W.metars[0].rawOb || '' : '',
+    taf: GNG.W && GNG.W.tafs && GNG.W.tafs[0] ? GNG.W.tafs[0].rawTAF || '' : '',
     items: items.map(function (x) { return { label: x.label, level: x.level, value: x.value }; }) });
   S.fields.gngLog = JSON.stringify(log.slice(-20));
   save(); gngPaint(); renderRecap();
   showToast(decision + ' recorded');
+}
+/* ============================================================
+   AVIATION WEATHER: METAR AND TAF AT THE SITE PIN
+   Nearest airport observations (METAR) and terminal forecasts (TAF)
+   from aviationweather.gov through the EP relay, decoded. The raw
+   reports are kept with the assessment (S.fields.avwx) each time
+   they change, and each GO / NO-GO entry keeps the nearest pair.
+   ============================================================ */
+function avwxSaved() { try { return JSON.parse(S.fields.avwx || 'null'); } catch (e) { return null; } }
+function avwxKeep(W) {
+  if (!window.EPWX || W.metars === null || W.tafs === null) return;
+  var snap = EPWX.avwxSnapshot(W), prev = avwxSaved();
+  var sig = function (x) { return x ? (x.metars || []).map(function (m) { return m.raw; }).join('|') + '#' + (x.tafs || []).map(function (t) { return t.raw; }).join('|') : ''; };
+  if (sig(snap) === sig(prev)) return;
+  S.fields.avwx = JSON.stringify(snap);
+  save();
+}
+function avwxHTML() {
+  if (!window.EPWX) return '<p class="hint">Weather module did not load.</p>';
+  if (!S.fields.mapLat || !S.fields.mapLng) return '<p class="hint">Set the site location in Section 0 to load the nearest METARs and TAFs.</p>';
+  var W = GNG.W, saved = avwxSaved();
+  var head = '<div class="gng-head"><div class="hint" style="margin:0;">Nearest reporting airports to the site pin ' + esc(Number(S.fields.mapLat).toFixed(4)) + ', ' + esc(Number(S.fields.mapLng).toFixed(4)) + '.</div>' +
+    '<div class="gng-meta">' + (GNG.busy ? 'Loading' : W ? 'Updated ' + localStamp(W.at) : (GNG.err ? 'Failed: ' + esc(GNG.err) : '')) +
+    ' <button class="mini-btn no-print" onclick="gngFetch(true)"' + (GNG.busy ? ' disabled' : '') + '>Refresh</button></div></div>';
+  if (!W) {
+    return head + (saved ? '<p class="hint">Showing the reports saved with this assessment on ' + esc(localStamp(saved.at)) + '. Refresh for current ones.</p>' + EPWX.avwxSnapshotHTML(saved)
+      : '<p class="hint">' + (GNG.busy ? 'Loading METARs and TAFs.' : 'Not loaded yet.') + '</p>');
+  }
+  return head +
+    '<div class="gng-block"><div class="fg-label">METAR: observed now</div>' + EPWX.metarsHTML(W) + '</div>' +
+    '<div class="gng-block"><div class="fg-label">TAF: terminal forecast</div>' + EPWX.tafsHTML(W) + '</div>' +
+    '<p class="hint" style="margin-top:8px;">Reports refresh every 10 minutes while this page is open. The raw text is saved with the assessment whenever it changes, and each GO / NO-GO entry keeps the nearest METAR and TAF.</p>';
+}
+function avwxSectionEl() {
+  var d = document.createElement('div');
+  d.className = 'section open'; d.dataset.id = 'avwx';
+  d.innerHTML = '<div class="section-header" onclick="this.parentNode.classList.toggle(\'open\')" role="button" tabindex="0"><div class="section-num">WX</div>' +
+    '<div class="section-title">Aviation weather: METAR and TAF</div><div class="section-toggle">&#9662;</div></div>' +
+    '<div class="section-body" id="avwxBody"></div>';
+  return d;
 }
 function gngSectionEl() {
   var d = document.createElement('div');
