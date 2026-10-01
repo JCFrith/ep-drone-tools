@@ -79,12 +79,12 @@
 <script>
 'use strict';
 /* Live launch checklist shared between the AGP at the site and the RPIC at the ROC.
-   Items are the LAUNCH CHECKLIST from Check Lists, Attachment G (07d). Each item has one owner:
+   Items are the LAUNCH CHECKLIST from EP Check Lists v2.1 (CoW 107W-2026-01762), carried over unchanged from Attachment G (07d). Each item has one owner:
    the database only lets ground personnel accounts mark AGP items, and records who marked every
    item and when. Owner assignments follow the AGP duties in CONOPS 5.1.2 (AGP secure the launch
    and recovery area and do the basic physical inspection; the RPIC owns C2, control and BVLOS).
    Edit TEMPLATE below to change an item or its owner. */
-var CHECKLIST_VERSION = 'Attachment G Launch Checklist (07d), EP owner split v1';
+var CHECKLIST_VERSION = 'EP Check Lists v2.1 (CoW 107W-2026-01762), Launch Checklist, EP owner split v1';
 var TEMPLATE = [
   // [section, key, label, owner for AGP manual launch, owner for dock launch ('' = not used)]
   ['1. Pre-Launch Area Verification', 'a_launch', 'Launch zone clear', 'agp', 'rpic'],
@@ -109,10 +109,10 @@ var TEMPLATE = [
   ['3. C2 & Communications', 'c_input', 'Manual control input produces aircraft response within 1 second', 'rpic', 'rpic'],
   ['3. C2 & Communications', 'c_roc1', 'ROC primary comms checked', 'rpic', 'rpic'],
   ['3. C2 & Communications', 'c_roc2', 'ROC secondary comms checked', 'rpic', 'rpic'],
-  ['3. C2 & Communications', 'c_agp', 'RPIC–AGP comms checked', 'rpic', ''],
-  ['3. C2 & Communications', 'c_vo', 'RPIC–VO comms checked (if applicable)', 'rpic', 'rpic'],
+  ['3. C2 & Communications', 'c_agp', 'RPIC to AGP comms checked', 'rpic', ''],
+  ['3. C2 & Communications', 'c_vo', 'RPIC to VO comms checked (if applicable)', 'rpic', 'rpic'],
   ['4. Handoff Readiness', 'h_orient', 'Aircraft orientation confirmed', 'agp', ''],
-  ['4. Handoff Readiness', 'h_hover', 'Hover stable (3–10 ft AGL)', 'agp', ''],
+  ['4. Handoff Readiness', 'h_hover', 'Hover stable (3 to 10 ft AGL)', 'agp', ''],
   ['4. Handoff Readiness', 'h_drift', 'No drift or instability', 'agp', ''],
   ['4. Handoff Readiness', 'h_status', 'RPIC system status normal', 'rpic', ''],
   ['4. Handoff Readiness', 'h_route', 'RPIC route verified', 'rpic', ''],
