@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Go / No-Go | Enhanced Patrol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="ep-faa-airspace.js"></script>
+<script src="ep-faa-map.js"></script>
+<script src="ep-flight-wx.js"></script>
+<style>
+  :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-white:#FFFFFF;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-warn:#F5A524;--ep-block:#E5484D;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ep-navy);color:#fff;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  a{color:var(--ep-blue);}
+  .topbar{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--ep-navy-deep);border-bottom:2px solid var(--ep-gold);flex-wrap:wrap;position:sticky;top:0;z-index:1500;}
+  .topbar img{height:34px;}
+  .topbar h1{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.6rem;letter-spacing:2px;line-height:1;}
+  .topbar h1 em{color:var(--ep-gold);font-style:normal;}
+  .topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:.72rem;color:var(--ep-gray);}
+  .ep-hub-btn{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;text-decoration:none;border:1px solid #FCC00E;background:transparent;padding:7px 12px;border-radius:4px;white-space:nowrap;line-height:1.2;transition:background .2s,color .2s;}
+  .ep-hub-btn:hover{background:#FCC00E;color:#0B1923;}
+  .ep-hub-btn .chev{font-size:1rem;line-height:1;margin-top:-1px;}
+  .wrap{max-width:980px;margin:0 auto;padding:16px 16px 90px;}
+  .card{background:var(--ep-navy-card);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:14px 16px;margin-bottom:14px;}
+  .card.gold{border-color:rgba(252,192,14,.45);}
+  .card h2{display:flex;align-items:center;gap:10px;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ep-gold);margin-bottom:12px;}
+  .card h2 .num{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:1px;color:var(--ep-gold);min-width:26px;}
+  .card h2 small{margin-left:auto;color:var(--ep-gray);letter-spacing:0;text-transform:none;font-weight:400;font-size:.7rem;}
+  .sub{font-size:.66rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ep-gray);font-weight:700;margin:14px 0 6px;}
+  .hint{font-size:.72rem;color:var(--ep-gray);line-height:1.5;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 14px;}
+  label.f{display:block;font-size:.66rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ep-gray);}
+  label.f input,label.f select,label.f textarea{display:block;width:100%;margin-top:4px;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:9px 10px;font:inherit;font-size:.9rem;text-transform:none;letter-spacing:0;}
+  label.f input:focus,label.f select:focus{outline:none;border-color:var(--ep-blue);}
+  .btn{font:inherit;font-size:.78rem;font-weight:700;padding:10px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;}
+  .btn.primary{background:var(--ep-dark-blue);border-color:var(--ep-blue);}
+  .btn.gold{background:var(--ep-gold);border-color:var(--ep-gold);color:var(--ep-navy);}
+  .btn.go{background:var(--ep-ok);border-color:var(--ep-ok);}
+  .btn.nogo{background:var(--ep-block);border-color:var(--ep-block);}
+  .btn.sm{padding:6px 10px;font-size:.7rem;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .recbar{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
+  .recbar label.f{flex:1 1 260px;}
+  #map{height:380px;border-radius:6px;background:var(--ep-navy-deep);margin-top:10px;}
+  .search{display:flex;gap:8px;margin-top:4px;}
+  .search input{flex:1;min-width:0;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:9px 10px;font:inherit;font-size:.9rem;}
+  .linked{margin-top:10px;padding:9px 11px;border-radius:6px;background:rgba(0,162,233,.08);border:1px solid rgba(0,162,233,.3);font-size:.8rem;line-height:1.5;}
+  .acinfo{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px 12px;margin-top:10px;font-size:.82rem;}
+  .acinfo div span{display:block;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ep-gray);}
+  .checks{margin-top:8px;}
+  .chk{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,.06);font-size:.84rem;}
+  .chk .ref{display:block;font-size:.66rem;color:var(--ep-gray);margin-top:2px;}
+  .chk .auto{display:block;font-size:.66rem;color:var(--ep-blue);margin-top:2px;}
+  .st{display:flex;gap:4px;}
+  .st button{font:inherit;font-size:.66rem;font-weight:700;padding:8px 10px;min-width:46px;border-radius:5px;border:1px solid rgba(255,255,255,.2);background:transparent;color:var(--ep-gray);cursor:pointer;}
+  .st button.on.yes{background:var(--ep-ok);border-color:var(--ep-ok);color:#fff;}
+  .st button.on.na{background:rgba(255,255,255,.2);color:#fff;border-color:#fff;}
+  .verdict{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:8px;font-weight:700;font-size:.95rem;margin-bottom:10px;}
+  .verdict .dot{width:14px;height:14px;border-radius:50%;flex:0 0 auto;}
+  .verdict.ok{background:rgba(48,164,108,.15);border:1px solid var(--ep-ok);} .verdict.ok .dot{background:var(--ep-ok);}
+  .verdict.warn{background:rgba(245,165,36,.12);border:1px solid var(--ep-warn);} .verdict.warn .dot{background:var(--ep-warn);}
+  .verdict.no{background:rgba(229,72,77,.15);border:1px solid var(--ep-block);} .verdict.no .dot{background:var(--ep-block);}
+  .decide{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+  .decide input{flex:1 1 240px;min-width:0;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:10px;font:inherit;font-size:.86rem;}
+  .log{margin-top:12px;font-size:.8rem;}
+  .log div{padding:7px 9px;border-radius:5px;margin-bottom:5px;}
+  .log .go{background:rgba(48,164,108,.12);border-left:3px solid var(--ep-ok);}
+  .log .nogo{background:rgba(229,72,77,.12);border-left:3px solid var(--ep-block);}
+  .chip{display:inline-block;padding:3px 9px;border-radius:12px;font-size:.66rem;font-weight:700;letter-spacing:.05em;}
+  .chip.ok{background:var(--ep-ok);} .chip.warn{background:var(--ep-warn);color:var(--ep-navy);} .chip.no{background:var(--ep-block);}
+  .savestate{font-size:.7rem;color:var(--ep-gray);}
+  details.more summary{cursor:pointer;font-size:.78rem;color:var(--ep-blue);margin-top:10px;}
+  .blk{margin-top:12px;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ep-navy-card);border:1px solid var(--ep-blue);border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:9999;display:none;max-width:90vw;}
+  .faa-btn{display:inline-block;font-size:.72rem;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:5px;color:#fff;text-decoration:none;margin:8px 6px 0 0;}
+  @media (max-width:640px){ .grid2,.grid3{grid-template-columns:1fr;} #map{height:300px;} .topbar h1{font-size:1.35rem;} .ep-hub-btn{padding:6px 9px;font-size:.64rem;letter-spacing:.5px;} }
+  @media print{ .topbar,.no-print,.decide,#map{display:none!important;} body{background:#fff;color:#000;} .card{border:1px solid #999;background:#fff;} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
+  <a class="ep-hub-btn" href="index.html" title="Back to all EP drone tools"><span class="chev">&#8249;</span>All tools</a>
+  <h1>Go <em>/</em> No-Go</h1>
+  <div class="right"><span id="who"></span><button class="btn sm" id="soBtn" style="display:none" onclick="signOut()">Sign out</button></div>
+</div>
+<div class="wrap" id="app"><div class="card"><div class="hint">Loading</div></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* Flight-day Go / No-Go for the RPIC. Site, aircraft and airspace (copied from site assessment sections 0, 2 and 3),
+   weather against the aircraft limits, METAR and TAF, and a recorded GO or NO-GO with a snapshot of every
+   indicator at that moment. Records live in go_nogo_checks (admin and pilot only). A check can start from a
+   synced site assessment, which fills the pin, aircraft, planned altitude and the approved ceiling.
+   Indicators never decide. The RPIC records the decision. */
+var SB_URL = 'https://oaztzgvxxloiesorfjlf.supabase.co', SB_KEY = 'sb_publishable_iYK9cCY1xdqn2hZtPyzczA_oBa56LBN';
+var sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ep-sa-auth' } }) : null;
+var SESSION = null, FLEET = [], ASSESS = [], RECENT = [];
+var REC = null;              // current record { id, fields, checks, faa, log, avwx }
+var W = null, WKEY = '', WBUSY = false, WERR = '', WTIMER = null;
+var FAABUSY = false, FAAERR = '';
+var map = null, pin = null, saveTO = null, saving = false, dirty = false;
+var Q = new URLSearchParams(location.search);
+
+/* Flight-day checks. auto(rec) returns 'na' with a reason when the item does not apply. */
+var CHECKS = [
+  { sec: 'ac', key: 'ac_lights', text: 'Anti-collision lighting fitted and operational', ref: 'Anti-Collision Lighting (SP 29), 14 CFR 107.29' },
+  { sec: 'ac', key: 'ac_guards', text: 'Rotating component shielding fitted (prop guards or equivalent)', ref: 'Light Aircraft Overflight, Rotating Component Shielding (SP 15(d)). Required on that pathway' },
+  { sec: 'ac', key: 'ac_prs', text: 'PRS operational and compliant with ASTM F3322-18 as revised', ref: 'PRS-Equipped Overflight, PRS Operational Status (SP 14(e))',
+    auto: function () { var a = aircraft(); var prs = a ? a.prs_equipped : REC.fields.prsEquipped === 'Yes'; return prs ? null : 'No PRS on this aircraft'; } },
+  { sec: 'air', key: 'air_tfr', text: 'TFRs reviewed, none impacting operations', ref: 'Shapes shown in the FAA lookup are from lookup time. Read each NOTAM.' },
+  { sec: 'air', key: 'air_notam', text: 'NOTAMs reviewed, none affecting operations', ref: 'FAA NOTAM Search' },
+  { sec: 'air', key: 'air_sua', text: 'No restricted, prohibited or special-use airspace conflict', ref: 'FAA lookup lists special use, prohibited and national security airspace at the pin' },
+  { sec: 'air', key: 'air_sp16', text: 'SP 16 NOTAM filed 24 to 72 hours prior and verified issued before flight', ref: 'UASFM Grid Operations, NOTAM Filing (SP 16(a)), 1-877-487-6867',
+    auto: function () { var R = REC.faa; if (R && !R.controlled) return 'Class G at the pin, no SP 16 NOTAM'; return null; } }
+];
+
+function esc(v){ return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._to); t._to=setTimeout(function(){t.style.display='none';},3500); }
+function role(){ return (SESSION && SESSION.user && SESSION.user.app_metadata && SESSION.user.app_metadata.role) || 'viewer'; }
+function allowed(){ var r = role(); return r === 'admin' || r === 'pilot'; }
+function app(){ return document.getElementById('app'); }
+function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
+function stamp(iso){ try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
+function aircraft(){ return REC && REC.fields.aircraftId ? FLEET.filter(function (a) { return a.id === REC.fields.aircraftId; })[0] || null : null; }
+function linked(){ return REC && REC.fields.assessmentId ? ASSESS.filter(function (a) { return a.id === REC.fields.assessmentId; })[0] || REC.fields.assessmentSnap || null : null; }
+function newRec(){ return { id: null, fields: { rpic: SESSION ? SESSION.user.email : '', launchMethod: 'Tactical deployment' }, checks: {}, faa: null, log: [], avwx: null }; }
+
+/* ---------------- Auth ---------------- */
+function renderWho(){
+  document.getElementById('who').textContent = SESSION ? SESSION.user.email + ' (' + role() + ')' : '';
+  document.getElementById('soBtn').style.display = SESSION ? '' : 'none';
+}
+function signInView(){
+  app().innerHTML = '<div class="card" style="max-width:420px;margin:30px auto;"><h2>Sign in</h2><p class="hint" style="margin-bottom:12px;">Use the same account as the other EP drone tools. Go / No-Go is limited to admin and pilot accounts.</p>' +
+    '<label class="f">Email<input id="em" type="email" autocomplete="username"></label><div style="height:10px"></div>' +
+    '<label class="f">Password<input id="pw" type="password" autocomplete="current-password"></label><div style="height:14px"></div>' +
+    '<button class="btn primary" id="siBtn" onclick="doSignIn()">Sign in</button></div>';
+  document.getElementById('pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSignIn(); });
+}
+function doSignIn(){
+  var b = document.getElementById('siBtn'); b.disabled = true;
+  sb.auth.signInWithPassword({ email: document.getElementById('em').value.trim(), password: document.getElementById('pw').value }).then(function (r) {
+    b.disabled = false;
+    if (r.error) { toast(r.error.message); return; }
+    SESSION = r.data.session; renderWho(); boot();
+  });
+}
+function signOut(){ if (!sb) return; sb.auth.signOut().then(function () { SESSION = null; REC = null; renderWho(); signInView(); }); }
+function deniedView(){
+  app().innerHTML = '<div class="card" style="max-width:480px;margin:30px auto;"><h2>Access restricted</h2><p class="hint">Go / No-Go is for admin and pilot (RPIC) accounts. This account is ' + esc(role()) + '. Ask an administrator if this is unexpected.</p>' +
+    '<div class="row" style="margin-top:14px;"><a class="ep-hub-btn" href="index.html"><span class="chev">&#8249;</span>All tools</a><button class="btn" onclick="signOut()">Sign out</button></div></div>';
+}
+
+/* ---------------- Data ---------------- */
+function loadLists(){
+  return Promise.all([
+    sb.from('fleet_aircraft').select('*').order('name').then(function (r) { FLEET = r.error ? [] : (r.data || []); }),
+    sb.from('site_assessments').select('id,site_name,client_name,status,governing_provision,overflight_pathway,max_agl,latitude,longitude,site_address,assess_date,updated_at,payload')
+      .order('updated_at', { ascending: false }).limit(200).then(function (r) { ASSESS = r.error ? [] : (r.data || []); }),
+    loadRecent()
+  ]);
+}
+function loadRecent(){
+  return sb.from('go_nogo_checks').select('id,site_name,decision,decided_at,updated_at,created_by').order('updated_at', { ascending: false }).limit(30)
+    .then(function (r) { RECENT = r.error ? [] : (r.data || []); });
+}
+function openRecord(id){
+  return sb.from('go_nogo_checks').select('*').eq('id', id).single().then(function (r) {
+    if (r.error || !r.data) { toast('Could not open that check'); REC = newRec(); render(); return; }
+    var p = r.data.payload || {};
+    REC = { id: r.data.id, fields: p.fields || {}, checks: p.checks || {}, faa: p.faa || null, log: p.log || [], avwx: p.avwx || null };
+    W = null; WKEY = '';
+    history.replaceState(null, '', '?id=' + REC.id);
+    render(); refreshWx(false);
+  });
+}
+function rowFromRec(){
+  var f = REC.fields, a = aircraft(), last = REC.log[REC.log.length - 1];
+  return {
+    site_name: f.siteName || null, client_name: f.clientName || null,
+    assessment_id: f.assessmentId || null,
+    latitude: num(f.lat), longitude: num(f.lng),
+    aircraft_id: f.aircraftId || null, aircraft_label: a ? a.name : (f.acAsset || null),
+    planned_alt_ft: num(f.plannedAlt) != null ? Math.round(num(f.plannedAlt)) : null,
+    decision: last ? last.decision : null, decided_at: last ? last.at : null, decided_by: last ? last.by : null,
+    payload: { fields: f, checks: REC.checks, faa: REC.faa, log: REC.log, avwx: REC.avwx, v: 1 }
+  };
+}
+function save(now){
+  dirty = true; paintSave();
+  clearTimeout(saveTO);
+  saveTO = setTimeout(flush, now ? 0 : 900);
+}
+function flush(){
+  if (!REC || saving || !dirty) return Promise.resolve();
+  if (!REC.id && !REC.fields.siteName && !REC.fields.lat) return Promise.resolve();   // nothing worth keeping yet
+  saving = true; dirty = false; paintSave();
+  var row = rowFromRec();
+  var q = REC.id ? sb.from('go_nogo_checks').update(row).eq('id', REC.id).select('id').single() : sb.from('go_nogo_checks').insert(row).select('id').single();
+  return q.then(function (r) {
+    saving = false;
+    if (r.error) { dirty = true; paintSave('Save failed: ' + r.error.message); return; }
+    if (!REC.id) { REC.id = r.data.id; history.replaceState(null, '', '?id=' + REC.id); loadRecent().then(paintRecbar); }
+    paintSave();
+    if (dirty) save();
+  });
+}
+function paintSave(msg){
+  var el = document.getElementById('saveState'); if (!el) return;
+  el.textContent = msg || (saving ? 'Saving' : dirty ? 'Unsaved changes' : REC && REC.id ? 'Saved' : 'Not saved yet. Set a site name or pin.');
+}
+
+/* ---------------- Render ---------------- */
+function render(){
+  var f = REC.fields;
+  app().innerHTML =
+    '<div class="card no-print" id="recbar"></div>' +
+    '<div class="card gold"><h2><span class="num">GO</span>Flight conditions now<small id="wxStamp"></small></h2><div id="gngBody"></div></div>' +
+    '<div class="card"><h2><span class="num">1</span>Site</h2><div id="siteBody"></div></div>' +
+    '<div class="card"><h2><span class="num">2</span>Aircraft &amp; equipment</h2><div id="acBody"></div></div>' +
+    '<div class="card"><h2><span class="num">3</span>Airspace &amp; regulatory</h2><div id="airBody"></div></div>' +
+    '<div class="card"><h2><span class="num">WX</span>Weather at the site</h2><div id="wxBody"></div></div>' +
+    '<div class="card"><h2><span class="num">WX</span>Aviation weather: METAR and TAF</h2><div id="avwxBody"></div></div>';
+  paintRecbar(); paintSite(); paintAc(); paintAir(); paintAll();
+}
+function paintRecbar(){
+  var el = document.getElementById('recbar'); if (!el) return;
+  var opts = '<option value="">Start from a site assessment (optional)</option>' + ASSESS.map(function (a) {
+    return '<option value="' + a.id + '"' + (REC.fields.assessmentId === a.id ? ' selected' : '') + '>' + esc((a.site_name || 'Unnamed site') + (a.client_name ? ', ' + a.client_name : '') + ' (' + statusLabel(a.status) + ')') + '</option>';
+  }).join('');
+  var recent = '<option value="">Open a recent check</option>' + RECENT.map(function (x) {
+    return '<option value="' + x.id + '"' + (REC.id === x.id ? ' selected' : '') + '>' + esc((x.site_name || 'Unnamed') + ', ' + stamp(x.updated_at || x.created_at) + (x.decision ? ', ' + x.decision : '')) + '</option>';
+  }).join('');
+  el.innerHTML = '<div class="recbar">' +
+    '<label class="f">Site assessment<select id="asSel" onchange="pickAssessment(this.value)">' + opts + '</select></label>' +
+    '<label class="f">Saved checks<select onchange="if(this.value) openRecord(this.value)">' + recent + '</select></label>' +
+    '<button class="btn gold" onclick="startNew()">New check</button></div>' +
+    '<div class="row" style="margin-top:8px;justify-content:space-between;"><span class="savestate" id="saveState"></span>' +
+    (REC.id ? '<span class="hint">Record ' + esc(REC.id.slice(0, 8)) + '</span>' : '') + '</div>';
+  paintSave();
+}
+function statusLabel(s){ return { draft: 'draft', approved_with_conditions: 'approved with conditions', needs_program_review: 'needs program review', not_approved: 'not approved' }[s] || s || 'unknown'; }
+function startNew(){
+  if (REC && REC.id && dirty) flush();
+  REC = newRec(); W = null; WKEY = '';
+  history.replaceState(null, '', location.pathname);
+  render();
+}
+function pickAssessment(id){
+  if (!id) { REC.fields.assessmentId = ''; REC.fields.assessmentSnap = null; save(); paintSite(); paintAll(); return; }
+  var a = ASSESS.filter(function (x) { return x.id === id; })[0]; if (!a) return;
+  var af = (a.payload && a.payload.fields) || {}, f = REC.fields;
+  f.assessmentId = a.id;
+  f.assessmentSnap = { id: a.id, site_name: a.site_name, status: a.status, governing_provision: a.governing_provision, overflight_pathway: a.overflight_pathway, max_agl: a.max_agl, updated_at: a.updated_at };
+  f.siteName = a.site_name || af.siteName || f.siteName || '';
+  f.clientName = a.client_name || af.clientName || f.clientName || '';
+  f.address = a.site_address || af.mapAddress || f.address || '';
+  var lat = a.latitude != null ? a.latitude : num(af.mapLat), lng = a.longitude != null ? a.longitude : num(af.mapLng);
+  if (af.launchMethod) f.launchMethod = af.launchMethod;
+  if (af.plannedAlt) f.plannedAlt = af.plannedAlt;
+  if (af.acAircraftId) f.aircraftId = af.acAircraftId;
+  ['acAsset', 'acReg', 'mtow', 'prsEquipped'].forEach(function (k) { if (af[k]) f[k] = af[k]; });
+  if (af.uasfmOps) f.uasfmOps = af.uasfmOps;
+  render();
+  if (lat != null && lng != null) setPin(Number(lat), Number(lng), true); else save();
+  toast('Loaded from the site assessment');
+}
+
+/* ---- 0. Site ---- */
+function fText(k, label, ph, type){ return '<label class="f">' + label + '<input type="' + (type || 'text') + '" data-k="' + k + '" value="' + esc(REC.fields[k] || '') + '" placeholder="' + esc(ph || '') + '"></label>'; }
+function fSel(k, label, opts){ return '<label class="f">' + label + '<select data-k="' + k + '"><option value=""></option>' + opts.map(function (o) { return '<option' + (REC.fields[k] === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select></label>'; }
+function bind(root){
+  root.querySelectorAll('[data-k]').forEach(function (el) {
+    var ev = el.tagName === 'SELECT' ? 'change' : 'input';
+    el.addEventListener(ev, function () {
+      REC.fields[el.dataset.k] = el.value; save();
+      if (/plannedAlt|windLimit|launchMethod|prsEquipped|acAsset/.test(el.dataset.k)) { paintAll(); if (el.dataset.k === 'prsEquipped') paintAc(); }
+    });
+  });
+}
+function paintSite(){
+  var f = REC.fields, a = linked(), el = document.getElementById('siteBody'); if (!el) return;
+  el.innerHTML =
+    '<div class="grid2">' + fText('siteName', 'Site name or ID') + fText('clientName', 'Client / agency') + '</div>' +
+    '<div class="sub">Location</div>' +
+    '<div class="search no-print"><input id="q" type="text" placeholder="Address, or latitude, longitude" value="' + esc(f.address || '') + '"><button class="btn primary" onclick="findQuery()">Find</button><button class="btn" onclick="locateMe()">My location</button></div>' +
+    '<div id="map"></div>' +
+    '<div class="hint" id="pinHint" style="margin-top:6px;">' + (f.lat ? 'Pin ' + Number(f.lat).toFixed(5) + ', ' + Number(f.lng).toFixed(5) + '. ' : 'Tap the map to drop the pin. ') + 'Drag the pin to adjust. Layers: UASFM grid, controlled and special use airspace, no-fly zones, TFRs, stadiums.</div>' +
+    '<div class="grid3" style="margin-top:12px;">' + fText('rpic', 'RPIC') + fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment']) +
+      fText('plannedAlt', 'Planned altitude (ft AGL)', 'e.g. 150', 'number') + '</div>' +
+    (a ? '<div class="linked">Site assessment: <b>' + esc(a.site_name || '') + '</b>, ' + esc(statusLabel(a.status)) +
+      (a.governing_provision ? '. ' + esc(a.governing_provision) : '') + (a.max_agl ? '. Approved ceiling <b>' + esc(a.max_agl) + ' ft AGL</b>' : '') +
+      (a.overflight_pathway ? '. ' + esc(a.overflight_pathway) : '') + '.</div>' : '<p class="hint" style="margin-top:10px;">No site assessment linked. Pick one above to check the planned altitude against its approved ceiling.</p>');
+  bind(el);
+  document.getElementById('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); findQuery(); } });
+  initMap();
+}
+function initMap(){
+  if (!window.L) { document.getElementById('map').innerHTML = '<div class="hint" style="padding:14px;">Map did not load. Enter coordinates in the search box.</div>'; return; }
+  if (map) { map.remove(); map = null; pin = null; }
+  var f = REC.fields, has = f.lat && f.lng;
+  map = L.map('map', { center: has ? [Number(f.lat), Number(f.lng)] : [35.85, -86.39], zoom: has ? 14 : 9 });
+  var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
+  if (window.EPFAAMap) EPFAAMap.attach(map, { base: osm, collapsed: true });
+  map.on('click', function (e) { setPin(e.latlng.lat, e.latlng.lng, false); });
+  if (has) placeMarker(Number(f.lat), Number(f.lng));
+}
+function pinIcon(){ return L.divIcon({ className: '', html: '<div style="width:22px;height:22px;background:#FCC00E;border:3px solid #164998;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }); }
+function placeMarker(lat, lng){
+  if (!map) return;
+  if (!pin) { pin = L.marker([lat, lng], { draggable: true, icon: pinIcon(), zIndexOffset: 1000 }).addTo(map); pin.on('dragend', function () { var p = pin.getLatLng(); setPin(p.lat, p.lng, false); }); }
+  else pin.setLatLng([lat, lng]);
+}
+function setPin(lat, lng, fly){
+  REC.fields.lat = lat.toFixed(6); REC.fields.lng = lng.toFixed(6);
+  placeMarker(lat, lng);
+  if (fly && map) map.setView([lat, lng], Math.max(map.getZoom(), 14));
+  var h = document.getElementById('pinHint'); if (h) h.innerHTML = 'Pin ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '. Drag the pin to adjust. Layers: UASFM grid, controlled and special use airspace, no-fly zones, TFRs, stadiums.';
+  save();
+  if (!REC.fields.address) reverseGeo(lat, lng);
+  runFaa(); refreshWx(true);
+}
+function reverseGeo(lat, lng){
+  fetch('https://nominatim.openstreetmap.org/reverse?format=json&zoom=17&lat=' + lat + '&lon=' + lng, { headers: { 'Accept-Language': 'en' } })
+    .then(function (r) { return r.json(); }).then(function (d) { if (d && d.display_name && !REC.fields.address) { REC.fields.address = d.display_name; var q = document.getElementById('q'); if (q) q.value = d.display_name; save(); } }).catch(function () {});
+}
+function findQuery(){
+  var q = document.getElementById('q').value.trim(); if (!q) { toast('Enter an address or coordinates'); return; }
+  var m = q.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
+  if (m) { setPin(parseFloat(m[1]), parseFloat(m[2]), true); return; }
+  REC.fields.address = q;
+  fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=' + encodeURIComponent(q), { headers: { 'Accept-Language': 'en' } })
+    .then(function (r) { return r.ok ? r.json() : null; }).then(function (a) {
+      if (!a || !a.length) { toast('No match for that address'); return; }
+      setPin(parseFloat(a[0].lat), parseFloat(a[0].lon), true);
+    }).catch(function () { toast('Address lookup failed'); });
+}
+function locateMe(){
+  if (!navigator.geolocation) { toast('Geolocation is not available'); return; }
+  toast('Getting location');
+  navigator.geolocation.getCurrentPosition(function (p) { setPin(p.coords.latitude, p.coords.longitude, true); }, function (e) { toast('Location error: ' + e.message); }, { enableHighAccuracy: true, timeout: 15000 });
+}
+
+/* ---- 2. Aircraft ---- */
+function yn(v){ return v === true ? 'Yes' : v === false ? 'No' : 'Not recorded'; }
+function paintAc(){
+  var el = document.getElementById('acBody'); if (!el) return;
+  var a = aircraft(), f = REC.fields;
+  var sel = '<label class="f">Aircraft<select id="acSel"><option value="">Not in the fleet list</option>' + FLEET.map(function (x) {
+    return '<option value="' + x.id + '"' + (f.aircraftId === x.id ? ' selected' : '') + '>' + esc(x.name + (x.model ? ', ' + x.model : '') + (x.status !== 'active' ? ' (' + x.status.replace(/_/g, ' ') + ')' : '') + (x.is_test ? ' [test]' : '')) + '</option>';
+  }).join('') + '</select></label>';
+  var info = a ? '<div class="acinfo">' +
+      '<div><span>Registration</span>' + esc(a.faa_registration || 'n/a') + '</div><div><span>MTOW</span>' + (a.mtow_lb != null ? esc(a.mtow_lb) + ' lb' : 'n/a') + '</div>' +
+      '<div><span>PRS</span>' + yn(a.prs_equipped) + (a.prs_model ? ', ' + esc(a.prs_model) : '') + '</div><div><span>Prop guards</span>' + yn(a.prop_guards) + '</div>' +
+      '<div><span>Anti-collision lights</span>' + yn(a.anti_collision_lighting) + '</div><div><span>Wind limit</span>' + (a.wind_limit_mph != null ? esc(a.wind_limit_mph) + ' mph' : 'Not set') + '</div>' +
+      '<div><span>Temperature range</span>' + (a.temp_min_f != null || a.temp_max_f != null ? esc(a.temp_min_f != null ? a.temp_min_f : '?') + ' to ' + esc(a.temp_max_f != null ? a.temp_max_f : '?') + ' &deg;F' : 'Not set') + '</div>' +
+      '<div><span>Status</span>' + esc((a.status || '').replace(/_/g, ' ')) + (a.is_test ? ', test record' : '') + '</div></div>'
+    : '<div class="grid2" style="margin-top:10px;">' + fText('acAsset', 'Asset designation', 'e.g. Alpha 1') + fText('acReg', 'FAA registration number') +
+      fText('mtow', 'MTOW, all attachments (lb)', '', 'number') + fSel('prsEquipped', 'PRS equipped', ['Yes', 'No']) + '</div>';
+  var wl = (!a || a.wind_limit_mph == null) ? '<div class="grid3" style="margin-top:10px;">' + fText('windLimit', 'Wind limit (mph)', 'From the aircraft manual', 'number') + '</div>' : '';
+  el.innerHTML = sel + info + wl + '<div class="sub">Flight-day checks</div>' + checksHTML('ac');
+  document.getElementById('acSel').addEventListener('change', function () { REC.fields.aircraftId = this.value; save(); paintAc(); paintAll(); });
+  bind(el); bindChecks(el);
+}
+
+/* ---- 3. Airspace ---- */
+function paintAir(){
+  var el = document.getElementById('airBody'); if (!el) return;
+  var R = REC.faa, f = REC.fields;
+  var moved = R && f.lat && EPFAA.distMi(Number(f.lat), Number(f.lng), R.lat, R.lng) > 0.02;
+  var head = '<div class="row" style="justify-content:space-between;"><span class="hint">' + (FAABUSY ? 'Looking up FAA airspace at the pin' : R ? 'FAA lookup ' + stamp(R.at) + (moved ? '. <b style="color:var(--ep-warn)">The pin moved. Run it again.</b>' : '') : (FAAERR ? 'FAA lookup failed: ' + esc(FAAERR) : f.lat ? 'Not looked up yet' : 'Set the pin to look up the airspace')) + '</span>' +
+    '<button class="btn sm no-print" onclick="runFaa()"' + (FAABUSY || !f.lat ? ' disabled' : '') + '>Run lookup</button></div>';
+  var body = R && window.EPFAA ? '<div class="blk">' + EPFAA.renderHTML(R) + '</div>' +
+    '<div class="acinfo"><div style="grid-column:1/-1"><span>Authorization basis</span>' + (R.controlled ? 'At or below the UASFM grid: SP 16 with a NOTAM. Above it: separate ATC authorization (LAANC may not be used for waivered operations)' : 'Class G, none required') + '</div></div>' +
+    '<div class="no-print"><a class="faa-btn" href="' + EPFAA.links.notam + '" target="_blank" rel="noopener">NOTAM search</a><a class="faa-btn" href="' + EPFAA.links.tfr + '" target="_blank" rel="noopener">TFR list</a></div>' : '';
+  el.innerHTML = head + body + '<div class="sub">Flight-day checks</div>' + checksHTML('air');
+  bindChecks(el);
+}
+function runFaa(){
+  var f = REC.fields; if (!window.EPFAA || !f.lat) return;
+  FAABUSY = true; FAAERR = ''; paintAir();
+  EPFAA.lookup(Number(f.lat), Number(f.lng)).then(function (R) { REC.faa = R; save(); }, function (e) { FAAERR = e.message || 'failed'; })
+    .then(function () { FAABUSY = false; paintAir(); paintAll(); });
+}
+
+/* ---- Checks ---- */
+function checkState(c){ var why = c.auto ? c.auto() : null; if (why && REC.checks[c.key] !== 'yes') return { s: 'na', why: why, auto: true }; return { s: REC.checks[c.key] || '' }; }
+function checksHTML(sec){
+  return '<div class="checks">' + CHECKS.filter(function (c) { return c.sec === sec; }).map(function (c) {
+    var st = checkState(c);
+    return '<div class="chk"><div>' + esc(c.text) + '<span class="ref">' + esc(c.ref) + '</span>' + (st.auto ? '<span class="auto">N/A: ' + esc(st.why) + '</span>' : '') + '</div>' +
+      '<div class="st"><button data-c="' + c.key + '" data-v="yes" class="' + (st.s === 'yes' ? 'on yes' : '') + '">YES</button><button data-c="' + c.key + '" data-v="na" class="' + (st.s === 'na' ? 'on na' : '') + '">N/A</button></div></div>';
+  }).join('') + '</div>';
+}
+function bindChecks(root){
+  root.querySelectorAll('.st button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.dataset.c, v = b.dataset.v;
+      REC.checks[k] = REC.checks[k] === v ? '' : v;
+      var c = CHECKS.filter(function (x) { return x.key === k; })[0];
+      save(); if (c.sec === 'ac') paintAc(); else paintAir(); paintAll();
+    });
+  });
+}
+function openChecks(){ return CHECKS.filter(function (c) { return !checkState(c).s; }); }
+
+/* ---------------- Indicators ---------------- */
+function windLimit(){ var a = aircraft(); if (a && a.wind_limit_mph != null) return Number(a.wind_limit_mph); return num(REC.fields.windLimit); }
+function gngItems(){
+  var items = [], f = REC.fields, a = aircraft(), L = linked(), R = REC.faa, alt = num(f.plannedAlt);
+  // Site assessment
+  if (!L) items.push({ key: 'site', label: 'Site assessment', level: 'warn', value: 'None linked', detail: 'Link the approved site assessment for this site.' });
+  else items.push({ key: 'site', label: 'Site assessment', level: L.status === 'approved_with_conditions' ? 'ok' : L.status === 'not_approved' ? 'no' : 'warn',
+    value: statusLabel(L.status), detail: L.status === 'approved_with_conditions' ? 'Follow its conditions.' : L.status === 'not_approved' ? 'The site is not approved for operations.' : 'The assessment is not approved yet.' });
+  // Planned altitude
+  if (alt == null) items.push({ key: 'alt', label: 'Planned altitude', level: 'warn', value: 'Not set', detail: 'Enter the planned altitude in part 1. Wind at altitude uses it.' });
+  else {
+    var cap = [], lvl = 'ok';
+    if (L && L.max_agl) { cap.push('approved ceiling ' + L.max_agl + ' ft'); if (alt > Number(L.max_agl)) lvl = 'no'; }
+    if (R && R.controlled && R.grid) { cap.push('UASFM grid ' + R.grid.ceiling + ' ft'); if (alt > R.grid.ceiling) lvl = 'no'; }
+    items.push({ key: 'alt', label: 'Planned altitude', level: lvl, value: alt + ' ft AGL', detail: lvl === 'no' ? 'Above the ' + cap.join(' and ') + '.' : cap.length ? 'Within the ' + cap.join(' and ') + '.' : '' });
+  }
+  // Airspace
+  if (!R) items.push({ key: 'faa', label: 'Airspace', level: 'warn', value: f.lat ? 'No FAA lookup yet' : 'No pin', detail: 'Set the pin and run the lookup in part 3.' });
+  else {
+    var moved = f.lat && EPFAA.distMi(Number(f.lat), Number(f.lng), R.lat, R.lng) > 0.02;
+    var st = R.status, lv = moved ? 'no' : (st === 'stop' || st === 'partial') ? 'no' : st === 'warn' ? 'warn' : 'ok';
+    items.push({ key: 'faa', label: 'Airspace', level: lv, value: EPFAA.summaryLine(R), detail: moved ? 'The pin moved after the lookup. Run it again.' : st === 'partial' ? 'The lookup was incomplete. Run it again.' : 'Looked up ' + stamp(R.at) + '.' });
+    var inT = (R.tfrs || []).filter(function (t) { return t.inside; });
+    items.push({ key: 'tfr', label: 'TFRs', level: !R.tfrChecked ? 'warn' : inT.length ? 'warn' : 'ok', value: !R.tfrChecked ? 'Not checked' : inT.length ? 'Inside ' + inT.map(function (t) { return t.notam; }).join(', ') : 'None at the site',
+      detail: inT.length ? 'Read each NOTAM for times, altitudes and whether UAS are restricted.' : '' });
+  }
+  // Aircraft
+  if (a) items.push({ key: 'ac', label: 'Aircraft', level: a.status !== 'active' ? 'no' : a.is_test ? 'warn' : 'ok', value: a.name + (a.model ? ', ' + a.model : ''),
+    detail: a.status !== 'active' ? 'Fleet record shows ' + a.status.replace(/_/g, ' ') + '.' : a.is_test ? 'Test record, not for operational use.' : '' });
+  else items.push({ key: 'ac', label: 'Aircraft', level: 'warn', value: f.acAsset || 'Not selected', detail: 'Pick the aircraft in part 2 so its limits apply.' });
+  // Flight-day checks
+  var open = openChecks();
+  items.push({ key: 'checks', label: 'Flight-day checks', level: open.length ? 'no' : 'ok', value: open.length ? open.length + ' open' : 'All complete',
+    detail: open.length ? open.map(function (c) { return c.text; }).join('; ') : '' });
+  // Weather
+  if (W) items = items.concat(EPWX.evaluate(W, { plannedAltFt: alt, windLimit: windLimit(), tempMin: a ? a.temp_min_f : null, tempMax: a ? a.temp_max_f : null, lights: a ? a.anti_collision_lighting : null }));
+  else items.push({ key: 'wx', label: 'Weather', level: 'warn', value: WBUSY ? 'Loading' : f.lat ? (WERR ? 'Failed: ' + WERR : 'Not loaded') : 'No pin', detail: '' });
+  return items;
+}
+function overall(items){ return items.some(function (x) { return x.level === 'no'; }) ? 'no' : items.some(function (x) { return x.level === 'warn'; }) ? 'warn' : 'ok'; }
+function paintGng(){
+  var el = document.getElementById('gngBody'); if (!el) return;
+  var items = gngItems(), o = overall(items), last = REC.log[REC.log.length - 1];
+  var keep = document.activeElement && document.activeElement.id === 'reason' ? document.activeElement.value : null;
+  el.innerHTML = '<div class="verdict ' + o + '"><span class="dot"></span>' + (o === 'no' ? 'NO-GO indicated' : o === 'warn' ? 'Caution: review the flagged items' : 'No limiting conditions found') + '</div>' +
+    (window.EPWX ? EPWX.itemsHTML(items) : '') +
+    '<div class="decide no-print"><button class="btn go" onclick="record(\'GO\')"' + (o === 'no' || !W ? ' disabled title="Clear every red item first"' : '') + '>Record GO</button>' +
+    '<button class="btn nogo" onclick="record(\'NO-GO\')">Record NO-GO</button>' +
+    '<input type="text" id="reason" placeholder="Reason or conditions (required for NO-GO)"></div>' +
+    (last && last.decision === 'GO' ? '<div class="row no-print" style="margin-top:10px;"><a class="btn primary" href="launch-checklist.html?site=' + encodeURIComponent(REC.fields.siteName || '') + (REC.fields.aircraftId ? '&aircraft=' + encodeURIComponent(REC.fields.aircraftId) : '') + '">Open the launch checklist</a></div>' : '') +
+    (REC.log.length ? '<div class="log">' + REC.log.slice().reverse().map(function (x) {
+      return '<div class="' + (x.decision === 'GO' ? 'go' : 'nogo') + '"><b>' + esc(x.decision) + '</b> by ' + esc(x.by) + ', ' + esc(stamp(x.at)) + (x.reason ? ': ' + esc(x.reason) : '') +
+        ' <span class="hint">(' + x.items.filter(function (i) { return i.level !== 'ok'; }).length + ' flagged at the time' + (x.metar ? ', METAR kept' : '') + ')</span></div>';
+    }).join('') + '</div>' : '') +
+    '<p class="hint" style="margin-top:10px;">Indicators only. The RPIC makes the decision. Each GO or NO-GO keeps a snapshot of these indicators and the nearest METAR and TAF.</p>';
+  if (keep !== null) { var r = document.getElementById('reason'); r.value = keep; r.focus(); }
+  var ws = document.getElementById('wxStamp'); if (ws) ws.textContent = WBUSY ? 'Loading weather' : W ? 'Weather ' + stamp(W.at) : '';
+}
+function record(decision){
+  var reason = (document.getElementById('reason') || {}).value || '';
+  if (decision === 'NO-GO' && !reason.trim()) { toast('Enter the reason for NO-GO'); return; }
+  var items = gngItems();
+  if (decision === 'GO' && overall(items) === 'no') { toast('Clear every red item before recording GO'); return; }
+  REC.log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(), by: SESSION.user.email, alt: num(REC.fields.plannedAlt), windLimit: windLimit(),
+    aircraft: (aircraft() || {}).name || REC.fields.acAsset || '',
+    metar: W && W.metars && W.metars[0] ? W.metars[0].rawOb || '' : '', taf: W && W.tafs && W.tafs[0] ? W.tafs[0].rawTAF || '' : '',
+    items: items.map(function (x) { return { label: x.label, level: x.level, value: x.value }; }) });
+  save(true); paintGng(); toast(decision + ' recorded');
+}
+
+/* ---------------- Weather ---------------- */
+function refreshWx(force){
+  var f = REC.fields; if (!window.EPWX || !f.lat) { paintAll(); return; }
+  var key = Number(f.lat).toFixed(4) + ',' + Number(f.lng).toFixed(4);
+  var fresh = W && WKEY === key && Date.now() - Date.parse(W.at) < 10 * 60 * 1000;
+  if ((fresh && !force) || WBUSY) { paintAll(); return; }
+  WBUSY = true; WERR = ''; paintAll();
+  EPWX.fetchAll(Number(f.lat), Number(f.lng)).then(function (w) { W = w; WKEY = key; keepAvwx(w); }, function (e) { WERR = e.message || 'failed'; })
+    .then(function () { WBUSY = false; paintAll(); });
+  clearInterval(WTIMER);
+  WTIMER = setInterval(function () { if (REC && REC.fields.lat) refreshWx(true); }, 10 * 60 * 1000);
+}
+function keepAvwx(w){
+  if (w.metars === null || w.tafs === null) return;
+  var snap = EPWX.avwxSnapshot(w), prev = REC.avwx;
+  var sig = function (x) { return x ? (x.metars || []).map(function (m) { return m.raw; }).join('|') + '#' + (x.tafs || []).map(function (t) { return t.raw; }).join('|') : ''; };
+  if (sig(snap) !== sig(prev)) { REC.avwx = snap; save(); }
+}
+function paintWx(){
+  var el = document.getElementById('wxBody'), el2 = document.getElementById('avwxBody'); if (!el) return;
+  var f = REC.fields, refresh = ' <button class="btn sm no-print" onclick="refreshWx(true)"' + (WBUSY || !f.lat ? ' disabled' : '') + '>Refresh</button>';
+  if (!f.lat) { el.innerHTML = el2.innerHTML = '<p class="hint">Set the pin in part 1 to load the weather.</p>'; return; }
+  if (!W) {
+    el.innerHTML = '<p class="hint">' + (WBUSY ? 'Loading weather' : WERR ? 'Weather failed: ' + esc(WERR) : 'Not loaded') + refresh + '</p>';
+    el2.innerHTML = REC.avwx ? '<p class="hint">Showing the reports saved with this check on ' + esc(stamp(REC.avwx.at)) + '.' + refresh + '</p>' + EPWX.avwxSnapshotHTML(REC.avwx) : el.innerHTML;
+    return;
+  }
+  var lim = windLimit(), alt = num(f.plannedAlt);
+  el.innerHTML = '<div class="row" style="justify-content:space-between;"><span class="hint">Forecast model data for the pin, updated ' + esc(stamp(W.at)) + '. Wind limit ' + (lim != null ? lim + ' mph' : 'not set') + '.</span>' + refresh + '</div>' +
+    '<div class="blk">' + EPWX.tilesHTML(W, lim, alt) + '</div>' +
+    '<div class="blk"><div class="sub">Next 12 hours</div>' + EPWX.hoursHTML(W, lim, 12) + '</div>' +
+    '<div class="blk"><div class="sub">Weather alerts</div>' + EPWX.alertsHTML(W) + '</div>' +
+    '<div class="blk"><div class="sub">Sun</div>' + EPWX.sunHTML(W) + '</div>';
+  el2.innerHTML = '<div class="row" style="justify-content:space-between;"><span class="hint">Nearest reporting airports to the pin.</span>' + refresh + '</div>' +
+    '<div class="blk"><div class="sub">METAR: observed now</div>' + EPWX.metarsHTML(W) + '</div>' +
+    '<div class="blk"><div class="sub">TAF: terminal forecast</div>' + EPWX.tafsHTML(W) + '</div>' +
+    '<p class="hint" style="margin-top:8px;">The raw METAR and TAF text is saved with this check whenever it changes.</p>';
+}
+function paintAll(){ paintGng(); paintWx(); }
+
+/* ---------------- Boot ---------------- */
+function boot(){
+  if (!allowed()) { deniedView(); return; }
+  app().innerHTML = '<div class="card"><div class="hint">Loading fleet, site assessments and saved checks</div></div>';
+  loadLists().then(function () {
+    var id = Q.get('id'), as = Q.get('assessment');
+    if (id) return openRecord(id);
+    REC = newRec(); render();
+    if (as) pickAssessment(as);
+  });
+}
+window.addEventListener('beforeunload', function (e) { if (dirty) { flush(); e.preventDefault(); e.returnValue = ''; } });
+if (!sb) app().innerHTML = '<div class="card"><p class="hint">The sign-in library did not load. Check the connection and reload.</p></div>';
+else sb.auth.getSession().then(function (r) {
+  SESSION = r.data && r.data.session; renderWho();
+  if (!SESSION) signInView(); else boot();
+});
+</script>
+</body>
+</html>

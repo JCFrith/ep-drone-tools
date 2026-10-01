@@ -17,7 +17,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
 <script src="ep-faa-airspace.js"></script>
 <script src="ep-faa-map.js"></script>
-<script src="ep-flight-wx.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
@@ -201,19 +200,7 @@ body{font-family:'Gotham Book', 'Montserrat',-apple-system,BlinkMacSystemFont,sa
 .walk-nav{display:flex;justify-content:space-between;margin-top:12px;}
 .dictate-btn{position:fixed;right:14px;bottom:86px;z-index:2500;display:none;font:700 0.72rem 'Montserrat',sans-serif;letter-spacing:0.06em;text-transform:uppercase;padding:12px 16px;border-radius:24px;border:1px solid var(--ep-blue);background:var(--ep-dark-blue);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,0.4);cursor:pointer;}
 .dictate-btn.live{background:#E5484D;border-color:#E5484D;}
-.gng-section{border-color:rgba(252,192,14,0.45)!important;}
-.gng-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
-.gng-meta{font-size:0.72rem;color:var(--ep-gray);display:flex;align-items:center;gap:8px;}
-.gng-limits{font-size:0.8rem;margin-bottom:6px;color:#d7e3ee;}
-.gng-more{margin-top:10px;font-size:0.82rem;} .gng-more summary{cursor:pointer;color:var(--ep-blue);font-weight:700;padding:6px 0;}
-.gng-block{margin-top:12px;}
-.gng-decide{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px;}
-.gng-decide input{flex:1 1 220px;min-width:0;}
-.gng-go{background:#30A46C;color:#fff;} .gng-go:disabled{opacity:0.4;cursor:not-allowed;}
-.gng-nogo{background:#E5484D;color:#fff;}
-.gng-log{margin-top:10px;font-size:0.78rem;} .gng-log div{padding:5px 8px;border-left:3px solid #30A46C;margin-bottom:4px;background:rgba(255,255,255,0.03);} .gng-log div.nogo{border-color:#E5484D;}
-.gng-chip{font-size:0.62rem;font-weight:700;letter-spacing:0.08em;padding:2px 7px;border-radius:4px;margin-left:8px;vertical-align:2px;}
-.gng-chip.ok{background:#30A46C;color:#fff;} .gng-chip.warn{background:#F5A524;color:#091520;} .gng-chip.no{background:#E5484D;color:#fff;}
+.gng-link{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 16px;margin:0 0 16px;border:1px solid rgba(252,192,14,0.45);border-radius:6px;background:rgba(252,192,14,0.05);font-size:0.84rem;line-height:1.5;}
 .layout-bar{font-size:0.78rem;color:var(--ep-gray);margin:0 0 12px;}
 .layout-bar a{color:var(--ep-blue);margin-left:6px;}
 .part-sub{font-size:0.66rem;letter-spacing:0;text-transform:none;color:var(--ep-gray);font-family:'Montserrat',sans-serif;font-weight:400;margin-top:2px;}
@@ -624,7 +611,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 // ============================================================
 const COW_REF = 'CoW 107W-2026-01762, effective 13 AUG 2026 to 31 JAN 2030';
 const COW_PRIOR = 'CoW 107W-2025-04534, effective 14 JAN 2026 to 31 JAN 2030';
-const TOOL_VER = '8.8';
+const TOOL_VER = '8.9';
 const BUILD_DATE = '2026-10-01';
 
 // ── INDEXEDDB ──────────────────────────────────────────────
@@ -943,7 +930,6 @@ function renderVersionStamp(){
   if (p) p.textContent = 'Tool v' + TOOL_VER + '  /  Built ' + BUILD_DATE + '  /  Rules v' + live + (remote ? ' (server)' : ' (embedded)');
 }
 function renderApproval(){
-  if (typeof gngPaint === 'function' && document.getElementById('gngBody') && !(document.activeElement && document.activeElement.dataset && document.activeElement.dataset.field === 'gngWindLimit')) { clearTimeout(window._gngTO); window._gngTO = setTimeout(gngPaint, 250); }
   var el=document.getElementById('apprPanel');
   if(!el) return;
   var r=evaluateRules();
@@ -1501,8 +1487,6 @@ function renderRecap() {
   html += item('Launch method', f.launchMethod);
   const faaR = faaData();
   html += item('FAA airspace', faaR && window.EPFAA ? EPFAA.summaryLine(faaR) : 'No lookup', faaR && (faaR.status === 'stop' || f.faaCheck === 'stale' || f.faaCheck === 'mismatch'));
-  const gLast = gngLog().slice(-1)[0];
-  html += item('Last go / no-go', gLast ? gLast.decision + ', ' + localStamp(gLast.at) : 'None recorded', gLast && gLast.decision !== 'GO');
   html += item('Governing provision', d.ready ? d.provName : 'Not yet determined');
   html += item('Max altitude', d.ready && d.agl !== null ? d.agl + ' ft AGL' : 'Not set');
   html += item('Planned altitude', plannedAlt !== null ? plannedAlt + ' ft AGL' : 'Not set', overCeiling);
@@ -1729,7 +1713,7 @@ function renderFullSections() {
       ' <button class="action-btn no-print" style="padding:4px 10px;font-size:0.72rem;margin-left:6px;" onclick="openRejectPanel()">Send back to ground crew</button>';
     main.appendChild(b);
   }
-  if (!isAgp()) { main.appendChild(gngSectionEl()); main.appendChild(avwxSectionEl()); setTimeout(function () { gngFetch(false); }, 50); }
+  if (!isAgp()) main.appendChild(gngLinkEl());
   if (layoutMode() === 'streamlined') {
     renderStreamlined(main);
     buildOwners(); renderVersionStamp(); renderLegacyBanner(); updateProgress(); renderDetermination(); renderApproval();
@@ -2229,7 +2213,6 @@ async function faaRun(manual) {
   faaApply(false);
   save();
   faaAfter();
-  if (document.getElementById('gngBody')) gngFetch(false);
   if (R.status === 'stop') showToast('FAA data shows a restriction at this site', true);
   else showToast('FAA airspace: ' + EPFAA.summaryLine(R));
   if (FAA_AGAIN) { FAA_AGAIN = false; faaQueue(); }
@@ -2630,152 +2613,16 @@ function stampImage(dataUrl, lines) {
 })();
 
 /* ============================================================
-   GO / NO-GO: flight conditions now, for the RPIC
-   Airspace, TFRs, site approval, weather against the aircraft limits,
-   daylight and alerts in one panel. Indicators never decide; the RPIC
-   records GO or NO-GO, and each decision keeps a snapshot of what the
-   indicators showed at that moment. None of this changes site approval.
+   FLIGHT DAY: Go / No-Go lives in its own tool (go-no-go.html).
+   This bar opens it with this assessment loaded once it is synced.
    ============================================================ */
-var GNG = { key: '', W: null, busy: false, err: '', timer: null };
-function gngAircraft() { return fleetById(S.fields.acAircraftId); }
-function gngWindLimit() { var a = gngAircraft(); if (a && a.wind_limit_mph != null) return Number(a.wind_limit_mph); var v = parseFloat(S.fields.gngWindLimit); return isNaN(v) ? null : v; }
-function gngAlt() { var p = num(S.fields.plannedAlt); if (p !== null) return p; var d = classify(); return d.ready && d.agl ? d.agl : null; }
-function gngLog() { try { return JSON.parse(S.fields.gngLog || '[]'); } catch (e) { return []; } }
-function gngItems() {
-  var items = [], a = gngAircraft();
-  var r = evaluateRules(), D = RULES.decisions;
-  items.push({ key: 'site', label: 'Site approval', level: r.decision === D.notApproved ? 'no' : r.decision === D.needsProgramReview ? 'warn' : 'ok', value: r.decision,
-    detail: r.failed.length ? r.failed.length + ' blocking item(s) in the approval panel below.' : '' });
-  var R = faaData(), fs = S.fields.faaStatus, fc = S.fields.faaCheck;
-  if (!R) items.push({ key: 'faa', label: 'Airspace', level: 'warn', value: 'No FAA lookup on record', detail: 'Set the site location or run the lookup in Section 3.' });
-  else {
-    var lvl = (fs === 'stop' || fs === 'partial' || fc === 'stale' || fc === 'mismatch') ? 'no' : fs === 'warn' ? 'warn' : 'ok';
-    items.push({ key: 'faa', label: 'Airspace', level: lvl, value: window.EPFAA ? EPFAA.summaryLine(R) : '', detail: fc === 'stale' ? 'The pin moved after the lookup. Re-run it.' : ('Looked up ' + localStamp(R.at) + '.') });
-    var inT = (R.tfrs || []).filter(function (t) { return t.inside; });
-    items.push({ key: 'tfr', label: 'TFRs', level: !R.tfrChecked ? 'warn' : inT.length ? 'warn' : 'ok',
-      value: !R.tfrChecked ? 'Not checked' : inT.length ? 'Inside ' + inT.map(function (t) { return t.notam; }).join(', ') : 'None at the site',
-      detail: inT.length ? 'Read each NOTAM for times, altitudes and whether UAS are restricted.' : 'TFR shapes at lookup time. Re-run the lookup on flight day.' });
-  }
-  var notam = S.checks[window.EP_CHECK_KEYS['air.notam']] === 'checked';
-  items.push({ key: 'notam', label: 'NOTAMs', level: notam ? 'ok' : 'warn', value: notam ? 'Reviewed (Section 3)' : 'Not marked reviewed', detail: notam ? '' : 'Review NOTAMs and mark the Section 3 item.' });
-  if (a) items.push({ key: 'ac', label: 'Aircraft', level: a.status !== 'active' ? 'no' : a.is_test ? 'warn' : 'ok', value: a.name + (a.model ? ', ' + a.model : ''),
-    detail: a.status !== 'active' ? 'Fleet record shows ' + a.status.replace(/_/g, ' ') + '.' : a.is_test ? 'Test record, not for operational use.' : '' });
-  else items.push({ key: 'ac', label: 'Aircraft', level: 'warn', value: S.fields.acAsset || 'Not selected', detail: 'Pick the aircraft in Section 2 so its limits apply.' });
-  if (GNG.W) items = items.concat(EPWX.evaluate(GNG.W, { plannedAltFt: gngAlt(), windLimit: gngWindLimit(), tempMin: a ? a.temp_min_f : null, tempMax: a ? a.temp_max_f : null, lights: a ? a.anti_collision_lighting : null }));
-  return items;
-}
-function gngOverall(items) { return items.some(function (x) { return x.level === 'no'; }) ? 'no' : items.some(function (x) { return x.level === 'warn'; }) ? 'warn' : 'ok'; }
-function gngHTML() {
-  if (!window.EPWX) return '<p class="hint">Weather module did not load.</p>';
-  if (!S.fields.mapLat || !S.fields.mapLng) return '<p class="hint">Set the site location in Section 0 to load flight conditions.</p>';
-  var items = gngItems(), o = gngOverall(items), a = gngAircraft(), log = gngLog(), last = log[log.length - 1];
-  var head = '<div class="gng-head"><div class="faa-status faa-' + (o === 'no' ? 'stop' : o) + '" style="margin:0"><span class="dot"></span>' +
-    (o === 'no' ? 'NO-GO indicated' : o === 'warn' ? 'Caution: review the flagged items' : 'No limiting conditions found') + '</div>' +
-    '<div class="gng-meta">' + (GNG.busy ? 'Loading weather' : GNG.W ? 'Weather ' + localStamp(GNG.W.at) : (GNG.err ? 'Weather failed: ' + esc(GNG.err) : '')) +
-    ' <button class="mini-btn no-print" onclick="gngFetch(true)"' + (GNG.busy ? ' disabled' : '') + '>Refresh</button></div></div>';
-  var limits = '<div class="gng-limits">Planned altitude <b>' + (gngAlt() != null ? gngAlt() + ' ft AGL' : 'not set') + '</b>' +
-    (a && a.wind_limit_mph != null ? ' &middot; Wind limit <b>' + a.wind_limit_mph + ' mph</b> (fleet record)'
-      : ' &middot; Wind limit <input type="number" min="0" step="1" data-field="gngWindLimit" value="' + esc(S.fields.gngWindLimit) + '" placeholder="mph" style="width:72px;padding:4px 6px;"> mph') + '</div>';
-  var body = EPWX.itemsHTML(items);
-  var more = GNG.W ? '<details class="gng-more"><summary>Weather now, next 12 hours, alerts, sun</summary>' +
-    '<div class="gng-block">' + EPWX.tilesHTML(GNG.W, gngWindLimit(), gngAlt()) + '</div>' +
-    '<div class="gng-block">' + EPWX.hoursHTML(GNG.W, gngWindLimit(), 12) + '</div>' +
-    '<div class="gng-block"><div class="fg-label">Weather alerts</div>' + EPWX.alertsHTML(GNG.W) + '</div>' +
-    '<div class="gng-block"><div class="fg-label">Sun</div>' + EPWX.sunHTML(GNG.W) + '</div></details>' : '';
-  var dec = '<div class="gng-decide no-print"><button class="action-btn gng-go" onclick="gngRecord(\'GO\')"' + (o === 'no' || !GNG.W ? ' disabled title="Clear every red item first"' : '') + '>Record GO</button>' +
-    '<button class="action-btn gng-nogo" onclick="gngRecord(\'NO-GO\')">Record NO-GO</button>' +
-    '<input type="text" id="gngReason" placeholder="Reason or conditions (required for NO-GO)">' +
-    '<a class="mini-btn" style="text-decoration:none;" href="launch-checklist.html?site=' + encodeURIComponent(S.fields.siteName || '') + (S.fields.acAircraftId ? '&aircraft=' + encodeURIComponent(S.fields.acAircraftId) : '') + '">Launch checklist</a></div>';
-  var hist = log.length ? '<div class="gng-log">' + log.slice(-5).reverse().map(function (x) {
-    return '<div class="' + (x.decision === 'GO' ? 'go' : 'nogo') + '"><b>' + esc(x.decision) + '</b> by ' + esc(x.by) + ', ' + esc(localStamp(x.at)) + (x.reason ? ': ' + esc(x.reason) : '') +
-      ' <span class="hint">(' + x.items.filter(function (i) { return i.level !== 'ok'; }).length + ' flagged at the time)</span></div>';
-  }).join('') + '</div>' : '';
-  return head + limits + body + more + dec + hist +
-    '<p class="hint" style="margin-top:8px;">Indicators only. The RPIC makes the decision. Recording GO or NO-GO keeps a snapshot of these indicators with the assessment; it does not change site approval.</p>';
-}
-function gngPaint() {
-  var el = document.getElementById('gngBody'); if (!el) return;
-  var focus = document.activeElement && document.activeElement.id === 'gngReason' ? document.getElementById('gngReason').value : null;
-  el.innerHTML = gngHTML();
-  bindFields(el);
-  if (focus !== null) { var r = document.getElementById('gngReason'); if (r) { r.value = focus; r.focus(); } }
-  var ab = document.getElementById('avwxBody'); if (ab) ab.innerHTML = avwxHTML();
-  var chip = document.getElementById('gngChip');
-  if (chip) { var o = S.fields.mapLat ? gngOverall(gngItems()) : ''; chip.className = 'gng-chip ' + o; chip.textContent = !o ? '' : o === 'no' ? 'NO-GO' : o === 'warn' ? 'CAUTION' : 'CLEAR'; }
-}
-function gngFetch(force) {
-  if (!window.EPWX || !S.fields.mapLat || !S.fields.mapLng || !EXTERNAL_OK) { gngPaint(); return; }
-  var lat = parseFloat(S.fields.mapLat), lng = parseFloat(S.fields.mapLng), key = lat.toFixed(4) + ',' + lng.toFixed(4);
-  var fresh = GNG.W && GNG.key === key && Date.now() - Date.parse(GNG.W.at) < 10 * 60 * 1000;
-  if ((fresh && !force) || GNG.busy) { gngPaint(); return; }
-  GNG.busy = true; GNG.err = ''; gngPaint();
-  EPWX.fetchAll(lat, lng).then(function (W) { GNG.W = W; GNG.key = key; avwxKeep(W); }, function (e) { GNG.err = e.message || 'failed'; })
-    .then(function () { GNG.busy = false; gngPaint(); });
-  clearInterval(GNG.timer);
-  GNG.timer = setInterval(function () { if (document.getElementById('gngBody')) gngFetch(true); else clearInterval(GNG.timer); }, 10 * 60 * 1000);
-}
-function gngRecord(decision) {
-  var reason = (document.getElementById('gngReason') || {}).value || '';
-  if (decision === 'NO-GO' && !reason.trim()) { showToast('Enter the reason for NO-GO', true); return; }
-  var items = gngItems();
-  if (decision === 'GO' && gngOverall(items) === 'no') { showToast('Clear every red item before recording GO', true); return; }
-  var log = gngLog();
-  log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(),
-    by: (SESSION && SESSION.user ? SESSION.user.email : '') || S.fields.rpicReviewing || 'unrecorded',
-    alt: gngAlt(), windLimit: gngWindLimit(), aircraft: S.fields.acAsset || '',
-    metar: GNG.W && GNG.W.metars && GNG.W.metars[0] ? GNG.W.metars[0].rawOb || '' : '',
-    taf: GNG.W && GNG.W.tafs && GNG.W.tafs[0] ? GNG.W.tafs[0].rawTAF || '' : '',
-    items: items.map(function (x) { return { label: x.label, level: x.level, value: x.value }; }) });
-  S.fields.gngLog = JSON.stringify(log.slice(-20));
-  save(); gngPaint(); renderRecap();
-  showToast(decision + ' recorded');
-}
-/* ============================================================
-   AVIATION WEATHER: METAR AND TAF AT THE SITE PIN
-   Nearest airport observations (METAR) and terminal forecasts (TAF)
-   from aviationweather.gov through the EP relay, decoded. The raw
-   reports are kept with the assessment (S.fields.avwx) each time
-   they change, and each GO / NO-GO entry keeps the nearest pair.
-   ============================================================ */
-function avwxSaved() { try { return JSON.parse(S.fields.avwx || 'null'); } catch (e) { return null; } }
-function avwxKeep(W) {
-  if (!window.EPWX || W.metars === null || W.tafs === null) return;
-  var snap = EPWX.avwxSnapshot(W), prev = avwxSaved();
-  var sig = function (x) { return x ? (x.metars || []).map(function (m) { return m.raw; }).join('|') + '#' + (x.tafs || []).map(function (t) { return t.raw; }).join('|') : ''; };
-  if (sig(snap) === sig(prev)) return;
-  S.fields.avwx = JSON.stringify(snap);
-  save();
-}
-function avwxHTML() {
-  if (!window.EPWX) return '<p class="hint">Weather module did not load.</p>';
-  if (!S.fields.mapLat || !S.fields.mapLng) return '<p class="hint">Set the site location in Section 0 to load the nearest METARs and TAFs.</p>';
-  var W = GNG.W, saved = avwxSaved();
-  var head = '<div class="gng-head"><div class="hint" style="margin:0;">Nearest reporting airports to the site pin ' + esc(Number(S.fields.mapLat).toFixed(4)) + ', ' + esc(Number(S.fields.mapLng).toFixed(4)) + '.</div>' +
-    '<div class="gng-meta">' + (GNG.busy ? 'Loading' : W ? 'Updated ' + localStamp(W.at) : (GNG.err ? 'Failed: ' + esc(GNG.err) : '')) +
-    ' <button class="mini-btn no-print" onclick="gngFetch(true)"' + (GNG.busy ? ' disabled' : '') + '>Refresh</button></div></div>';
-  if (!W) {
-    return head + (saved ? '<p class="hint">Showing the reports saved with this assessment on ' + esc(localStamp(saved.at)) + '. Refresh for current ones.</p>' + EPWX.avwxSnapshotHTML(saved)
-      : '<p class="hint">' + (GNG.busy ? 'Loading METARs and TAFs.' : 'Not loaded yet.') + '</p>');
-  }
-  return head +
-    '<div class="gng-block"><div class="fg-label">METAR: observed now</div>' + EPWX.metarsHTML(W) + '</div>' +
-    '<div class="gng-block"><div class="fg-label">TAF: terminal forecast</div>' + EPWX.tafsHTML(W) + '</div>' +
-    '<p class="hint" style="margin-top:8px;">Reports refresh every 10 minutes while this page is open. The raw text is saved with the assessment whenever it changes, and each GO / NO-GO entry keeps the nearest METAR and TAF.</p>';
-}
-function avwxSectionEl() {
+function gngLinkEl() {
   var d = document.createElement('div');
-  d.className = 'section open'; d.dataset.id = 'avwx';
-  d.innerHTML = '<div class="section-header" onclick="this.parentNode.classList.toggle(\'open\')" role="button" tabindex="0"><div class="section-num">WX</div>' +
-    '<div class="section-title">Aviation weather: METAR and TAF</div><div class="section-toggle">&#9662;</div></div>' +
-    '<div class="section-body" id="avwxBody"></div>';
-  return d;
-}
-function gngSectionEl() {
-  var d = document.createElement('div');
-  d.className = 'section open gng-section'; d.dataset.id = 'gng';
-  d.innerHTML = '<div class="section-header" onclick="this.parentNode.classList.toggle(\'open\')" role="button" tabindex="0"><div class="section-num">GO</div>' +
-    '<div class="section-title">Go / No-Go: flight conditions now <span id="gngChip" class="gng-chip"></span></div><div class="section-toggle">&#9662;</div></div>' +
-    '<div class="section-body" id="gngBody"></div>';
+  d.className = 'gng-link no-print';
+  var id = S.remote_id || '';
+  d.innerHTML = '<div><b>Flight day:</b> weather, METAR and TAF, and the recorded GO or NO-GO are in the Go / No-Go tool.' +
+    (id ? '' : ' <span class="hint">Sync this assessment first so the tool can load it.</span>') + '</div>' +
+    '<a class="mini-btn" style="text-decoration:none;white-space:nowrap;" href="go-no-go.html' + (id ? '?assessment=' + encodeURIComponent(id) : '') + '">Open Go / No-Go</a>';
   return d;
 }
 

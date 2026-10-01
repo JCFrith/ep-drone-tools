@@ -168,9 +168,8 @@
 
     .tools-grid {
         display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 24px;
-        max-width: 860px; margin: 0 auto;
     }
 
     .tool-card {
@@ -417,7 +416,6 @@
                     <p class="tool-desc">Evaluate a prospective site before deployment. Capture physical layout, access control, airspace classification, risk factors, and operational constraints in a structured format.</p>
                     <ul class="tool-features">
                         <li>FAA airspace lookup at the pin: class, UASFM grid, restrictions, TFRs</li>
-                        <li>Go/No-Go panel: airspace and weather in one view for the RPIC</li>
                         <li>Auto-fills what the data settles; ground crew and RPIC fill-ins first, check-offs last</li>
                         <li>Fleet aircraft picker and AGP hasty assessment with photo walk</li>
                         <li>Exportable site record</li>
@@ -454,11 +452,34 @@
                 </div>
             </div>
 
+            <!-- Go / No-Go -->
+            <div class="tool-card">
+                <div class="tool-card-body">
+                    <div class="tool-icon">✅</div>
+                    <div class="tool-tag">Flight Day: Decision</div>
+                    <div class="tool-name">Go / No-Go</div>
+                    <p class="tool-desc">The RPIC's flight-day decision. Load the approved site assessment, confirm the aircraft and airspace, check weather, METAR and TAF against the aircraft limits, then record GO or NO-GO with a snapshot of every indicator.</p>
+                    <ul class="tool-features">
+                        <li>Starts from a synced site assessment: pin, aircraft, approved ceiling</li>
+                        <li>Map with airspace layers and FAA lookup at the pin</li>
+                        <li>Wind at altitude, alerts, daylight, METAR and TAF</li>
+                        <li>Saved records with the decision and the reports used</li>
+                        <li>Admin and pilot accounts only</li>
+                    </ul>
+                </div>
+                <div class="tool-card-footer">
+                    <a href="go-no-go.html" class="btn-tool">
+                        Launch Tool
+                        <svg width="12" height="12" viewBox="0 0 512 512" fill="currentColor"><path d="M256 8c137 0 248 111 248 248S393 504 256 504 8 393 8 256 119 8 256 8zm113.9 231L234.4 103.5c-9.4-9.4-24.6-9.4-33.9 0l-17 17c-9.4 9.4-9.4 24.6 0 33.9L285.1 256 183.5 357.6c-9.4 9.4-9.4 24.6 0 33.9l17 17c9.4 9.4 24.6 9.4 33.9 0L369.9 273c9.4-9.4 9.4-24.6 0-34z"/></svg>
+                    </a>
+                </div>
+            </div>
+
             <!-- Airspace & Weather -->
             <div class="tool-card">
                 <div class="tool-card-body">
                     <div class="tool-icon">🌦️</div>
-                    <div class="tool-tag">Flight Day: Go / No-Go</div>
+                    <div class="tool-tag">Flight Day: Quick Look</div>
                     <div class="tool-name">Airspace &amp; Weather</div>
                     <p class="tool-desc">Drop a pin to see the airspace, live TFRs and the next 12 hours of weather at that spot, including wind at 80 m and 120 m. Built from FAA, National Weather Service and aviation weather data, with no subscription.</p>
                     <ul class="tool-features">
