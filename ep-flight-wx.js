@@ -1,6 +1,7 @@
 /* Enhanced Patrol: flight-day weather for one point, shared by the Airspace & Weather page and the
    site assessment Go / No-Go panel.
-   Sources: Open-Meteo forecast (wind at 10 m, 80 m and 120 m), National Weather Service active alerts,
+   Sources: National Weather Service forecast grid through the relay (surface wind; 80 m and 120 m wind is an
+   estimate from a standard wind-shear profile), National Weather Service active alerts,
    and aviationweather.gov METARs and TAFs through the EP relay (/api/faa). Sun times are computed locally.
    The indicators only inform the RPIC. They never decide GO. */
 (function () {
@@ -48,18 +49,13 @@
   /* ---- Fetch everything for a point. Each source can fail on its own. ---- */
   function fetchAll(lat, lng) {
     var W = { lat: lat, lng: lng, at: new Date().toISOString(), fc: null, alerts: null, metars: null, errors: {} };
-    var fcUrl = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat.toFixed(4) + '&longitude=' + lng.toFixed(4) +
-      '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,cloud_cover_low,precipitation' +
-      '&hourly=temperature_2m,dew_point_2m,precipitation_probability,precipitation,weather_code,cloud_cover_low,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m' +
-      '&wind_speed_unit=mph&temperature_unit=fahrenheit&precipitation_unit=inch&timezone=auto&forecast_days=2';
+    // Forecast only through the relay: it reshapes the NWS grid. There is no direct fallback.
     var d = 0.75, k = Math.cos(lat * Math.PI / 180);
     var bb = [lng - d / k, lat - d, lng + d / k, lat + d].map(function (n) { return n.toFixed(3); }).join(',');
     var d2 = 1.5, bb2 = [lng - d2 / k, lat - d2, lng + d2 / k, lat + d2].map(function (n) { return n.toFixed(3); }).join(',');
     W.tafs = null;
     return Promise.all([
-      // Through the relay only: one place to hold the commercial Open-Meteo key, and the edge
-      // reaches Open-Meteo faster than some field networks. Direct is a last resort off the EP site.
-      (RELAY ? timed(RELAY + '?src=forecast&lat=' + lat.toFixed(3) + '&lng=' + lng.toFixed(3), 20000) : timed(fcUrl, 25000))
+      (RELAY ? timed(RELAY + '?src=forecast&lat=' + lat.toFixed(3) + '&lng=' + lng.toFixed(3), 25000) : Promise.reject(new Error('relay unavailable')))
         .then(function (j) { W.fc = j; }, function (e) { W.errors.fc = e.message || 'failed'; }),
       timed('https://api.weather.gov/alerts/active?point=' + lat.toFixed(4) + ',' + lng.toFixed(4), 12000, { headers: { Accept: 'application/geo+json' } })
         .then(function (j) { W.alerts = (j.features || []).map(function (f) { var p = f.properties || {}; return { event: p.event, severity: p.severity, headline: p.headline, ends: p.ends || p.expires }; }); },
@@ -82,12 +78,13 @@
     for (var i = 0; i < H.time.length; i++) if (H.time[i].slice(0, 13) >= iso) return i;
     return 0;
   }
-  /* Model level at or above the planned altitude: 10 m is 33 ft, 80 m is 262 ft, 120 m is 394 ft. */
+  /* Level at or above the planned altitude: 10 m is 33 ft, 80 m is 262 ft, 120 m is 394 ft.
+     NWS forecasts wind at 10 m only; 80 m and 120 m are estimated (1/7 power law), so they are labelled est. */
   function windAtAlt(fc, i, altFt) {
     var H = fc.hourly;
     if (altFt == null || altFt <= 33) return { spd: H.wind_speed_10m[i], dir: H.wind_direction_10m[i], level: '10 m' };
-    if (altFt <= 262) return { spd: Math.max(H.wind_speed_10m[i], H.wind_speed_80m[i]), dir: H.wind_direction_80m[i], level: '80 m' };
-    return { spd: Math.max(H.wind_speed_80m[i], H.wind_speed_120m[i]), dir: H.wind_direction_120m[i], level: '120 m' };
+    if (altFt <= 262) return { spd: Math.max(H.wind_speed_10m[i], H.wind_speed_80m[i]), dir: H.wind_direction_80m[i], level: '80 m est.' };
+    return { spd: Math.max(H.wind_speed_80m[i], H.wind_speed_120m[i]), dir: H.wind_direction_120m[i], level: '120 m est.' };
   }
   function metarInfo(m) {
     if (!m) return null;
@@ -226,7 +223,7 @@
       else add('ceiling', 'Ceiling', near.ceilingFt < need ? 'no' : near.ceilingFt < need + 500 ? 'warn' : 'ok',
         near.ceilingFt.toLocaleString('en-US') + ' ft (' + near.id + ', ' + near.mi.toFixed(0) + ' mi)',
         'Needs ' + need + ' ft: planned ' + (alt || 0) + ' ft plus 500 ft below clouds, 14 CFR 107.51(d)(1). Station ceiling is above that station, not this site.');
-    } else if (fc && fc.current && fc.current.cloud_cover_low >= 70) add('ceiling', 'Ceiling', 'warn', 'Low cloud ' + fc.current.cloud_cover_low + '% (forecast)', 'No METAR within ' + METAR_NEAR_MI + ' mi. Confirm 500 ft below clouds, 14 CFR 107.51(d)(1).');
+    } else if (fc && fc.current && fc.current.cloud_cover_low >= 70) add('ceiling', 'Ceiling', 'warn', 'Sky cover ' + fc.current.cloud_cover_low + '% (forecast)', 'No METAR within ' + METAR_NEAR_MI + ' mi. Confirm 500 ft below clouds, 14 CFR 107.51(d)(1).');
     else add('ceiling', 'Ceiling', 'warn', 'No nearby METAR', 'No station within ' + METAR_NEAR_MI + ' mi. Confirm 500 ft below clouds, 14 CFR 107.51(d)(1).');
     // Thunderstorms (the available proxy for lightning within 10 NM)
     var tsFc = false; if (fc) for (var t = i; t <= Math.min(i + 2, H.time.length - 1); t++) if (H.weather_code[t] >= 95) tsFc = true;
@@ -289,9 +286,9 @@
       tile('Conditions', '<span style="font-size:.86rem">' + esc(WMO[c.weather_code] || '') + '</span>', Math.round(c.temperature_2m) + '&deg;F, ' + c.relative_humidity_2m + '% RH') +
       tile('Wind 10 m', Math.round(c.wind_speed_10m) + ' mph', 'from ' + compass(c.wind_direction_10m) + arrow(c.wind_direction_10m), lvl(c.wind_speed_10m)) +
       tile('Gusts', Math.round(c.wind_gusts_10m) + ' mph', 'surface', lvl(c.wind_gusts_10m)) +
-      tile('Wind 80 m', Math.round(H.wind_speed_80m[i]) + ' mph', 'about 260 ft', lvl(H.wind_speed_80m[i])) +
-      tile('Wind 120 m', Math.round(H.wind_speed_120m[i]) + ' mph', 'about 390 ft', lvl(H.wind_speed_120m[i])) +
-      tile('Visibility', vis(c.visibility) + ' mi', 'low cloud ' + c.cloud_cover_low + '%', (c.visibility != null && c.visibility < 4828) ? ' warn' : '') +
+      tile('Wind 80 m est.', Math.round(H.wind_speed_80m[i]) + ' mph', 'about 260 ft, estimated', lvl(H.wind_speed_80m[i])) +
+      tile('Wind 120 m est.', Math.round(H.wind_speed_120m[i]) + ' mph', 'about 390 ft, estimated', lvl(H.wind_speed_120m[i])) +
+      tile('Visibility', vis(c.visibility) + ' mi', 'sky cover ' + c.cloud_cover_low + '%', (c.visibility != null && c.visibility < 4828) ? ' warn' : '') +
       '</div>';
   }
   function hoursHTML(W, lim, count) {
@@ -310,8 +307,8 @@
         '<td class="' + lvl(H.wind_speed_120m[k]) + '">' + Math.round(H.wind_speed_120m[k]) + arrow(H.wind_direction_120m[k]) + '</td>' +
         '<td class="' + ((H.visibility[k] != null && H.visibility[k] < 4828) ? 'warn' : '') + '">' + vis(H.visibility[k]) + '</td><td>' + H.cloud_cover_low[k] + '%</td></tr>';
     }
-    return '<div class="wx-scroll"><table class="wx-table"><thead><tr><th>Hour</th><th>Sky</th><th>Temp</th><th>Rain</th><th>Wind 10 m</th><th>Gust</th><th>80 m</th><th>120 m</th><th>Vis mi</th><th>Low cld</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      '<div class="wx-src">Winds in mph; the arrow points where the wind is blowing. &#9790; marks hours outside civil twilight. Local time at the site.</div>';
+    return '<div class="wx-scroll"><table class="wx-table"><thead><tr><th>Hour</th><th>Sky</th><th>Temp</th><th>Rain</th><th>Wind 10 m</th><th>Gust</th><th>80 m est</th><th>120 m est</th><th>Vis mi</th><th>Sky</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="wx-src">National Weather Service forecast for the site. Winds in mph; the arrow points where the wind is blowing. NWS forecasts wind at 33 ft (10 m) only: the 80 m and 120 m columns are estimates from a standard wind-shear profile and can run low, especially at night and in stable air. &#9790; marks hours outside civil twilight. Local time at the site.</div>';
   }
   function alertsHTML(W) {
     if (W.alerts === null) return '<div class="wx-empty">National Weather Service alerts unavailable (US locations only).</div>';
@@ -320,6 +317,51 @@
       return '<div class="wx-alert' + (/Extreme|Severe/.test(a.severity || '') ? ' sev' : '') + '"><b>' + esc(a.event) + '</b>' + (a.severity ? ' (' + esc(a.severity) + ')' : '') + '<div class="wx-src">' + esc(a.headline || '') + '</div></div>';
     }).join('');
   }
+  /* ---- Plain-language summaries ---- */
+  var COVER = { FEW: 'a few clouds', SCT: 'scattered clouds', BKN: 'broken clouds', OVC: 'overcast', OVX: 'sky obscured', VV: 'sky obscured' };
+  function compassWord(d) {
+    if (d == null || d === 'VRB') return 'a variable direction';
+    var w = { N: 'north', NNE: 'north-northeast', NE: 'northeast', ENE: 'east-northeast', E: 'east', ESE: 'east-southeast', SE: 'southeast', SSE: 'south-southeast',
+      S: 'south', SSW: 'south-southwest', SW: 'southwest', WSW: 'west-southwest', W: 'west', WNW: 'west-northwest', NW: 'northwest', NNW: 'north-northwest' };
+    return 'the ' + (w[compass(Number(d))] || 'variable direction');
+  }
+  function windPlain(dir, kt, gkt) {
+    if (kt == null) return '';
+    if (Number(kt) === 0) return 'calm wind';
+    return 'wind from ' + compassWord(dir) + ' at ' + Math.round(kt * KT_MPH) + ' mph' + (gkt ? ' gusting ' + Math.round(gkt * KT_MPH) : '');
+  }
+  function visPlain(v) {
+    var p = parseVis(v); if (p == null) return '';
+    if (typeof p === 'number') p = { v: p, plus: false };
+    var n = p.v >= 1 ? (Math.round(p.v * 4) / 4) : p.v;
+    return 'visibility ' + (p.plus ? 'over ' : '') + (n === 1 ? '1 mile' : (n < 1 ? visText(v).replace(' SM', '') + ' mile' : visText(v).replace(/^More than /, '').replace(' SM', '') + ' miles'));
+  }
+  function cloudsPlain(clouds, vv) {
+    var L = (clouds || []).filter(function (c) { return COVER[c.cover]; }).map(function (c) {
+      return COVER[c.cover] + (c.base != null ? ' at ' + Number(c.base).toLocaleString('en-US') + ' ft' : '') + (c.type === 'CB' ? ' (thunderstorm clouds)' : c.type === 'TCU' ? ' (towering cumulus)' : '');
+    });
+    if (vv != null) L.push('sky obscured, vertical visibility ' + Number(vv).toLocaleString('en-US') + ' ft');
+    if (!L.length) return (clouds || []).some(function (c) { return /CLR|SKC|NCD|NSC|CAVOK/.test(c.cover || ''); }) ? 'clear skies' : '';
+    return L.join(', ');
+  }
+  var CAT_PLAIN = { VFR: 'VFR, good flying weather', MVFR: 'marginal VFR', IFR: 'IFR, low ceiling or visibility', LIFR: 'low IFR, very low ceiling or visibility' };
+  function metarPlain(x) {
+    var parts = [windPlain(x.wdir, x.wspd, x.wgst), visPlain(x.visib), cloudsPlain(x.clouds, x.vertVis)];
+    if (x.wxString) parts.push(wxText(x.wxString));
+    if (x.temp != null) parts.push(Math.round(x.temp * 9 / 5 + 32) + '&deg;F');
+    var s = parts.filter(Boolean).join(', ');
+    return s.charAt(0).toUpperCase() + s.slice(1) + '.' + (x.fltCat ? ' ' + (CAT_PLAIN[x.fltCat] || x.fltCat) + '.' : '');
+  }
+  function periodPlain(p, off) {
+    var bits = [];
+    if (p.wspd != null) bits.push(windPlain(p.wdir, p.wspd, p.wgst));
+    if (p.visRaw != null) bits.push(visPlain(p.visRaw));
+    if ((p.clouds && p.clouds.length) || p.vertVis != null) bits.push(cloudsPlain(p.clouds, p.vertVis));
+    if (p.wx) bits.push(wxText(p.wx));
+    var when = p.kind === 'Initial' ? 'Until ' + tzLabel(p.to, off) : (/chance|Temporary/.test(p.kind) ? p.kind + ' ' : 'From ') + tzLabel(p.from, off) + (/chance|Temporary/.test(p.kind) ? ' to ' + tzLabel(p.to, off) : '');
+    return '<b>' + esc(when) + ':</b> ' + esc(bits.filter(Boolean).join(', ') || 'no change') + (p.cat ? ' (' + p.cat + ')' : '') + '.';
+  }
+
   function metarDecoded(x) {
     var vis = visNum(x.visib), ceil = ceilingOf(x.clouds, x.vertVis), cells = [];
     cells.push(['Wind', windText(x.wdir, x.wspd, x.wgst)]);
@@ -337,7 +379,7 @@
     return W.metars.slice(0, limit || W.metars.length).map(function (x) {
       var m = metarInfo(x);
       return '<div class="wx-metar"><b>' + esc(m.id) + '</b> ' + esc(m.name || '') + ' <span class="wx-src" style="display:inline">' + m.mi.toFixed(1) + ' mi' + (m.ageMin != null ? ', ' + m.ageMin + ' min old' : '') + '</span>' +
-        (m.fltCat ? '<span class="wx-fc ' + esc(m.fltCat) + '">' + esc(m.fltCat) + '</span>' : '') + metarDecoded(x) + '<code>' + esc(m.raw) + '</code></div>';
+        (m.fltCat ? '<span class="wx-fc ' + esc(m.fltCat) + '">' + esc(m.fltCat) + '</span>' : '') + '<div class="wx-plain">' + metarPlain(x) + '</div>' + metarDecoded(x) + '<code>' + esc(m.raw) + '</code></div>';
     }).join('');
   }
   function tafsHTML(W, limit) {
@@ -345,6 +387,8 @@
     if (!W.tafs.length) return '<div class="wx-empty">No TAF issued within about 100 miles.</div>';
     var off = offsetOf(W), now = Date.now() / 1000;
     return W.tafs.slice(0, limit || W.tafs.length).map(function (t) {
+      var live = tafPeriods(t).filter(function (p) { return p.to > now && p.from < now + 24 * 3600; });
+      var plain = '<div class="wx-plain">' + live.map(function (p) { return '<div>' + periodPlain(p, off) + '</div>'; }).join('') + '</div>';
       var rows = tafPeriods(t).filter(function (p) { return p.to > now; }).map(function (p) {
         var cur = p.from <= now && p.to > now;
         return '<tr class="' + (cur ? 'cur' : '') + (p.temp ? ' tmp' : '') + '"><td>' + esc(p.kind) + '<div class="wx-mute">' + tzLabel(p.from, off) + ' to ' + tzLabel(p.to, off) + '<br>' + zLabel(p.from) + ' to ' + zLabel(p.to) + '</div></td>' +
@@ -357,11 +401,11 @@
       var far = t._mi > TAF_NEAR_MI;
       return '<div class="wx-taf"><b>' + esc(t.icaoId) + '</b> ' + esc(t.name || '') + ' <span class="wx-src" style="display:inline">' + t._mi.toFixed(1) + ' mi' +
         (t.issueTime ? ', issued ' + tzLabel(Date.parse(t.issueTime) / 1000, off) : '') + '</span>' +
-        (far ? '<div class="wx-warn">More than ' + TAF_NEAR_MI + ' mi from the site. Treat it as a regional trend only.</div>' : '') +
-        '<div class="wx-scroll"><table class="wx-table wx-taf-t"><thead><tr><th>Period (site time, Z)</th><th>Wind</th><th>Visibility</th><th>Clouds (ft AGL)</th><th>Weather</th><th>Cat</th></tr></thead><tbody>' +
-        (rows || '<tr><td colspan="6" class="wx-mute">All periods have passed.</td></tr>') + '</tbody></table></div><code>' + esc(t.rawTAF || '') + '</code></div>';
+        (far ? '<div class="wx-warn">More than ' + TAF_NEAR_MI + ' mi from the site. Treat it as a regional trend only.</div>' : '') + plain +
+        '<details class="wx-det"><summary>Decoded table</summary><div class="wx-scroll"><table class="wx-table wx-taf-t"><thead><tr><th>Period (site time, Z)</th><th>Wind</th><th>Visibility</th><th>Clouds (ft AGL)</th><th>Weather</th><th>Cat</th></tr></thead><tbody>' +
+        (rows || '<tr><td colspan="6" class="wx-mute">All periods have passed.</td></tr>') + '</tbody></table></div></details><code>' + esc(t.rawTAF || '') + '</code></div>';
     }).join('') + '<div class="wx-src">TAFs from the NWS Aviation Weather Center. A TAF covers about 5 SM around its airport, so conditions at the site can differ. ' +
-      'The highlighted row is in effect now; shaded rows are temporary or probable changes. Periods without a value carry the prior one forward.</div>';
+      'In the decoded table the highlighted row is in effect now and shaded rows are temporary or probable changes. A period without a value carries the prior one forward.</div>';
   }
   /* Raw METAR and TAF text kept with a record, so the reports read later are exactly what was shown. */
   function avwxSnapshot(W, limit) {
@@ -400,6 +444,8 @@
     '.wx-alert{border-left:3px solid #F5A524;padding:6px 9px;margin-bottom:6px;background:rgba(245,165,36,.07);font-size:.8rem;} .wx-alert.sev{border-color:#E5484D;background:rgba(229,72,77,.08);}' +
     '.wx-metar{font-size:.78rem;margin-bottom:8px;} .wx-metar code{display:block;font-size:.72rem;background:#091520;padding:6px 8px;border-radius:5px;margin-top:3px;white-space:pre-wrap;word-break:break-word;color:#d7e3ee;}' +
     '.wx-dec{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;margin:6px 0 2px;font-size:.78rem;} .wx-dec div span{display:block;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;color:#9A9A9A;}' +
+    '.wx-plain{font-size:.84rem;line-height:1.55;margin:6px 0;color:#eef4f9;} .wx-plain div{margin-bottom:3px;}' +
+    '.wx-det summary{cursor:pointer;font-size:.74rem;color:#00A2E9;margin-top:4px;}' +
     '.wx-mute{color:#9A9A9A;font-size:.92em;} .wx-warn{color:#F5A524;font-size:.72rem;margin-top:2px;}' +
     '.wx-taf{margin-bottom:12px;font-size:.78rem;} .wx-taf code{display:block;font-size:.7rem;background:#091520;padding:6px 8px;border-radius:5px;margin-top:6px;white-space:pre-wrap;word-break:break-word;color:#d7e3ee;}' +
     'table.wx-taf-t{min-width:620px;margin-top:6px;} table.wx-taf-t td{white-space:normal;vertical-align:top;text-align:left;} table.wx-taf-t th{text-align:left;}' +

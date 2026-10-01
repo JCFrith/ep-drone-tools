@@ -13,9 +13,8 @@
   'use strict';
   var BASE = 'https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/';
   var EPQS = 'https://epqs.nationalmap.gov/v1/json';
-  var OPEN_METEO = 'https://api.open-meteo.com/v1/elevation';
   var TIMEOUT_MS = 12000;
-  var ELEV_TIMEOUT_MS = 6000;
+  var ELEV_TIMEOUT_MS = 10000;
   var PIN_TOL_DEG = 0.0003;           // about 33 m: a pin this close to a boundary counts as inside
   var FAC_RADIUS_MI = 3;              // SP 19(d) states 3 miles, not nautical miles
   var LOWLEVEL_RADIUS_MI = 1;         // EP practice: low-level operations within 1 SM
@@ -129,15 +128,15 @@
     };
     return attempt(0);
   }
-  /* Ground elevation in ft MSL. Two free sources raced; the first valid answer wins. USGS EPQS is the
-     authoritative US source but often takes 20 s or more; Open-Meteo (Copernicus 90 m DEM) usually
-     answers in under a second and is close enough to convert airspace floors from MSL to AGL. */
+  /* Ground elevation in ft MSL from USGS 3DEP (EPQS), asked twice in a race: straight from the browser and
+     through the EP relay, whose server connection is often faster. The first valid answer wins; if both
+     fail, the caller falls back to the nearest airport's elevation. */
   function elevation(lat, lng) {
     var ok = function (v) { return isFinite(v) && v > -1000 && v < 30000; };
     var usgs = withTimeout(EPQS + '?x=' + lng.toFixed(6) + '&y=' + lat.toFixed(6) + '&units=Feet&wkid=4326&includeDate=false', ELEV_TIMEOUT_MS)
       .then(function (j) { var v = j && Number(j.value); if (!ok(v)) throw new Error('no value'); return { ft: Math.round(v), src: 'USGS 3DEP' }; });
-    var om = withTimeout(RELAY ? RELAY + '?src=elev&lat=' + lat.toFixed(5) + '&lng=' + lng.toFixed(5) : OPEN_METEO + '?latitude=' + lat.toFixed(6) + '&longitude=' + lng.toFixed(6), ELEV_TIMEOUT_MS)
-      .then(function (j) { var m = j && j.elevation && Number(j.elevation[0]); if (!ok(m)) throw new Error('no value'); return { ft: Math.round(m * 3.28084), src: 'Copernicus DEM via Open-Meteo' }; });
+    var om = (RELAY ? withTimeout(RELAY + '?src=elev&lat=' + lat.toFixed(5) + '&lng=' + lng.toFixed(5), ELEV_TIMEOUT_MS) : Promise.reject(new Error('relay unavailable')))
+      .then(function (j) { var m = j && j.elevation && Number(j.elevation[0]); if (!ok(m)) throw new Error('no value'); return { ft: Math.round(m * 3.28084), src: 'USGS 3DEP' }; });
     return new Promise(function (resolve) {
       var left = 2, done = false;
       var win = function (r) { if (!done) { done = true; resolve(r); } };
