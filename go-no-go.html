@@ -13,6 +13,7 @@
 <script src="ep-faa-airspace.js"></script>
 <script src="ep-faa-map.js"></script>
 <script src="ep-flight-wx.js"></script>
+<script src="ep-roster.js"></script>
 <style>
   :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-white:#FFFFFF;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-warn:#F5A524;--ep-block:#E5484D;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -97,6 +98,7 @@
   .totop{position:fixed;right:16px;bottom:18px;z-index:1400;font:inherit;font-size:.74rem;font-weight:700;padding:10px 14px;border-radius:20px;border:1px solid #FCC00E;background:#0B1923;color:#fff;cursor:pointer;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
   .totop.show{display:block;}
   .lockbar{background:rgba(48,164,108,.1);border:1px solid #30A46C;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:.84rem;line-height:1.5;}
+  .testtag{margin-top:10px;font-size:.84rem;font-weight:700;color:#F5A524;}
   .lockbar.edit{background:rgba(245,165,36,.1);border-color:#F5A524;}
   .rq{flex:1 1 240px;min-width:0;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:9px 10px;font:inherit;font-size:.9rem;}
   .rec-list{display:flex;flex-direction:column;}
@@ -157,7 +159,8 @@ function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
 function stamp(iso){ try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
 function aircraft(){ return REC && REC.fields.aircraftId ? FLEET.filter(function (a) { return a.id === REC.fields.aircraftId; })[0] || null : null; }
 function linked(){ return REC && REC.fields.assessmentId ? ASSESS.filter(function (a) { return a.id === REC.fields.assessmentId; })[0] || REC.fields.assessmentSnap || null : null; }
-function newRec(){ return { id: null, fields: { rpic: SESSION ? SESSION.user.email : '', launchMethod: 'Tactical deployment' }, checks: {}, acks: {}, faa: null, log: [], avwx: null, edits: [] }; }
+function myName(){ return SESSION ? EPRoster.nameFor(SESSION.user.email) : ''; }
+function newRec(){ return { id: null, fields: { rpic: myName(), launchMethod: 'Tactical deployment' }, checks: {}, acks: {}, faa: null, log: [], avwx: null, edits: [] }; }
 function isAdmin(){ return role() === 'admin'; }
 function lastGo(){ var L = REC && REC.log || []; for (var i = L.length - 1; i >= 0; i--) if (L[i].decision === 'GO') return L[i]; return null; }
 /* A check becomes a locked flight record once GO is recorded. Only an admin can unlock it to edit. */
@@ -195,10 +198,11 @@ function loadLists(){
     sb.from('fleet_aircraft').select('*').order('name').then(function (r) { FLEET = r.error ? [] : (r.data || []); }),
     sb.from('site_assessments').select('id,site_name,client_name,status,governing_provision,overflight_pathway,max_agl,latitude,longitude,site_address,assess_date,updated_at,payload')
       .order('updated_at', { ascending: false }).limit(200).then(function (r) { ASSESS = r.error ? [] : (r.data || []); }),
+    EPRoster.load(sb)
   ]);
 }
 function loadRecords(){
-  return sb.from('go_nogo_checks').select('id,site_name,client_name,aircraft_label,planned_alt_ft,decision,decided_at,decided_by,created_by,created_at,updated_at,updated_by,rpic:payload->fields->>rpic')
+  return sb.from('go_nogo_checks').select('id,site_name,client_name,aircraft_label,planned_alt_ft,decision,decided_at,decided_by,created_by,created_at,updated_at,updated_by,rpic:payload->fields->>rpic,test_no:payload->fields->>testNo,is_test:payload->fields->>isTest')
     .order('updated_at', { ascending: false }).limit(1000)
     .then(function (r) { if (r.error) { toast('Could not load flight records: ' + r.error.message); RECORDS = []; } else RECORDS = r.data || []; });
 }
@@ -279,11 +283,11 @@ function lockInputs(){
 }
 function lockBanner(){
   var g = lastGo(); if (!g) return '';
-  var who = REC.meta ? 'Started by ' + esc(REC.meta.created_by || 'unknown') + ', ' + esc(stamp(REC.meta.created_at)) + '. ' : '';
+  var who = REC.meta ? 'Started by ' + esc(EPRoster.nameFor(REC.meta.created_by) || 'unknown') + ', ' + esc(stamp(REC.meta.created_at)) + '. ' : '';
   var ed = (REC.edits || []).length ? ' Edited by an admin ' + REC.edits.length + ' time' + (REC.edits.length > 1 ? 's' : '') + ', last ' + esc(REC.edits[REC.edits.length - 1].by) + ', ' + esc(stamp(REC.edits[REC.edits.length - 1].at)) + '.' : '';
   if (EDIT) return '<div class="lockbar edit"><b>Admin edit.</b> Changes save to this flight record and are logged under your account.' + ed +
     ' <button class="btn sm" onclick="endEdit()">Done editing</button></div>';
-  return '<div class="lockbar"><b>Flight record: GO recorded by ' + esc(g.by) + ', ' + esc(stamp(g.at)) + '.</b> ' + who + 'Locked: this shows what was recorded at the time of the decision.' + ed +
+  return '<div class="lockbar"><b>' + (REC.fields.testNo ? esc(REC.fields.testNo) + '. ' : '') + 'Flight record: GO recorded by ' + esc(g.byName || g.by) + ', ' + esc(stamp(g.at)) + '.</b> ' + who + 'Locked: this shows what was recorded at the time of the decision.' + ed +
     (isAdmin() ? '<div class="row" style="margin-top:8px;"><button class="btn sm" onclick="startEdit()">Edit record</button>' +
       '<button class="btn sm nogo" id="delBtn" onclick="deleteRecord(REC.id, this)">Delete record</button></div>' : '<div class="hint" style="margin-top:4px;">Only an admin can change or delete it.</div>') + '</div>';
 }
@@ -297,7 +301,9 @@ function paintRecbar(){
   el.innerHTML = '<div class="recbar">' +
     (locked() ? '' : '<label class="f">Site assessment<select id="asSel" onchange="pickAssessment(this.value)">' + opts + '</select></label>') +
     '<button class="btn" onclick="showRecords()">Flight records</button>' +
-    '<button class="btn gold" onclick="startNew()">New check</button></div>' +
+    '<button class="btn gold" onclick="startNew()">New check</button>' +
+    '<button class="btn" onclick="startTest()" title="Test flight at the ROC">Test flight</button></div>' +
+    (REC.fields.isTest === 'Yes' ? '<div class="testtag">' + (REC.fields.testNo ? esc(REC.fields.testNo) + ', recorded ' + esc(stamp(REC.fields.testAt)) : 'Test flight. The number is assigned when GO or NO-GO is recorded.') + '</div>' : '') +
     '<div class="row" style="margin-top:8px;justify-content:space-between;"><span class="savestate" id="saveState"></span>' +
     (REC.id ? '<span class="hint">Record ' + esc(REC.id.slice(0, 8)) + '</span>' : '') + '</div>';
   paintSave();
@@ -349,7 +355,7 @@ function paintSite(){
     '<div class="search no-print"><input id="q" type="text" placeholder="Address, or latitude, longitude" value="' + esc(f.address || '') + '"><button class="btn primary" onclick="findQuery()">Find</button><button class="btn" onclick="locateMe()">My location</button></div>' +
     '<div id="map"></div>' +
     '<div class="hint" id="pinHint" style="margin-top:6px;">' + (f.lat ? 'Pin ' + Number(f.lat).toFixed(5) + ', ' + Number(f.lng).toFixed(5) + '. ' : 'Tap the map to drop the pin. ') + 'Drag the pin to adjust. Layers: UASFM grid, controlled and special use airspace, no-fly zones, TFRs, stadiums.</div>' +
-    '<div class="grid3" id="jAlt" style="margin-top:12px;">' + fText('rpic', 'RPIC') + fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment']) +
+    '<div class="grid3" id="jAlt" style="margin-top:12px;">' + '<label class="f">RPIC<select data-k="rpic" data-roster="admin,pilot">' + EPRoster.optionsHTML(f.rpic, ['admin', 'pilot']) + '</select></label>' + fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment']) +
       fText('plannedAlt', 'Planned altitude (ft AGL)', 'e.g. 150', 'number') + '</div>' +
     (a ? '<div class="linked" id="jLinked">Site assessment: <b>' + esc(a.site_name || '') + '</b>, ' + esc(statusLabel(a.status)) +
       (a.governing_provision ? '. ' + esc(a.governing_provision) : '') + (a.max_agl ? '. Approved ceiling <b>' + esc(a.max_agl) + ' ft AGL</b>' : '') +
@@ -620,7 +626,7 @@ function paintGng(){
 }
 function logHTML(){
   return (REC.log.length ? '<div class="log">' + REC.log.slice().reverse().map(function (x) {
-      return '<div class="' + (x.decision === 'GO' ? 'go' : 'nogo') + '"><b>' + esc(x.decision) + '</b> by ' + esc(x.by) + ', ' + esc(stamp(x.at)) + (x.reason ? ': ' + esc(x.reason) : '') +
+      return '<div class="' + (x.decision === 'GO' ? 'go' : 'nogo') + '"><b>' + esc(x.decision) + '</b> by ' + esc(x.byName || x.by) + ', ' + esc(stamp(x.at)) + (x.reason ? ': ' + esc(x.reason) : '') +
         ' <span class="hint">(' + x.items.filter(function (i) { return i.level !== 'ok'; }).length + ' flagged at the time' + (x.metar ? ', METAR kept' : '') + ')</span></div>';
     }).join('') + '</div>' : '');
 }
@@ -628,7 +634,7 @@ function lockedGngHTML(){
   var g = lastGo(), sn = g.snapshot || {};
   var items = sn.items || g.items || [];
   var o = overall(items);
-  return '<div class="verdict ok"><span class="dot"></span>GO recorded ' + esc(stamp(g.at)) + ' by ' + esc(g.by) + (g.reason ? ': ' + esc(g.reason) : '') + '</div>' +
+  return '<div class="verdict ok"><span class="dot"></span>' + (REC.fields.testNo ? esc(REC.fields.testNo) + ': ' : '') + 'GO recorded ' + esc(stamp(g.at)) + ' by ' + esc(g.byName || g.by) + (g.reason ? ': ' + esc(g.reason) : '') + '</div>' +
     (o !== 'ok' ? '<div class="hint" style="margin:-4px 0 8px;">Indicators at the time: ' + (o === 'warn' ? 'cautions were flagged and accepted by the RPIC.' : 'red items were present.') + '</div>' : '') +
     (sn.limits && window.EPWX ? '<div class="sub" style="margin-top:4px;">Aircraft limits against the weather at the time</div>' + EPWX.limitsHTML(sn.limits, jumpFor) : '') +
     (window.EPWX ? EPWX.itemsHTML(items.filter(function (x) { return !sn.limits || ['wind', 'gust', 'temp'].indexOf(x.key) < 0; }), jumpFor) : '') +
@@ -640,8 +646,14 @@ function record(decision){
   var items = gngItems();
   if (decision === 'GO' && overall(items) === 'no') { toast('Clear every red item before recording GO'); return; }
   if (!W) { toast('Weather has not loaded yet. Refresh it before recording.'); return; }
+  if (REC.fields.isTest === 'Yes' && !REC.fields.testNo) {
+    toast('Assigning the test flight number');
+    nextTestNo().then(function (no) { REC.fields.testNo = no; REC.fields.testAt = new Date().toISOString(); record(decision); },
+      function (e) { toast('Could not assign the test flight number: ' + (e && e.message || 'try again') + '. Nothing was recorded.'); });
+    return;
+  }
   var copy = function (o) { return o == null ? null : JSON.parse(JSON.stringify(o)); };
-  REC.log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(), by: SESSION.user.email, alt: num(REC.fields.plannedAlt), windLimit: windLimit(), gustLimit: gustLimit(), tempRange: [tempMin(), tempMax()],
+  REC.log.push({ decision: decision, reason: reason.trim(), at: REC.fields.testAt && !REC.log.length ? REC.fields.testAt : new Date().toISOString(), by: SESSION.user.email, byName: myName(), testNo: REC.fields.testNo || '', alt: num(REC.fields.plannedAlt), windLimit: windLimit(), gustLimit: gustLimit(), tempRange: [tempMin(), tempMax()],
     aircraft: (aircraft() || {}).name || REC.fields.acAsset || '',
     metar: W && W.metars && W.metars[0] ? W.metars[0].rawOb || '' : '', taf: W && W.tafs && W.tafs[0] ? W.tafs[0].rawTAF || '' : '',
     acks: copy(REC.acks || {}),
@@ -652,6 +664,36 @@ function record(decision){
   if (decision === 'GO') REC.avwx = EPWX.avwxSnapshot(W, 1);
   REC._pending = decision;
   save(true); paintGng(); toast('Saving ' + decision);
+}
+
+/* Test flights are numbered in order per year: Test Flight 26-0001, 26-0002, ... The number is taken when
+   GO or NO-GO is first recorded, so abandoned test checks leave no gaps. */
+function nextTestNo(){
+  var yy = String(new Date().getFullYear() % 100).padStart(2, '0'), pre = 'Test Flight ' + yy + '-';
+  return sb.from('go_nogo_checks').select('id,no:payload->fields->>testNo').like('payload->fields->>testNo', pre + '%').then(function (r) {
+    if (r.error) throw r.error;
+    var max = 0;
+    (r.data || []).forEach(function (x) { if (x.id === REC.id) return; var n = parseInt(String(x.no || '').slice(pre.length), 10); if (n > max) max = n; });
+    return pre + String(max + 1).padStart(4, '0');
+  });
+}
+/* Test flight at the ROC: site, aircraft and altitude are set; the pilot still works the airspace checks. */
+var TEST_SITE = { siteName: 'ROC', clientName: 'Enhanced Patrol', address: '855 W College St, Murfreesboro, TN 37129', alt: '175' };
+function startTest(){
+  if (REC && REC.id && dirty) flush();
+  REC = newRec(); EDIT = false; W = null; WKEY = '';
+  history.replaceState(null, '', location.pathname);
+  var sa = ASSESS.filter(function (a) { var af = a.payload && a.payload.fields || {}; return af.isTest === 'Yes' && String(a.site_name || af.siteName || '').trim().toUpperCase() === 'ROC'; })[0];
+  if (sa) pickAssessment(sa.id);
+  var f = REC.fields, ac = FLEET.filter(function (a) { return a.status === 'active' && /mavic 3|m3t/i.test((a.name || '') + ' ' + (a.model || '')); })[0];
+  f.isTest = 'Yes'; f.siteName = TEST_SITE.siteName; f.clientName = TEST_SITE.clientName;
+  f.launchMethod = 'Tactical deployment'; f.plannedAlt = TEST_SITE.alt; f.rpic = myName();
+  if (ac) f.aircraftId = ac.id;
+  var needPin = !f.lat;
+  if (needPin) f.address = TEST_SITE.address;
+  render(); save(true);
+  if (needPin) { var q = document.getElementById('q'); if (q) { q.value = TEST_SITE.address; findQuery(); } }
+  toast('Test flight started' + (sa ? ', linked to the ROC test site assessment' : '') + '. Work through the airspace checks before recording.');
 }
 
 /* ---------------- Weather ---------------- */
@@ -730,7 +772,7 @@ function paintRecords(){
     if (d === 'GO' && x.decision !== 'GO') return false;
     if (d === 'NO-GO' && x.decision !== 'NO-GO') return false;
     if (d === 'open' && x.decision) return false;
-    return !q || [x.site_name, x.client_name, x.aircraft_label, x.rpic, x.decided_by, x.created_by].join(' ').toLowerCase().indexOf(q) >= 0;
+    return !q || [x.test_no, x.is_test === 'Yes' ? 'test' : '', x.site_name, x.client_name, x.aircraft_label, x.rpic, x.decided_by, x.created_by].join(' ').toLowerCase().indexOf(q) >= 0;
   }).sort(function (a, b) { return Date.parse(b.decided_at || b.updated_at) - Date.parse(a.decided_at || a.updated_at); });
   var count = function (f) { return RECORDS.filter(f).length; };
   var tab = function (k, label, n) { return '<button class="btn sm' + (d === k ? ' primary' : '') + '" onclick="RFILTER.d=\'' + k + '\';paintRecords()">' + label + ' (' + n + ')</button>'; };
@@ -742,9 +784,9 @@ function paintRecords(){
     (rows.length ? '<div class="rec-list">' + rows.map(function (x) {
       var dec = x.decision ? '<span class="chip ' + (x.decision === 'GO' ? 'ok' : 'no') + '">' + esc(x.decision) + '</span>' : '<span class="chip warn">IN PROGRESS</span>';
       return '<div class="rec-row"><div class="rec-main" onclick="openRecord(\'' + x.id + '\')" role="button" tabindex="0">' +
-        '<div class="rec-top">' + dec + ' <b>' + esc(x.site_name || 'Unnamed site') + '</b>' + (x.client_name ? ' <span class="hint">' + esc(x.client_name) + '</span>' : '') + '</div>' +
+        '<div class="rec-top">' + dec + (x.test_no ? ' <span class="chip warn">' + esc(x.test_no) + '</span>' : x.is_test === 'Yes' ? ' <span class="chip warn">TEST</span>' : '') + ' <b>' + esc(x.site_name || 'Unnamed site') + '</b>' + (x.client_name ? ' <span class="hint">' + esc(x.client_name) + '</span>' : '') + '</div>' +
         '<div class="hint">' + esc(stamp(x.decided_at || x.updated_at)) + (x.aircraft_label ? ' &middot; ' + esc(x.aircraft_label) : '') + (x.planned_alt_ft ? ' &middot; ' + x.planned_alt_ft + ' ft AGL' : '') +
-        ' &middot; ' + esc(x.decided_by || x.rpic || x.created_by || '') + '</div></div>' +
+        ' &middot; ' + esc(x.rpic || EPRoster.nameFor(x.decided_by || x.created_by)) + '</div></div>' +
         '<div class="rec-act"><button class="btn sm" onclick="openRecord(\'' + x.id + '\')">Open</button>' +
         (isAdmin() ? '<button class="btn sm nogo" onclick="deleteRecord(\'' + x.id + '\', this)">' + (DELARM === x.id ? 'Confirm delete' : 'Delete') + '</button>' : '') + '</div></div>';
     }).join('') + '</div>' : '<p class="hint">No records match.</p>') + '</div>';

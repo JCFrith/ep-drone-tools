@@ -1,5 +1,5 @@
 {
-  "version": "4.4",
+  "version": "4.5",
   "certificate": "107W-2026-01762",
   "basis": "Reconciled against Certificate of Waiver and Authorization 107W-2026-01762 as issued, effective 13 AUG 2026 to 31 JAN 2030, which supersedes 107W-2025-04534. Version 4.0 restates the shielded/non-shielded split, the three operations-over-non-participants pathways, the UASFM grid authorization and NOTAM requirement, and the EP operating interpretations documented under interpretations in this file. Trims Aircraft & Equipment to site-invariant items (aircraft-state checks such as Remote ID, ADS-B, maintenance log and FCC compliance now belong on a separate pre-flight readiness checklist, not a per-site record), removes duplicate Shielding Geometry and Property items already covered elsewhere, and splits the applicable sections between ground-crew and RPIC items with a single RPIC attestation gating final approval. Items carried over from the superseded certificate as EP practice are labelled as such. Version 4.4 adds the FAA airspace lookup: the site pin is checked against FAA open data (UAS Facility Maps, class airspace, special use and prohibited airspace, National Security UAS Flight Restrictions, stadiums, and airports and heliports within 3 miles). A pin moved after the lookup, a recorded class or grid height that differs from the FAA data without a reason, a site inside national security, prohibited or national defense airspace, or an incomplete lookup blocks approval.",
   "decisions": {
@@ -371,8 +371,8 @@
       "severity": "needsProgramReview",
       "provision": "Shielded Operations (SP 11), Non-Shielded Operations (SP 12)",
       "test": {
-        "type": "checkDone",
-        "key": "cls.gapsdocumented"
+        "type": "fieldPresent",
+        "field": "shieldSegments"
       },
       "when": {
         "type": "fieldEquals",
@@ -380,8 +380,8 @@
         "value": "gaps"
       },
       "label": "Shielding gaps documented",
-      "failReason": "Shielding gaps have not been identified and documented.",
-      "correctiveAction": "Identify every segment that reclassifies to Non-Shielded Operations (SP 12) and document it. The certificate provides no partial-shielding allowance."
+      "failReason": "Shielding gaps have not been documented in the segment-by-segment shielding record.",
+      "correctiveAction": "Record every segment that falls to Non-Shielded Operations (SP 12) in the Section 5 segment-by-segment shielding record. The certificate provides no partial-shielding allowance."
     },
     {
       "id": "CLS-005",
@@ -1777,32 +1777,6 @@
       "correctiveAction": "Confirm the site meets the site selection performance procedures in the waiver application."
     },
     {
-      "id": "RISK-004",
-      "category": "Approval",
-      "severity": "notApproved",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "fieldPresent",
-        "field": "reassessDate"
-      },
-      "label": "Reassessment date scheduled",
-      "failReason": "Reassessment date has not been scheduled.",
-      "correctiveAction": "Schedule and record the reassessment date. Default interval is 6 months."
-    },
-    {
-      "id": "RISK-005",
-      "category": "Approval",
-      "severity": "needsProgramReview",
-      "provision": "Site Assessment",
-      "test": {
-        "type": "fieldPresent",
-        "field": "reassessTriggers"
-      },
-      "label": "Conditions requiring reassessment recorded",
-      "failReason": "Conditions requiring reassessment have not been recorded.",
-      "correctiveAction": "Record conditions such as infrastructure, staging, C2, construction, or seasonal change."
-    },
-    {
       "id": "PHOTO-001",
       "category": "Evidence",
       "severity": "notApproved",
@@ -1905,10 +1879,6 @@
     {
       "id": "COND-006",
       "text": "Stop operations and reassess if ground risk exposure, access control, RF or C2 conditions, obstacles, construction, route geometry, or shielding conditions materially change."
-    },
-    {
-      "id": "COND-007",
-      "text": "The site must be reassessed no later than the recorded reassessment date."
     },
     {
       "id": "COND-008",
