@@ -64,7 +64,6 @@
   .warnbox.ok{background:rgba(48,164,108,.14);border:1px solid var(--ep-ok);}
   .warnbox b{color:#fff;}
   .submitbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;}
-  .rec{display:flex;justify-content:space-between;gap:10px;padding:9px 2px;border-top:1px solid rgba(255,255,255,.06);font-size:.82rem;}
   .chip{display:inline-block;padding:3px 9px;border-radius:12px;font-size:.66rem;font-weight:700;letter-spacing:.05em;}
   .chip.ok{background:var(--ep-ok);} .chip.no{background:var(--ep-block);}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ep-navy-card);border:1px solid var(--ep-blue);border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:99;display:none;max-width:90vw;}
@@ -90,7 +89,7 @@
    A submitted checklist is saved to shift_checklists and cannot be edited (admins can delete). */
 var SB_URL = 'https://oaztzgvxxloiesorfjlf.supabase.co', SB_KEY = 'sb_publishable_iYK9cCY1xdqn2hZtPyzczA_oBa56LBN';
 var sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ep-sa-auth' } }) : null;
-var SESSION = null, RECS = [], BUSY = false, POPUP_BLOCKED = false;
+var SESSION = null, BUSY = false, POPUP_BLOCKED = false;
 var DRAFT_KEY = 'ep-shift-draft';
 var S = freshState();
 
@@ -189,7 +188,7 @@ function render(){
       '<div style="margin-top:10px;"><label class="f">What are you reporting (optional)<textarea id="unfitNote" rows="2">' + esc(S.unfitNote) + '</textarea></label></div>' +
       '<div class="submitbar" style="margin-top:10px;"><button class="btn nogo" style="border-color:#E5484D;background:#E5484D;color:#fff;" onclick="submit(false)"' + (BUSY ? ' disabled' : '') + '>Record not fit for duty</button>' +
       '<button class="btn" onclick="S.unfit=false;saveDraft();render()">Back</button></div></div>';
-    app().innerHTML = h + historyHtml();
+    app().innerHTML = h;
     var un = document.getElementById('unfitNote'); if (un) un.addEventListener('input', function () { S.unfitNote = un.value; saveDraft(); });
     return;
   }
@@ -234,7 +233,7 @@ function render(){
     '<span class="hint">' + (ready ? 'All items checked. Submitting records your name and the time.' : (all - done) + ' item' + (all - done === 1 ? '' : 's') + ' left.') + '</span>' +
     '<button class="btn sm" style="margin-left:auto" onclick="resetAll()">Start over</button></div></div>';
 
-  app().innerHTML = h + historyHtml();
+  app().innerHTML = h;
 
   var ic = document.getElementById('icao');
   if (ic) ic.addEventListener('input', function () {
@@ -248,24 +247,7 @@ function setItem(k, v){ S.items[k] = v; saveDraft(); render(); }
 function toggleItem(k){ setItem(k, !S.items[k]); }
 function resetAll(){ if (countDone() && !confirm('Clear every check and start over?')) return; S = freshState(); POPUP_BLOCKED = false; lsDel(draftKey()); render(); }
 
-function historyHtml(){
-  var admin = role() === 'admin';
-  var h = '<div class="card"><h2>' + (admin ? 'Recent checklists, all pilots' : 'Your recent checklists') + '</h2>';
-  if (!RECS.length) return h + '<p class="hint">None yet.</p></div>';
-  RECS.forEach(function (r) {
-    h += '<div class="rec"><span>' + (admin ? '<b>' + esc(r.pilot_email) + '</b><br>' : '') + stamp(r.completed_at) + (r.ao_icao ? ' &middot; ' + esc(r.ao_icao) : '') +
-      (r.notes ? '<br><span class="hint">' + esc(r.notes) + '</span>' : '') + '</span>' +
-      '<span style="text-align:right">' + (r.fit_for_duty ? '<span class="chip ok">COMPLETE</span>' : '<span class="chip no">NOT FIT</span>') +
-      (admin ? '<br><button class="btn sm" style="margin-top:6px" onclick="delRec(\'' + r.id + '\')">Delete</button>' : '') + '</span></div>';
-  });
-  return h + '</div>';
-}
-
 /* ---------------- Data ---------------- */
-function loadRecs(){
-  return sb.from('shift_checklists').select('id,pilot_email,fit_for_duty,ao_icao,notes,completed_at').order('completed_at', { ascending: false }).limit(role() === 'admin' ? 50 : 10)
-    .then(function (r) { RECS = r.error ? [] : (r.data || []); });
-}
 function submit(fit){
   if (BUSY) return;
   if (fit && countDone() !== total()) { toast('Every item must be checked.'); return; }
@@ -284,7 +266,7 @@ function submit(fit){
     if (r.error) { toast('Could not save: ' + r.error.message); render(); return; }
     lsDel(draftKey());
     S = freshState(); POPUP_BLOCKED = false;
-    loadRecs().then(function () {
+    Promise.resolve().then(function () {
       render();
       app().insertAdjacentHTML('afterbegin', fit
         ? '<div class="warnbox ok"><b>Checklist submitted.</b> ' + stamp(new Date().toISOString()) + '. You are cleared to take the shift.</div>'
@@ -293,18 +275,10 @@ function submit(fit){
     });
   });
 }
-function delRec(id){
-  if (!confirm('Delete this checklist record permanently?')) return;
-  sb.from('shift_checklists').delete().eq('id', id).then(function (r) {
-    if (r.error) { toast(r.error.message); return; }
-    loadRecs().then(render);
-  });
-}
-
 function boot(){
   if (!allowed()) { deniedView(); return; }
   S = freshState(); loadDraft();
-  loadRecs().then(render);
+  render();
 }
 (function init(){
   if (!sb) { app().innerHTML = '<div class="card"><p class="hint">Could not load sign-in. Check the connection and reload.</p></div>'; return; }

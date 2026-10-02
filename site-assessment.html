@@ -395,6 +395,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .adm-act{white-space:nowrap;display:flex;gap:6px;}
 .adm-msg{padding:18px 22px;font-size:0.8rem;color:var(--ep-gray);}
 .adm-msg.err{color:#FF9EA1;}
+.sc-filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding:0 0 12px;}
+.sc-filters label{display:flex;flex-direction:column;gap:4px;font-size:0.6rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--ep-gray);}
+.sc-filters select,.sc-filters input{min-width:150px;}
+.sc-detail td{background:rgba(0,0,0,0.18);}
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 18px;font-size:0.76rem;padding:6px 2px;}
+.sc-grid .ok{color:#7BE0AE;} .sc-grid .no{color:#FF9EA1;}
+.sc-grid h5{grid-column:1/-1;font-size:0.6rem;letter-spacing:1.2px;text-transform:uppercase;color:var(--ep-gold);margin-top:6px;}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ep-navy-deep);border:1px solid var(--ep-gold);color:var(--ep-white);padding:12px 22px;font-size:0.84rem;opacity:0;pointer-events:none;transition:all 0.25s;z-index:2000;max-width:90vw;text-align:center;}
@@ -3260,6 +3267,9 @@ async function loadAdmin() {
       .select('id,cad_number,call_number,pilot_name,flight_date,status,mission,aircraft_asset,site_address,created_at')
       .order('created_at', { ascending: false }).limit(500);
     ADMIN.reports = r.error ? [] : (r.data || []);
+    var sc = await c.from('shift_checklists').select('*').order('completed_at', { ascending: false }).limit(2000);
+    ADMIN.shifts = sc.error ? [] : (sc.data || []);
+    if (sc.error) ADMIN.err = (ADMIN.err ? ADMIN.err + ' ' : '') + 'Shift checklists unavailable: ' + sc.error.message;
     if (r.error) ADMIN.err = 'Assessments loaded. Reports unavailable: ' + r.error.message;
   } catch (e) {
     ADMIN.err = e.message || String(e);
@@ -3290,12 +3300,14 @@ function renderAdmin() {
     '<div><b>' + (counts.needs_program_review || 0) + '</b> program review</div>' +
     '<div><b>' + (counts.not_approved || 0) + '</b> not approved</div>' +
     '<div><b>' + (counts.draft || 0) + '</b> draft</div>' +
-    '<div><b>' + ADMIN.reports.length + '</b> AAR reports</div>';
+    '<div><b>' + ADMIN.reports.length + '</b> AAR reports</div>' +
+    '<div><b>' + (ADMIN.shifts || []).length + '</b> shift checklists</div>';
   var tabs = document.getElementById('adminTabs');
   tabs.innerHTML =
     '<button class="adm-tab' + (ADMIN.tab === 'assessments' ? ' on' : '') + '" onclick="adminTab(\'assessments\')">Site Assessments</button>' +
     '<button class="adm-tab' + (ADMIN.tab === 'reports' ? ' on' : '') + '" onclick="adminTab(\'reports\')">AAR Reports</button>' +
-    '<button class="adm-tab' + (ADMIN.tab === 'fleet' ? ' on' : '') + '" onclick="adminTab(\'fleet\')">Fleet</button>';
+    '<button class="adm-tab' + (ADMIN.tab === 'fleet' ? ' on' : '') + '" onclick="adminTab(\'fleet\')">Fleet</button>' +
+    '<button class="adm-tab' + (ADMIN.tab === 'shifts' ? ' on' : '') + '" onclick="adminTab(\'shifts\')">Shift Checklists</button>';
   renderAdminBody();
 }
 
@@ -3308,6 +3320,7 @@ function renderAdminBody() {
   var hit = function (vals) { return !q || vals.join(' ').toLowerCase().indexOf(q) >= 0; };
 
   if (ADMIN.tab === 'fleet') { el.innerHTML = head + fleetAdminHTML(); return; }
+  if (ADMIN.tab === 'shifts') { el.innerHTML = head + shiftAdminHTML(); return; }
   if (ADMIN.tab === 'assessments') {
     var rows = ADMIN.assessments.filter(function (x) {
       return hit([x.site_name, x.client_name, x.assessed_by, x.rpic_reviewing, x.governing_provision, x.status]);
@@ -3348,6 +3361,82 @@ function renderAdminBody() {
       }).join('') + '</tbody></table></div>' +
       '<p class="adm-msg">AAR reports are read only here. Edit them in the AAR tool.</p>';
   }
+}
+
+/* ---- Admin: pre-shift checklists (shift_checklists, written by shift-checklist.html) ---- */
+var SC_IMSAFE = [['I', 'Illness'], ['M', 'Medication'], ['S', 'Stress'], ['A', 'Alcohol'], ['F', 'Fatigue'], ['E', 'Emotion']];
+var SC_ITEMS = [['comms', 'Reviewed latest comms in Belfry / Teams'], ['brief', 'Briefed by previous RPIC / Shift Supervisor'], ['tfr', 'Checked TFRs for assigned AOs'],
+  ['notam', 'Checked NOTAMs for assigned AOs'], ['metar', 'Checked FAA weather of record (METAR, TAF)'], ['radar', 'Checked weather radar'],
+  ['skyvector', 'SkyVector open'], ['aloft', 'Aloft open'], ['gmaps', 'Google Maps open'], ['tools', 'EP Drone Tools open']];
+var SCF = { pilot: '', from: '', to: '', status: '', open: '' };
+function scDt(iso) { if (!iso) return ''; try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
+function scDay(iso) { var d = new Date(iso); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function scMins(a, b) { if (!a || !b) return ''; var m = Math.round((new Date(b) - new Date(a)) / 60000); return m >= 0 ? m + ' min' : ''; }
+function scSet(k, v) { SCF[k] = v; renderAdminBody(); }
+function scToggle(id) { SCF.open = SCF.open === id ? '' : id; renderAdminBody(); }
+function scClear() { SCF = { pilot: '', from: '', to: '', status: '', open: '' }; renderAdminBody(); }
+function shiftRows() {
+  var q = ADMIN.q;
+  return (ADMIN.shifts || []).filter(function (x) {
+    var day = scDay(x.completed_at);
+    if (SCF.pilot && x.pilot_email !== SCF.pilot) return false;
+    if (SCF.status === 'fit' && !x.fit_for_duty) return false;
+    if (SCF.status === 'unfit' && x.fit_for_duty) return false;
+    if (SCF.from && day < SCF.from) return false;
+    if (SCF.to && day > SCF.to) return false;
+    return !q || [x.pilot_email, x.ao_icao, x.notes, x.fit_for_duty ? 'complete' : 'not fit'].join(' ').toLowerCase().indexOf(q) >= 0;
+  });
+}
+function shiftAdminHTML() {
+  var all = ADMIN.shifts || [];
+  var pilots = all.map(function (x) { return x.pilot_email; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).sort();
+  var rows = shiftRows();
+  var h = '<div class="adm-scroll"><div class="sc-filters">' +
+    '<label>Pilot<select onchange="scSet(\'pilot\',this.value)"><option value="">All pilots</option>' + pilots.map(function (p) { return '<option' + (SCF.pilot === p ? ' selected' : '') + '>' + esc(p) + '</option>'; }).join('') + '</select></label>' +
+    '<label>From<input type="date" value="' + esc(SCF.from) + '" onchange="scSet(\'from\',this.value)"></label>' +
+    '<label>To<input type="date" value="' + esc(SCF.to) + '" onchange="scSet(\'to\',this.value)"></label>' +
+    '<label>Status<select onchange="scSet(\'status\',this.value)"><option value="">All</option><option value="fit"' + (SCF.status === 'fit' ? ' selected' : '') + '>Complete</option><option value="unfit"' + (SCF.status === 'unfit' ? ' selected' : '') + '>Not fit for duty</option></select></label>' +
+    '<button class="mini-btn" onclick="scClear()">Clear filters</button>' +
+    '<span style="font-size:0.72rem;color:var(--ep-gray);margin-left:auto;">' + rows.length + ' of ' + all.length + ' shown</span></div>';
+  if (!rows.length) return h + '</div><p class="adm-msg">No shift checklists match.</p>';
+  h += '<table class="adm-table"><thead><tr><th>Completed</th><th>Pilot</th><th>Status</th><th>ICAO</th><th>Time to complete</th><th>Notes</th><th></th></tr></thead><tbody>';
+  rows.forEach(function (x) {
+    var open = SCF.open === x.id;
+    h += '<tr><td><b>' + esc(scDt(x.completed_at)) + '</b></td><td>' + esc(x.pilot_email || '') + '</td>' +
+      '<td>' + (x.fit_for_duty ? '<span class="st-pill st-ok">Complete</span>' : '<span class="st-pill st-no">Not fit for duty</span>') + '</td>' +
+      '<td>' + esc(x.ao_icao || '') + '</td><td>' + esc(scMins(x.started_at, x.completed_at)) + '</td>' +
+      '<td>' + esc((x.notes || '').slice(0, 70)) + '</td>' +
+      '<td class="adm-act"><button class="mini-btn" onclick="scToggle(\'' + esc(x.id) + '\')">' + (open ? 'Hide' : 'View') + '</button>' +
+      '<button class="mini-btn danger" onclick="scDelete(\'' + esc(x.id) + '\')">Delete</button></td></tr>';
+    if (open) {
+      var im = x.imsafe || {}, it = x.items || {};
+      h += '<tr class="sc-detail"><td colspan="7"><div class="sc-grid">' +
+        '<h5>IMSAFE</h5>' + SC_IMSAFE.map(function (k) { return '<div class="' + (im[k[0]] ? 'ok' : 'no') + '">' + (im[k[0]] ? '&#10003; ' : '&#10007; ') + k[0] + ': ' + k[1] + '</div>'; }).join('') +
+        (x.fit_for_duty ? '<h5>RPIC workflow</h5>' + SC_ITEMS.map(function (k, i) { return '<div class="' + (it[k[0]] ? 'ok' : 'no') + '">' + (it[k[0]] ? '&#10003; ' : '&#10007; ') + (i + 1) + '. ' + esc(k[1]) + '</div>'; }).join('') : '') +
+        '<h5>Record</h5><div>Started: ' + esc(scDt(x.started_at)) + '</div><div>Submitted: ' + esc(scDt(x.completed_at)) + '</div>' +
+        (x.notes ? '<div style="grid-column:1/-1">Notes: ' + esc(x.notes) + '</div>' : '') +
+        '</div></td></tr>';
+    }
+  });
+  return h + '</tbody></table></div><p class="adm-msg">Records are written by the Pre-Shift Checklist and cannot be edited. Export CSV exports the filtered list.</p>';
+}
+function shiftExportRows() {
+  return shiftRows().map(function (x) {
+    var r = { completed_at: x.completed_at, started_at: x.started_at, pilot_email: x.pilot_email, status: x.fit_for_duty ? 'complete' : 'not fit for duty', ao_icao: x.ao_icao || '', notes: x.notes || '' };
+    SC_IMSAFE.forEach(function (k) { r['imsafe_' + k[1].toLowerCase()] = (x.imsafe || {})[k[0]] ? 'yes' : 'no'; });
+    SC_ITEMS.forEach(function (k) { r[k[0]] = (x.items || {})[k[0]] ? 'yes' : 'no'; });
+    return r;
+  });
+}
+function scDelete(id) {
+  var x = (ADMIN.shifts || []).filter(function (r) { return r.id === id; })[0]; if (!x) return;
+  inlineConfirm('Permanently delete the shift checklist from ' + (x.pilot_email || '') + ' on ' + scDt(x.completed_at) + '?\n\nThis cannot be undone.', 'Delete permanently', async function () {
+    var c = sbClient(); if (!c) return;
+    var del = await c.from('shift_checklists').delete().eq('id', id);
+    if (del.error) { showToast('Delete failed: ' + del.error.message, true); return; }
+    ADMIN.shifts = ADMIN.shifts.filter(function (r) { return r.id !== id; });
+    renderAdmin(); showToast('Shift checklist deleted');
+  });
 }
 
 /* ---- Admin: fleet registry editor ---- */
@@ -3448,7 +3537,7 @@ async function adminDelete(id, name) {
 }
 function adminOpen(remoteId) { closeAdmin(); openRemote(remoteId); }
 function adminExport() {
-  var rows = ADMIN.tab === 'assessments' ? ADMIN.assessments : ADMIN.reports;
+  var rows = ADMIN.tab === 'assessments' ? ADMIN.assessments : ADMIN.tab === 'shifts' ? shiftExportRows() : ADMIN.reports;
   if (!rows.length) { showToast('Nothing to export', true); return; }
   var cols = Object.keys(rows[0]);
   var csv = [cols.join(',')].concat(rows.map(function (r) {
