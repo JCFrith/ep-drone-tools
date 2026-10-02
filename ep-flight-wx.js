@@ -224,10 +224,10 @@
       detail: (lo == null && hi == null) ? 'No aircraft temperature range on record.' : T == null ? 'Temperature unavailable.' : tl === 'no' ? 'Outside the aircraft operating range.' : tl === 'warn' ? 'Within 5\u00b0F of the aircraft operating limit.' : 'Inside the aircraft operating range.' });
     return rows;
   }
-  function limitsHTML(rows) {
+  function limitsHTML(rows, link) {
     var name = { ok: 'GREEN', warn: 'YELLOW', no: 'RED' };
     return '<table class="wx-lim"><thead><tr><th>Aircraft limit</th><th>Limit</th><th>Now</th><th>Rating</th></tr></thead><tbody>' + rows.map(function (r) {
-      return '<tr class="' + r.level + '"><td><b>' + esc(r.label) + '</b><div class="wx-mute">' + esc(r.detail) + '</div></td>' +
+      return '<tr class="' + r.level + '"><td><b>' + jump(r.label, link && link(r.key)) + '</b><div class="wx-mute">' + esc(r.detail) + '</div></td>' +
         '<td>' + (r.limit == null ? '<span class="wx-mute">Not set</span>' : esc(r.limit) + ' ' + r.unit) + '</td>' +
         '<td>' + (r.now == null ? '<span class="wx-mute">n/a</span>' : r.now + ' ' + r.unit) + (r.source ? '<div class="wx-mute">' + esc(r.source) + '</div>' : '') + '</td>' +
         '<td><span class="wx-rate ' + r.level + '">' + name[r.level] + '</span></td></tr>';
@@ -452,9 +452,11 @@
       '</div><div><span>Sunset</span>' + fmtLocal(s.sr && s.sr.set, s.off) + '</div><div><span>Civil dusk</span>' + fmtLocal(s.cv && s.cv.set, s.off) + '</div></div>' +
       '<div class="wx-src">Today at the site, local time. Outside civil twilight, anti-collision lighting visible 3 SM is required (14 CFR 107.29).</div>';
   }
-  function itemsHTML(items) {
+  /* link(key) may return an element id; the label then jumps to that part of the page. */
+  function jump(label, id) { return id ? '<a class="wx-jump" href="#' + id + '" data-jump="' + id + '">' + esc(label) + ' <span aria-hidden="true">&#8250;</span></a>' : esc(label); }
+  function itemsHTML(items, link) {
     return '<div class="wx-items">' + items.map(function (x) {
-      return '<div class="wx-item ' + x.level + '"><span class="dot"></span><div class="lbl">' + esc(x.label) + '</div><div class="val">' + esc(x.value) +
+      return '<div class="wx-item ' + x.level + '"><span class="dot"></span><div class="lbl">' + jump(x.label, link && link(x.key)) + '</div><div class="val">' + esc(x.value) +
         (x.detail ? '<div class="det">' + esc(x.detail) + '</div>' : '') + '</div></div>';
     }).join('') + '</div>';
   }
@@ -475,6 +477,7 @@
     'table.wx-lim td{padding:7px 6px;border-top:1px solid rgba(255,255,255,.08);vertical-align:top;} table.wx-lim tr.no td{background:rgba(229,72,77,.08);} table.wx-lim tr.warn td{background:rgba(245,165,36,.06);}' +
     '.wx-rate{display:inline-block;padding:3px 9px;border-radius:4px;font-weight:700;font-size:.68rem;letter-spacing:.06em;} .wx-rate.ok{background:#30A46C;color:#fff;} .wx-rate.warn{background:#F5A524;color:#091520;} .wx-rate.no{background:#E5484D;color:#fff;}' +
     '@media (max-width:560px){table.wx-lim td:first-child .wx-mute{display:none;}}' +
+    'a.wx-jump{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(0,162,233,.7);cursor:pointer;} a.wx-jump:hover{color:#00A2E9;} a.wx-jump span{color:#00A2E9;}' +
     '.wx-plain{font-size:.84rem;line-height:1.55;margin:6px 0;color:#eef4f9;} .wx-plain div{margin-bottom:3px;}' +
     '.wx-det summary{cursor:pointer;font-size:.74rem;color:#00A2E9;margin-top:4px;}' +
     '.wx-mute{color:#9A9A9A;font-size:.92em;} .wx-warn{color:#F5A524;font-size:.72rem;margin-top:2px;}' +

@@ -91,6 +91,11 @@
   .ackrow input{flex:1 1 200px;min-width:0;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:5px;padding:7px 9px;font:inherit;font-size:.8rem;}
   .ackline{margin-top:4px;font-size:.76rem;color:#f3d9a6;}
   @media (max-width:640px){ .fgrp{grid-template-columns:1fr;gap:4px;} }
+  [id^="j"]{scroll-margin-top:72px;}
+  .flash{animation:flash 1.6s ease-out;}
+  @keyframes flash{0%{box-shadow:0 0 0 3px #FCC00E;background-color:rgba(252,192,14,.12);}100%{box-shadow:0 0 0 0 rgba(252,192,14,0);}}
+  .totop{position:fixed;right:16px;bottom:18px;z-index:1400;font:inherit;font-size:.74rem;font-weight:700;padding:10px 14px;border-radius:20px;border:1px solid #FCC00E;background:#0B1923;color:#fff;cursor:pointer;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
+  .totop.show{display:block;}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ep-navy-card);border:1px solid var(--ep-blue);border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:9999;display:none;max-width:90vw;}
   .faa-btn{display:inline-block;font-size:.72rem;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:5px;color:#fff;text-decoration:none;margin:8px 6px 0 0;}
   @media (max-width:640px){ .grid2,.grid3{grid-template-columns:1fr;} #map{height:300px;} .topbar h1{font-size:1.35rem;} .ep-hub-btn{padding:6px 9px;font-size:.64rem;letter-spacing:.5px;} }
@@ -235,12 +240,13 @@ function render(){
   var f = REC.fields;
   app().innerHTML =
     '<div class="card no-print" id="recbar"></div>' +
-    '<div class="card gold"><h2><span class="num">GO</span>Flight conditions now<small id="wxStamp"></small></h2><div id="gngBody"></div></div>' +
-    '<div class="card"><h2><span class="num">1</span>Site</h2><div id="siteBody"></div></div>' +
-    '<div class="card"><h2><span class="num">2</span>Aircraft &amp; equipment</h2><div id="acBody"></div></div>' +
-    '<div class="card"><h2><span class="num">3</span>Airspace &amp; regulatory</h2><div id="airBody"></div></div>' +
-    '<div class="card"><h2><span class="num">WX</span>Weather at the site</h2><div id="wxBody"></div></div>' +
-    '<div class="card"><h2><span class="num">WX</span>Aviation weather: METAR and TAF</h2><div id="avwxBody"></div></div>';
+    '<div class="card gold" id="jGo"><h2><span class="num">GO</span>Flight conditions now<small id="wxStamp"></small></h2><div id="gngBody"></div></div>' +
+    '<div class="card" id="jSite"><h2><span class="num">1</span>Site</h2><div id="siteBody"></div></div>' +
+    '<div class="card" id="jAc"><h2><span class="num">2</span>Aircraft &amp; equipment</h2><div id="acBody"></div></div>' +
+    '<div class="card" id="jAir"><h2><span class="num">3</span>Airspace &amp; regulatory</h2><div id="airBody"></div></div>' +
+    '<div class="card" id="jWx"><h2><span class="num">WX</span>Weather at the site</h2><div id="wxBody"></div></div>' +
+    '<div class="card" id="jAvwx"><h2><span class="num">WX</span>Aviation weather: METAR and TAF</h2><div id="avwxBody"></div></div>' +
+    '<button class="totop no-print" id="toTop" onclick="jumpTo(\'jGo\')">&#8593; Flight conditions</button>';
   paintRecbar(); paintSite(); paintAc(); paintAir(); paintAll();
 }
 function paintRecbar(){
@@ -306,9 +312,9 @@ function paintSite(){
     '<div class="search no-print"><input id="q" type="text" placeholder="Address, or latitude, longitude" value="' + esc(f.address || '') + '"><button class="btn primary" onclick="findQuery()">Find</button><button class="btn" onclick="locateMe()">My location</button></div>' +
     '<div id="map"></div>' +
     '<div class="hint" id="pinHint" style="margin-top:6px;">' + (f.lat ? 'Pin ' + Number(f.lat).toFixed(5) + ', ' + Number(f.lng).toFixed(5) + '. ' : 'Tap the map to drop the pin. ') + 'Drag the pin to adjust. Layers: UASFM grid, controlled and special use airspace, no-fly zones, TFRs, stadiums.</div>' +
-    '<div class="grid3" style="margin-top:12px;">' + fText('rpic', 'RPIC') + fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment']) +
+    '<div class="grid3" id="jAlt" style="margin-top:12px;">' + fText('rpic', 'RPIC') + fSel('launchMethod', 'Launch method', ['Tactical deployment', 'Dock deployment']) +
       fText('plannedAlt', 'Planned altitude (ft AGL)', 'e.g. 150', 'number') + '</div>' +
-    (a ? '<div class="linked">Site assessment: <b>' + esc(a.site_name || '') + '</b>, ' + esc(statusLabel(a.status)) +
+    (a ? '<div class="linked" id="jLinked">Site assessment: <b>' + esc(a.site_name || '') + '</b>, ' + esc(statusLabel(a.status)) +
       (a.governing_provision ? '. ' + esc(a.governing_provision) : '') + (a.max_agl ? '. Approved ceiling <b>' + esc(a.max_agl) + ' ft AGL</b>' : '') +
       (a.overflight_pathway ? '. ' + esc(a.overflight_pathway) : '') + '.</div>' : '<p class="hint" style="margin-top:10px;">No site assessment linked. Pick one above to check the planned altitude against its approved ceiling.</p>');
   bind(el);
@@ -384,7 +390,7 @@ function paintAc(){
   if (!a || a.temp_min_f == null) miss.push(fText('tempMin', 'Min temperature (\u00b0F)', '', 'number'));
   if (!a || a.temp_max_f == null) miss.push(fText('tempMax', 'Max temperature (\u00b0F)', '', 'number'));
   var wl = miss.length ? '<div class="sub">Limits not in the fleet record</div><div class="grid2">' + miss.join('') + '</div>' : '';
-  el.innerHTML = sel + info + wl + '<div class="sub">Flight-day checks</div>' + checksHTML('ac');
+  el.innerHTML = sel + info + wl + '<div class="sub" id="jAcChecks">Flight-day checks</div>' + checksHTML('ac');
   document.getElementById('acSel').addEventListener('change', function () { REC.fields.aircraftId = this.value; save(); paintAc(); paintAll(); });
   bind(el); bindChecks(el);
 }
@@ -399,7 +405,7 @@ function paintAir(){
   var body = R && window.EPFAA ? '<div class="blk">' + EPFAA.renderHTML(R) + '</div>' +
     '<div class="acinfo"><div style="grid-column:1/-1"><span>Authorization basis</span>' + (R.controlled ? 'At or below the UASFM grid: SP 16 with a NOTAM. Above it: separate ATC authorization (LAANC may not be used for waivered operations)' : 'Class G, none required') + '</div></div>' +
     '<div class="no-print"><a class="faa-btn" href="' + EPFAA.links.notam + '" target="_blank" rel="noopener">NOTAM search</a><a class="faa-btn" href="' + EPFAA.links.tfr + '" target="_blank" rel="noopener">TFR list</a></div>' : '';
-  el.innerHTML = head + (R ? foundHTML(R) : '') + body + '<div class="sub">Flight-day checks</div>' + checksHTML('air');
+  el.innerHTML = head + (R ? foundHTML(R) : '') + body + '<div class="sub" id="jAirChecks">Flight-day checks</div>' + checksHTML('air');
   bindChecks(el); bindAcks(el);
 }
 function runFaa(){
@@ -444,7 +450,7 @@ function foundHTML(R){
   if (R.tfrChecked && near.length) tfr += '<div class="hint" style="margin-top:4px;">Nearby, not at the site: ' + near.map(function (t) { return esc(t.notam) + ' (' + t.nm + ' NM, ' + esc(t.title) + ')'; }).join('; ') + '</div>';
   var sua = g('sua').length ? g('sua').map(ackHTML).join('') : '<div class="none">None found at the pin.</div>';
   var stad = g('stad').length ? g('stad').map(ackHTML).join('') : '<div class="none">None within 3 NM.</div>';
-  return '<div class="found"><div class="sub" style="margin-top:4px;">Found at the pin</div>' +
+  return '<div class="found" id="jFound"><div class="sub" style="margin-top:4px;">Found at the pin</div>' +
     '<div class="fgrp"><div class="flbl">TFRs</div><div>' + tfr + '</div></div>' +
     '<div class="fgrp"><div class="flbl">Restricted and special use airspace</div><div>' + sua + '</div></div>' +
     '<div class="fgrp"><div class="flbl">Stadiums</div><div>' + stad + '</div></div>' +
@@ -534,15 +540,37 @@ function gngItems(){
   else items.push({ key: 'wx', label: 'Weather', level: 'warn', value: WBUSY ? 'Loading' : f.lat ? (WERR ? 'Failed: ' + WERR : 'Not loaded') : 'No pin', detail: '' });
   return items;
 }
+/* Where each indicator is checked on the page. */
+function jumpFor(key){
+  var open = openChecks();
+  var map = { site: document.getElementById('jLinked') ? 'jLinked' : 'jSite', alt: 'jAlt', faa: 'jAir', tfr: 'jFound', restrict: 'jFound', ac: 'jAc',
+    checks: open.length ? (open[0].sec === 'ac' ? 'jAcChecks' : 'jAirChecks') : 'jAcChecks',
+    wind: 'jHours', gust: 'jHours', temp: 'jNow', vis: 'jMetar', ceiling: 'jMetar', storm: 'jHours', precip: 'jHours', light: 'jSun', alerts: 'jAlerts', taf: 'jTaf', wx: 'jWx' };
+  return map[key] || null;
+}
+function jumpTo(id){
+  var el = document.getElementById(id); if (!el) return;
+  var open = el.closest && el.closest('details'); if (open) open.open = true;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[data-jump]'); if (!a) return;
+  e.preventDefault(); jumpTo(a.dataset.jump);
+});
+window.addEventListener('scroll', function () {
+  var b = document.getElementById('toTop'), g = document.getElementById('jGo'); if (!b || !g) return;
+  b.classList.toggle('show', g.getBoundingClientRect().bottom < 0);
+}, { passive: true });
 function overall(items){ return items.some(function (x) { return x.level === 'no'; }) ? 'no' : items.some(function (x) { return x.level === 'warn'; }) ? 'warn' : 'ok'; }
 function paintGng(){
   var el = document.getElementById('gngBody'); if (!el) return;
   var items = gngItems(), o = overall(items), last = REC.log[REC.log.length - 1];
   var keep = document.activeElement && document.activeElement.id === 'reason' ? document.activeElement.value : null;
   el.innerHTML = '<div class="verdict ' + o + '"><span class="dot"></span>' + (o === 'no' ? 'NO-GO indicated' : o === 'warn' ? 'Caution: review the flagged items' : 'No limiting conditions found') + '</div>' +
-    (W && window.EPWX ? '<div class="sub" style="margin-top:4px;">Aircraft limits against the weather now</div>' + EPWX.limitsHTML(EPWX.limitsCheck(W, wxCtx())) +
+    (W && window.EPWX ? '<div class="sub" style="margin-top:4px;">Aircraft limits against the weather now</div>' + EPWX.limitsHTML(EPWX.limitsCheck(W, wxCtx()), jumpFor) +
       '<div class="hint" style="margin:-2px 0 8px;">Green below 80% of the limit, yellow from 80% or when the next 2 hours reach it, red at or past it. Temperature turns yellow within 5&deg;F of the range. Manufacturer limits from the fleet record.</div>' : '') +
-    (window.EPWX ? EPWX.itemsHTML(items.filter(function (x) { return !W || ['wind', 'gust', 'temp'].indexOf(x.key) < 0; })) : '') +
+    (window.EPWX ? EPWX.itemsHTML(items.filter(function (x) { return !W || ['wind', 'gust', 'temp'].indexOf(x.key) < 0; }), jumpFor) : '') +
     '<div class="decide no-print"><button class="btn go" onclick="record(\'GO\')"' + (o === 'no' || !W ? ' disabled title="Clear every red item first"' : '') + '>Record GO</button>' +
     '<button class="btn nogo" onclick="record(\'NO-GO\')">Record NO-GO</button>' +
     '<input type="text" id="reason" placeholder="Reason or conditions (required for NO-GO)"></div>' +
@@ -597,13 +625,13 @@ function paintWx(){
   }
   var lim = windLimit(), alt = num(f.plannedAlt);
   el.innerHTML = '<div class="row" style="justify-content:space-between;"><span class="hint">Forecast model data for the pin, updated ' + esc(stamp(W.at)) + '. Wind limit ' + (lim != null ? lim + ' mph' : 'not set') + '.</span>' + refresh + '</div>' +
-    '<div class="blk">' + EPWX.tilesHTML(W, lim, alt) + '</div>' +
-    '<div class="blk"><div class="sub">Next 12 hours</div>' + EPWX.hoursHTML(W, lim, 12) + '</div>' +
-    '<div class="blk"><div class="sub">Weather alerts</div>' + EPWX.alertsHTML(W) + '</div>' +
-    '<div class="blk"><div class="sub">Sun</div>' + EPWX.sunHTML(W) + '</div>';
+    '<div class="blk" id="jNow">' + EPWX.tilesHTML(W, lim, alt) + '</div>' +
+    '<div class="blk" id="jHours"><div class="sub">Next 12 hours</div>' + EPWX.hoursHTML(W, lim, 12) + '</div>' +
+    '<div class="blk" id="jAlerts"><div class="sub">Weather alerts</div>' + EPWX.alertsHTML(W) + '</div>' +
+    '<div class="blk" id="jSun"><div class="sub">Sun</div>' + EPWX.sunHTML(W) + '</div>';
   el2.innerHTML = '<div class="row" style="justify-content:space-between;"><span class="hint">Nearest reporting airport to the pin for each.</span>' + refresh + '</div>' +
-    '<div class="blk"><div class="sub">METAR: observed now</div>' + EPWX.metarsHTML(W, 1) + '</div>' +
-    '<div class="blk"><div class="sub">TAF: terminal forecast</div>' + EPWX.tafsHTML(W, 1) + '</div>' +
+    '<div class="blk" id="jMetar"><div class="sub">METAR: observed now</div>' + EPWX.metarsHTML(W, 1) + '</div>' +
+    '<div class="blk" id="jTaf"><div class="sub">TAF: terminal forecast</div>' + EPWX.tafsHTML(W, 1) + '</div>' +
     '<p class="hint" style="margin-top:8px;">The raw METAR and TAF text is saved with this check whenever it changes.</p>';
 }
 function paintAll(){ paintGng(); paintWx(); }
