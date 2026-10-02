@@ -294,7 +294,7 @@ function bind(root){
     var ev = el.tagName === 'SELECT' ? 'change' : 'input';
     el.addEventListener(ev, function () {
       REC.fields[el.dataset.k] = el.value; save();
-      if (/plannedAlt|windLimit|launchMethod|prsEquipped|acAsset/.test(el.dataset.k)) { paintAll(); if (el.dataset.k === 'prsEquipped') paintAc(); }
+      if (/plannedAlt|windLimit|gustLimit|tempMin|tempMax|launchMethod|prsEquipped|acAsset/.test(el.dataset.k)) { paintAll(); if (el.dataset.k === 'prsEquipped') paintAc(); }
     });
   });
 }
@@ -372,12 +372,18 @@ function paintAc(){
   var info = a ? '<div class="acinfo">' +
       '<div><span>Registration</span>' + esc(a.faa_registration || 'n/a') + '</div><div><span>MTOW</span>' + (a.mtow_lb != null ? esc(a.mtow_lb) + ' lb' : 'n/a') + '</div>' +
       '<div><span>PRS</span>' + yn(a.prs_equipped) + (a.prs_model ? ', ' + esc(a.prs_model) : '') + '</div><div><span>Prop guards</span>' + yn(a.prop_guards) + '</div>' +
-      '<div><span>Anti-collision lights</span>' + yn(a.anti_collision_lighting) + '</div><div><span>Wind limit</span>' + (a.wind_limit_mph != null ? esc(a.wind_limit_mph) + ' mph' : 'Not set') + '</div>' +
+      '<div><span>Anti-collision lights</span>' + yn(a.anti_collision_lighting) + '</div><div><span>Max wind</span>' + (a.wind_limit_mph != null ? esc(a.wind_limit_mph) + ' mph' : 'Not set') + '</div>' +
+      '<div><span>Max gust</span>' + (a.gust_limit_mph != null ? esc(a.gust_limit_mph) + ' mph' : 'Not set') + '</div>' +
       '<div><span>Temperature range</span>' + (a.temp_min_f != null || a.temp_max_f != null ? esc(a.temp_min_f != null ? a.temp_min_f : '?') + ' to ' + esc(a.temp_max_f != null ? a.temp_max_f : '?') + ' &deg;F' : 'Not set') + '</div>' +
       '<div><span>Status</span>' + esc((a.status || '').replace(/_/g, ' ')) + (a.is_test ? ', test record' : '') + '</div></div>'
     : '<div class="grid2" style="margin-top:10px;">' + fText('acAsset', 'Asset designation', 'e.g. Alpha 1') + fText('acReg', 'FAA registration number') +
       fText('mtow', 'MTOW, all attachments (lb)', '', 'number') + fSel('prsEquipped', 'PRS equipped', ['Yes', 'No']) + '</div>';
-  var wl = (!a || a.wind_limit_mph == null) ? '<div class="grid3" style="margin-top:10px;">' + fText('windLimit', 'Wind limit (mph)', 'From the aircraft manual', 'number') + '</div>' : '';
+  var miss = [];
+  if (!a || a.wind_limit_mph == null) miss.push(fText('windLimit', 'Max wind (mph)', 'From the aircraft manual', 'number'));
+  if (!a || a.gust_limit_mph == null) miss.push(fText('gustLimit', 'Max gust (mph)', 'Blank uses max wind', 'number'));
+  if (!a || a.temp_min_f == null) miss.push(fText('tempMin', 'Min temperature (\u00b0F)', '', 'number'));
+  if (!a || a.temp_max_f == null) miss.push(fText('tempMax', 'Max temperature (\u00b0F)', '', 'number'));
+  var wl = miss.length ? '<div class="sub">Limits not in the fleet record</div><div class="grid2">' + miss.join('') + '</div>' : '';
   el.innerHTML = sel + info + wl + '<div class="sub">Flight-day checks</div>' + checksHTML('ac');
   document.getElementById('acSel').addEventListener('change', function () { REC.fields.aircraftId = this.value; save(); paintAc(); paintAll(); });
   bind(el); bindChecks(el);
@@ -481,6 +487,10 @@ function openChecks(){ return CHECKS.filter(function (c) { return !checkState(c)
 
 /* ---------------- Indicators ---------------- */
 function windLimit(){ var a = aircraft(); if (a && a.wind_limit_mph != null) return Number(a.wind_limit_mph); return num(REC.fields.windLimit); }
+function gustLimit(){ var a = aircraft(); if (a && a.gust_limit_mph != null) return Number(a.gust_limit_mph); return num(REC.fields.gustLimit); }
+function tempMin(){ var a = aircraft(); if (a && a.temp_min_f != null) return Number(a.temp_min_f); return num(REC.fields.tempMin); }
+function tempMax(){ var a = aircraft(); if (a && a.temp_max_f != null) return Number(a.temp_max_f); return num(REC.fields.tempMax); }
+function wxCtx(){ var a = aircraft(); return { plannedAltFt: num(REC.fields.plannedAlt), windLimit: windLimit(), gustLimit: gustLimit(), tempMin: tempMin(), tempMax: tempMax(), lights: a ? a.anti_collision_lighting : null }; }
 function gngItems(){
   var items = [], f = REC.fields, a = aircraft(), L = linked(), R = REC.faa, alt = num(f.plannedAlt);
   // Site assessment
@@ -520,7 +530,7 @@ function gngItems(){
   items.push({ key: 'checks', label: 'Flight-day checks', level: open.length ? 'no' : 'ok', value: open.length ? open.length + ' open' : 'All complete',
     detail: open.length ? open.map(function (c) { return c.text; }).join('; ') : '' });
   // Weather
-  if (W) items = items.concat(EPWX.evaluate(W, { plannedAltFt: alt, windLimit: windLimit(), tempMin: a ? a.temp_min_f : null, tempMax: a ? a.temp_max_f : null, lights: a ? a.anti_collision_lighting : null }));
+  if (W) items = items.concat(EPWX.evaluate(W, wxCtx()));
   else items.push({ key: 'wx', label: 'Weather', level: 'warn', value: WBUSY ? 'Loading' : f.lat ? (WERR ? 'Failed: ' + WERR : 'Not loaded') : 'No pin', detail: '' });
   return items;
 }
@@ -530,7 +540,9 @@ function paintGng(){
   var items = gngItems(), o = overall(items), last = REC.log[REC.log.length - 1];
   var keep = document.activeElement && document.activeElement.id === 'reason' ? document.activeElement.value : null;
   el.innerHTML = '<div class="verdict ' + o + '"><span class="dot"></span>' + (o === 'no' ? 'NO-GO indicated' : o === 'warn' ? 'Caution: review the flagged items' : 'No limiting conditions found') + '</div>' +
-    (window.EPWX ? EPWX.itemsHTML(items) : '') +
+    (W && window.EPWX ? '<div class="sub" style="margin-top:4px;">Aircraft limits against the weather now</div>' + EPWX.limitsHTML(EPWX.limitsCheck(W, wxCtx())) +
+      '<div class="hint" style="margin:-2px 0 8px;">Green below 80% of the limit, yellow from 80% or when the next 2 hours reach it, red at or past it. Temperature turns yellow within 5&deg;F of the range. Manufacturer limits from the fleet record.</div>' : '') +
+    (window.EPWX ? EPWX.itemsHTML(items.filter(function (x) { return !W || ['wind', 'gust', 'temp'].indexOf(x.key) < 0; })) : '') +
     '<div class="decide no-print"><button class="btn go" onclick="record(\'GO\')"' + (o === 'no' || !W ? ' disabled title="Clear every red item first"' : '') + '>Record GO</button>' +
     '<button class="btn nogo" onclick="record(\'NO-GO\')">Record NO-GO</button>' +
     '<input type="text" id="reason" placeholder="Reason or conditions (required for NO-GO)"></div>' +
@@ -548,7 +560,7 @@ function record(decision){
   if (decision === 'NO-GO' && !reason.trim()) { toast('Enter the reason for NO-GO'); return; }
   var items = gngItems();
   if (decision === 'GO' && overall(items) === 'no') { toast('Clear every red item before recording GO'); return; }
-  REC.log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(), by: SESSION.user.email, alt: num(REC.fields.plannedAlt), windLimit: windLimit(),
+  REC.log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(), by: SESSION.user.email, alt: num(REC.fields.plannedAlt), windLimit: windLimit(), gustLimit: gustLimit(), tempRange: [tempMin(), tempMax()],
     aircraft: (aircraft() || {}).name || REC.fields.acAsset || '',
     metar: W && W.metars && W.metars[0] ? W.metars[0].rawOb || '' : '', taf: W && W.tafs && W.tafs[0] ? W.tafs[0].rawTAF || '' : '',
     acks: JSON.parse(JSON.stringify(REC.acks || {})),

@@ -191,6 +191,49 @@
     return { id: t.icaoId, mi: t._mi, ts: hit.some(function (p) { return p.ts; }), cat: worst, maxKt: maxG, minVis: hit.reduce(function (a, p) { return p.vis != null && (a == null || p.vis < a) ? p.vis : a; }, null) };
   }
 
+  /* ---- Aircraft limits against the weather now: max wind, max gust, temperature range ----
+     Green below 80% of the limit (temperature: more than 5 F inside the range), yellow from 80% or when the
+     next 2 hours reach the limit, red at or past the limit. "Now" takes the worse of the forecast for this
+     hour and the nearest METAR within 15 mi. Sustained wind is at the planned altitude (estimated above 10 m). */
+  function limitsCheck(W, ctx) {
+    ctx = ctx || {};
+    var fc = W.fc, H = fc && fc.hourly, i = fc ? nowIndex(fc) : 0, alt = ctx.plannedAltFt != null ? ctx.plannedAltFt : null;
+    var near = (W.metars || []).filter(function (m) { return m && m._mi <= METAR_NEAR_MI; })[0] || null;
+    var rows = [];
+    var lvl = function (v, lim, soon) { if (v == null || lim == null) return 'warn'; return v >= lim ? 'no' : (v >= 0.8 * lim || (soon != null && soon >= lim)) ? 'warn' : 'ok'; };
+    // Sustained wind
+    var wl = ctx.windLimit != null ? Number(ctx.windLimit) : null, wNow = null, wSrc = [], wSoon = null;
+    if (fc && H) { var wa = windAtAlt(fc, i, alt); wNow = wa.spd; wSrc.push('forecast ' + wa.level);
+      for (var k = i + 1; k <= Math.min(i + 2, H.time.length - 1); k++) wSoon = Math.max(wSoon || 0, windAtAlt(fc, k, alt).spd); }
+    if (near && near.wspd != null) { var ms = near.wspd * KT_MPH; if (wNow == null || ms > wNow) wNow = ms; wSrc.push(near.icaoId + ' observed'); }
+    rows.push({ key: 'wind', label: 'Max wind', limit: wl, now: wNow == null ? null : Math.round(wNow), unit: 'mph', source: wSrc.join(', '), level: lvl(wNow, wl, wSoon),
+      detail: wl == null ? 'No aircraft max wind on record.' : wNow == null ? 'Wind unavailable.' : wNow >= wl ? 'At or above the aircraft max wind.' : (wSoon != null && wSoon >= wl) ? 'Forecast to reach ' + Math.round(wSoon) + ' mph within 2 hours.' : wNow >= 0.8 * wl ? 'Within 20% of the aircraft max wind.' : 'Below 80% of the aircraft max wind.' });
+    // Gusts
+    var gl = ctx.gustLimit != null ? Number(ctx.gustLimit) : wl, gNow = null, gSrc = [], gSoon = null;
+    if (fc && H) { gNow = H.wind_gusts_10m[i]; gSrc.push('forecast');
+      for (var q = i + 1; q <= Math.min(i + 2, H.time.length - 1); q++) gSoon = Math.max(gSoon || 0, H.wind_gusts_10m[q] || 0); }
+    if (near) { var mg = (near.wgst || near.wspd || 0) * KT_MPH; if (gNow == null || mg > gNow) gNow = mg; gSrc.push(near.icaoId + ' observed'); }
+    rows.push({ key: 'gust', label: 'Max gust', limit: gl, now: gNow == null ? null : Math.round(gNow), unit: 'mph', source: gSrc.join(', '), level: lvl(gNow, gl, gSoon),
+      detail: (ctx.gustLimit == null && wl != null ? 'No separate gust limit on record; using the max wind. ' : '') + (gl == null ? 'No aircraft gust limit on record.' : gNow == null ? 'Gusts unavailable.' : gNow >= gl ? 'At or above the aircraft gust limit.' : (gSoon != null && gSoon >= gl) ? 'Forecast gusts reach ' + Math.round(gSoon) + ' mph within 2 hours.' : gNow >= 0.8 * gl ? 'Within 20% of the gust limit.' : 'Below 80% of the gust limit.') });
+    // Temperature
+    var lo = ctx.tempMin != null ? Number(ctx.tempMin) : null, hi = ctx.tempMax != null ? Number(ctx.tempMax) : null, T = null, tSrc = '';
+    if (near && near.temp != null) { T = near.temp * 9 / 5 + 32; tSrc = near.icaoId + ' observed'; }
+    else if (fc && fc.current && fc.current.temperature_2m != null) { T = fc.current.temperature_2m; tSrc = 'forecast'; }
+    var tl = (lo == null && hi == null) || T == null ? 'warn' : ((lo != null && T < lo) || (hi != null && T > hi)) ? 'no' : ((lo != null && T < lo + 5) || (hi != null && T > hi - 5)) ? 'warn' : 'ok';
+    rows.push({ key: 'temp', label: 'Temperature range', limit: (lo == null && hi == null) ? null : (lo != null ? lo : '?') + ' to ' + (hi != null ? hi : '?'), now: T == null ? null : Math.round(T), unit: '\u00b0F', source: tSrc, level: tl,
+      detail: (lo == null && hi == null) ? 'No aircraft temperature range on record.' : T == null ? 'Temperature unavailable.' : tl === 'no' ? 'Outside the aircraft operating range.' : tl === 'warn' ? 'Within 5\u00b0F of the aircraft operating limit.' : 'Inside the aircraft operating range.' });
+    return rows;
+  }
+  function limitsHTML(rows) {
+    var name = { ok: 'GREEN', warn: 'YELLOW', no: 'RED' };
+    return '<table class="wx-lim"><thead><tr><th>Aircraft limit</th><th>Limit</th><th>Now</th><th>Rating</th></tr></thead><tbody>' + rows.map(function (r) {
+      return '<tr class="' + r.level + '"><td><b>' + esc(r.label) + '</b><div class="wx-mute">' + esc(r.detail) + '</div></td>' +
+        '<td>' + (r.limit == null ? '<span class="wx-mute">Not set</span>' : esc(r.limit) + ' ' + r.unit) + '</td>' +
+        '<td>' + (r.now == null ? '<span class="wx-mute">n/a</span>' : r.now + ' ' + r.unit) + (r.source ? '<div class="wx-mute">' + esc(r.source) + '</div>' : '') + '</td>' +
+        '<td><span class="wx-rate ' + r.level + '">' + name[r.level] + '</span></td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+
   /* ---- Go / No-Go indicators. level: ok | warn | no ---- */
   function evaluate(W, ctx) {
     ctx = ctx || {};
@@ -199,18 +242,10 @@
     var alt = ctx.plannedAltFt != null ? ctx.plannedAltFt : null, lim = ctx.windLimit;
     var near = (W.metars || []).map(metarInfo).filter(function (m) { return m && m.mi <= METAR_NEAR_MI; })[0] || null;
 
-    // Wind at operating altitude and gusts, now and the next two hours
-    if (!fc) add('wind', 'Wind', 'warn', 'Unavailable', 'Forecast did not load. Check wind another way.');
-    else {
-      var w = windAtAlt(fc, i, alt), g = H.wind_gusts_10m[i], worst = Math.max(w.spd, g);
-      var later = 0; for (var k = i + 1; k <= Math.min(i + 2, H.time.length - 1); k++) later = Math.max(later, windAtAlt(fc, k, alt).spd, H.wind_gusts_10m[k]);
-      var val = Math.round(w.spd) + ' mph at ' + w.level + ' from ' + compass(w.dir) + ', gusts ' + Math.round(g);
-      if (lim == null) add('wind', 'Wind', 'warn', val, 'No aircraft wind limit on record. Set it in the fleet record or here.');
-      else if (worst >= lim) add('wind', 'Wind', 'no', val, 'At or above the ' + lim + ' mph aircraft limit.');
-      else if (later >= lim) add('wind', 'Wind', 'warn', val, 'Forecast to reach ' + Math.round(later) + ' mph within 2 hours (limit ' + lim + ').');
-      else if (worst >= 0.8 * lim) add('wind', 'Wind', 'warn', val, 'Within 20% of the ' + lim + ' mph limit.');
-      else add('wind', 'Wind', 'ok', val, 'Below the ' + lim + ' mph limit.');
-    }
+    // Aircraft limits: max wind, max gust, temperature range
+    limitsCheck(W, ctx).forEach(function (r) {
+      add(r.key, r.label, r.level, r.now == null ? 'Unavailable' : r.now + ' ' + r.unit + (r.limit != null ? ' (limit ' + r.limit + ' ' + r.unit + ')' : ''), r.detail);
+    });
     // Visibility, 14 CFR 107.51(c): 3 SM
     var vis = near && near.visSM != null ? near.visSM : (fc && fc.current && fc.current.visibility != null ? fc.current.visibility / 1609.34 : null);
     var visSrc = near && near.visSM != null ? near.id + ' METAR' : 'forecast';
@@ -237,15 +272,6 @@
     var popSoon = 0; if (fc) for (var p = i; p <= Math.min(i + 2, H.time.length - 1); p++) popSoon = Math.max(popSoon, H.precipitation_probability[p] || 0);
     add('precip', 'Precipitation / obscuration', wetNow ? 'no' : (obsc || popSoon >= 50) ? 'warn' : 'ok',
       wetNow ? (WMO[codeNow] || 'Reported') : obsc ? 'Haze, mist or smoke reported' : popSoon + '% chance in 2 h', 'EP preflight: no precipitation, fog, smoke or dust.');
-    // Temperature against the aircraft limits
-    if (fc && fc.current) {
-      var T = fc.current.temperature_2m, lo = ctx.tempMin, hi = ctx.tempMax;
-      if (lo == null && hi == null) add('temp', 'Temperature', 'warn', Math.round(T) + '°F', 'No aircraft temperature limits on record.');
-      else {
-        var bad = (lo != null && T < lo) || (hi != null && T > hi), close = (lo != null && T < lo + 5) || (hi != null && T > hi - 5);
-        add('temp', 'Temperature', bad ? 'no' : close ? 'warn' : 'ok', Math.round(T) + '°F', 'Aircraft limits ' + (lo != null ? lo : '?') + ' to ' + (hi != null ? hi : '?') + '°F.');
-      }
-    }
     // Daylight and lighting, 14 CFR 107.29
     var s = sunToday(W), nowMs = Date.now();
     var day = s.cv && nowMs >= s.cv.rise.getTime() && nowMs <= s.cv.set.getTime();
@@ -265,12 +291,13 @@
       if (W.tafs === null) add('taf', 'Terminal forecast', 'warn', 'Unavailable', 'TAFs did not load. Check aviationweather.gov.');
       else if (!o) add('taf', 'Terminal forecast', 'ok', 'No TAF within ' + TAF_NEAR_MI + ' mi', 'Nearest TAF airport is farther away; it describes that airport, not the site.');
       else {
-        var bad = o.ts || o.cat === 'IFR' || o.cat === 'LIFR' || (lim != null && o.maxKt * KT_MPH > lim);
+        var glim = ctx.gustLimit != null ? Number(ctx.gustLimit) : lim;
+        var bad = o.ts || o.cat === 'IFR' || o.cat === 'LIFR' || (glim != null && o.maxKt * KT_MPH > glim);
         add('taf', 'Terminal forecast', bad ? 'warn' : 'ok',
           o.id + ' (' + o.mi.toFixed(0) + ' mi), next 3 h: ' + (o.cat || 'n/a') + (o.ts ? ', thunderstorms' : '') + (o.maxKt ? ', wind to ' + Math.round(o.maxKt * KT_MPH) + ' mph' : ''),
           o.ts ? 'Thunderstorms forecast at the airport in the next 3 hours.'
             : (o.cat === 'IFR' || o.cat === 'LIFR') ? 'IFR or lower forecast at the airport in the next 3 hours. Check ceiling and visibility at the site.'
-            : bad ? 'Forecast wind or gusts above the ' + lim + ' mph limit in the next 3 hours.' : 'Forecast for the airport, not the site.');
+            : bad ? 'Forecast wind or gusts above the ' + glim + ' mph limit in the next 3 hours.' : 'Forecast for the airport, not the site.');
       }
     }
     return out;
@@ -444,6 +471,10 @@
     '.wx-alert{border-left:3px solid #F5A524;padding:6px 9px;margin-bottom:6px;background:rgba(245,165,36,.07);font-size:.8rem;} .wx-alert.sev{border-color:#E5484D;background:rgba(229,72,77,.08);}' +
     '.wx-metar{font-size:.78rem;margin-bottom:8px;} .wx-metar code{display:block;font-size:.72rem;background:#091520;padding:6px 8px;border-radius:5px;margin-top:3px;white-space:pre-wrap;word-break:break-word;color:#d7e3ee;}' +
     '.wx-dec{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 12px;margin:6px 0 2px;font-size:.78rem;} .wx-dec div span{display:block;font-size:.58rem;text-transform:uppercase;letter-spacing:.05em;color:#9A9A9A;}' +
+    'table.wx-lim{width:100%;border-collapse:collapse;font-size:.82rem;margin:4px 0 8px;} table.wx-lim th{text-align:left;font-size:.6rem;letter-spacing:.06em;text-transform:uppercase;color:#9A9A9A;padding:5px 6px;}' +
+    'table.wx-lim td{padding:7px 6px;border-top:1px solid rgba(255,255,255,.08);vertical-align:top;} table.wx-lim tr.no td{background:rgba(229,72,77,.08);} table.wx-lim tr.warn td{background:rgba(245,165,36,.06);}' +
+    '.wx-rate{display:inline-block;padding:3px 9px;border-radius:4px;font-weight:700;font-size:.68rem;letter-spacing:.06em;} .wx-rate.ok{background:#30A46C;color:#fff;} .wx-rate.warn{background:#F5A524;color:#091520;} .wx-rate.no{background:#E5484D;color:#fff;}' +
+    '@media (max-width:560px){table.wx-lim td:first-child .wx-mute{display:none;}}' +
     '.wx-plain{font-size:.84rem;line-height:1.55;margin:6px 0;color:#eef4f9;} .wx-plain div{margin-bottom:3px;}' +
     '.wx-det summary{cursor:pointer;font-size:.74rem;color:#00A2E9;margin-top:4px;}' +
     '.wx-mute{color:#9A9A9A;font-size:.92em;} .wx-warn{color:#F5A524;font-size:.72rem;margin-top:2px;}' +
@@ -466,5 +497,5 @@
   if (typeof document !== 'undefined') { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectCss); else injectCss(); }
 
   window.EPWX = { fetchAll: fetchAll, evaluate: evaluate, nowIndex: nowIndex, windAtAlt: windAtAlt, metarInfo: metarInfo, sunEvent: sunEvent, sunToday: sunToday,
-    tilesHTML: tilesHTML, hoursHTML: hoursHTML, alertsHTML: alertsHTML, metarsHTML: metarsHTML, tafsHTML: tafsHTML, avwxSnapshot: avwxSnapshot, avwxSnapshotHTML: avwxSnapshotHTML, tafOutlook: tafOutlook, wxText: wxText, sunHTML: sunHTML, itemsHTML: itemsHTML, WMO: WMO, compass: compass, fmtLocal: fmtLocal };
+    tilesHTML: tilesHTML, hoursHTML: hoursHTML, alertsHTML: alertsHTML, metarsHTML: metarsHTML, tafsHTML: tafsHTML, limitsCheck: limitsCheck, limitsHTML: limitsHTML, avwxSnapshot: avwxSnapshot, avwxSnapshotHTML: avwxSnapshotHTML, tafOutlook: tafOutlook, wxText: wxText, sunHTML: sunHTML, itemsHTML: itemsHTML, WMO: WMO, compass: compass, fmtLocal: fmtLocal };
 })();

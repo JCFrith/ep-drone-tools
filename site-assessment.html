@@ -2339,7 +2339,7 @@ function fleetPickerHTML() {
     card = '<div class="fleet-card">' + warn + '<div class="fleet-grid">' +
       row('Make / model', [a.make, a.model].filter(Boolean).join(' ')) + row('Serial', a.serial_number) + row('Remote ID', a.remote_id_serial) +
       row('NDAA compliant', yn(a.ndaa_compliant)) + row('C2 platform', a.c2_platform) + row('Firmware', a.firmware_version) +
-      row('Wind limit', a.wind_limit_mph != null ? a.wind_limit_mph + ' mph' : '') + row('Temperature range', (a.temp_min_f != null || a.temp_max_f != null) ? (a.temp_min_f != null ? a.temp_min_f : '?') + ' to ' + (a.temp_max_f != null ? a.temp_max_f : '?') + '\u00b0F' : '') + row('Prop guards', yn(a.prop_guards)) + row('Anti-collision lighting', yn(a.anti_collision_lighting)) + row('PRS', a.prs_equipped ? (a.prs_model || 'Yes') : 'No') +
+      row('Max wind', a.wind_limit_mph != null ? a.wind_limit_mph + ' mph' : '') + row('Max gust', a.gust_limit_mph != null ? a.gust_limit_mph + ' mph' : '') + row('Temperature range', (a.temp_min_f != null || a.temp_max_f != null) ? (a.temp_min_f != null ? a.temp_min_f : '?') + ' to ' + (a.temp_max_f != null ? a.temp_max_f : '?') + '\u00b0F' : '') + row('Prop guards', yn(a.prop_guards)) + row('Anti-collision lighting', yn(a.anti_collision_lighting)) + row('PRS', a.prs_equipped ? (a.prs_model || 'Yes') : 'No') +
       '</div>' + (a.notes ? '<div class="hint" style="margin-top:6px;">' + esc(a.notes) + '</div>' : '') +
       '<div class="hint" style="margin-top:6px;">Registration, weight and PRS below were filled from the fleet record. Correct them here if the aircraft differs today; the fleet record is changed in Admin.</div></div>';
   }
@@ -3337,7 +3337,7 @@ var FLEET_FIELDS = [
   ['serial_number', 'Serial number', 'text'], ['faa_registration', 'FAA registration', 'text'], ['remote_id_serial', 'Remote ID serial', 'text'],
   ['mtow_lb', 'Max takeoff weight, all attachments (lb)', 'number'], ['prs_equipped', 'PRS equipped', 'bool'], ['prs_model', 'PRS model', 'text'],
   ['prs_min_alt_ft', 'PRS minimum deployment height (ft AGL)', 'number'], ['prop_guards', 'Prop guards', 'bool'], ['anti_collision_lighting', 'Anti-collision lighting', 'bool'],
-  ['wind_limit_mph', 'Wind limit (mph)', 'number'], ['temp_min_f', 'Minimum operating temperature (\u00b0F)', 'number'], ['temp_max_f', 'Maximum operating temperature (\u00b0F)', 'number'],
+  ['wind_limit_mph', 'Max wind (mph)', 'number'], ['gust_limit_mph', 'Max gust (mph)', 'number'], ['temp_min_f', 'Minimum operating temperature (\u00b0F)', 'number'], ['temp_max_f', 'Maximum operating temperature (\u00b0F)', 'number'],
   ['ndaa_compliant', 'NDAA compliant', 'bool'], ['c2_platform', 'C2 platform', 'text'], ['firmware_version', 'Firmware version', 'text'],
   ['status', 'Status', 'status'], ['is_test', 'Test record', 'bool'], ['notes', 'Notes', 'text']
 ];
