@@ -74,6 +74,7 @@
 
   function nowIndex(fc) {
     var H = fc && fc.hourly; if (!H || !H.time) return 0;
+    if (fc._at0) return 0;   // saved snapshot: the first hour is the hour of the decision
     var iso = new Date(Date.now() + (fc.utc_offset_seconds || 0) * 1000).toISOString().slice(0, 13);
     for (var i = 0; i < H.time.length; i++) if (H.time[i].slice(0, 13) >= iso) return i;
     return 0;

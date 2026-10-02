@@ -96,6 +96,14 @@
   @keyframes flash{0%{box-shadow:0 0 0 3px #FCC00E;background-color:rgba(252,192,14,.12);}100%{box-shadow:0 0 0 0 rgba(252,192,14,0);}}
   .totop{position:fixed;right:16px;bottom:18px;z-index:1400;font:inherit;font-size:.74rem;font-weight:700;padding:10px 14px;border-radius:20px;border:1px solid #FCC00E;background:#0B1923;color:#fff;cursor:pointer;display:none;box-shadow:0 4px 14px rgba(0,0,0,.4);}
   .totop.show{display:block;}
+  .lockbar{background:rgba(48,164,108,.1);border:1px solid #30A46C;border-radius:8px;padding:12px 14px;margin-bottom:14px;font-size:.84rem;line-height:1.5;}
+  .lockbar.edit{background:rgba(245,165,36,.1);border-color:#F5A524;}
+  .rq{flex:1 1 240px;min-width:0;background:var(--ep-navy-deep);border:1px solid rgba(255,255,255,.18);color:#fff;border-radius:6px;padding:9px 10px;font:inherit;font-size:.9rem;}
+  .rec-list{display:flex;flex-direction:column;}
+  .rec-row{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 4px;border-top:1px solid rgba(255,255,255,.07);}
+  .rec-main{flex:1;min-width:0;cursor:pointer;} .rec-main:hover b{color:var(--ep-blue);}
+  .rec-top{font-size:.9rem;margin-bottom:2px;} .rec-act{display:flex;gap:6px;flex:0 0 auto;}
+  input:disabled,select:disabled{opacity:.75;}
   .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ep-navy-card);border:1px solid var(--ep-blue);border-radius:8px;padding:10px 16px;font-size:.85rem;z-index:9999;display:none;max-width:90vw;}
   .faa-btn{display:inline-block;font-size:.72rem;padding:6px 10px;border:1px solid rgba(255,255,255,.25);border-radius:5px;color:#fff;text-decoration:none;margin:8px 6px 0 0;}
   @media (max-width:640px){ .grid2,.grid3{grid-template-columns:1fr;} #map{height:300px;} .topbar h1{font-size:1.35rem;} .ep-hub-btn{padding:6px 9px;font-size:.64rem;letter-spacing:.5px;} }
@@ -121,8 +129,9 @@
    Indicators never decide. The RPIC records the decision. */
 var SB_URL = 'https://oaztzgvxxloiesorfjlf.supabase.co', SB_KEY = 'sb_publishable_iYK9cCY1xdqn2hZtPyzczA_oBa56LBN';
 var sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ep-sa-auth' } }) : null;
-var SESSION = null, FLEET = [], ASSESS = [], RECENT = [];
-var REC = null;              // current record { id, fields, checks, faa, log, avwx }
+var SESSION = null, FLEET = [], ASSESS = [], RECORDS = [], RFILTER = { q: '', d: 'decided' }, DELARM = '';
+var REC = null;              // current record { id, fields, checks, acks, faa, log, avwx, edits }
+var EDIT = false;            // admin has unlocked a locked record for editing
 var W = null, WKEY = '', WBUSY = false, WERR = '', WTIMER = null;
 var FAABUSY = false, FAAERR = '';
 var map = null, pin = null, saveTO = null, saving = false, dirty = false;
@@ -148,7 +157,11 @@ function num(v){ var n = parseFloat(v); return isNaN(n) ? null : n; }
 function stamp(iso){ try { return new Date(iso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
 function aircraft(){ return REC && REC.fields.aircraftId ? FLEET.filter(function (a) { return a.id === REC.fields.aircraftId; })[0] || null : null; }
 function linked(){ return REC && REC.fields.assessmentId ? ASSESS.filter(function (a) { return a.id === REC.fields.assessmentId; })[0] || REC.fields.assessmentSnap || null : null; }
-function newRec(){ return { id: null, fields: { rpic: SESSION ? SESSION.user.email : '', launchMethod: 'Tactical deployment' }, checks: {}, acks: {}, faa: null, log: [], avwx: null }; }
+function newRec(){ return { id: null, fields: { rpic: SESSION ? SESSION.user.email : '', launchMethod: 'Tactical deployment' }, checks: {}, acks: {}, faa: null, log: [], avwx: null, edits: [] }; }
+function isAdmin(){ return role() === 'admin'; }
+function lastGo(){ var L = REC && REC.log || []; for (var i = L.length - 1; i >= 0; i--) if (L[i].decision === 'GO') return L[i]; return null; }
+/* A check becomes a locked flight record once GO is recorded. Only an admin can unlock it to edit. */
+function locked(){ return !!(REC && REC.id && lastGo()) && !EDIT; }
 
 /* ---------------- Auth ---------------- */
 function renderWho(){
@@ -182,21 +195,24 @@ function loadLists(){
     sb.from('fleet_aircraft').select('*').order('name').then(function (r) { FLEET = r.error ? [] : (r.data || []); }),
     sb.from('site_assessments').select('id,site_name,client_name,status,governing_provision,overflight_pathway,max_agl,latitude,longitude,site_address,assess_date,updated_at,payload')
       .order('updated_at', { ascending: false }).limit(200).then(function (r) { ASSESS = r.error ? [] : (r.data || []); }),
-    loadRecent()
   ]);
 }
-function loadRecent(){
-  return sb.from('go_nogo_checks').select('id,site_name,decision,decided_at,updated_at,created_by').order('updated_at', { ascending: false }).limit(30)
-    .then(function (r) { RECENT = r.error ? [] : (r.data || []); });
+function loadRecords(){
+  return sb.from('go_nogo_checks').select('id,site_name,client_name,aircraft_label,planned_alt_ft,decision,decided_at,decided_by,created_by,created_at,updated_at,updated_by,rpic:payload->fields->>rpic')
+    .order('updated_at', { ascending: false }).limit(1000)
+    .then(function (r) { if (r.error) { toast('Could not load flight records: ' + r.error.message); RECORDS = []; } else RECORDS = r.data || []; });
 }
 function openRecord(id){
   return sb.from('go_nogo_checks').select('*').eq('id', id).single().then(function (r) {
     if (r.error || !r.data) { toast('Could not open that check'); REC = newRec(); render(); return; }
     var p = r.data.payload || {};
-    REC = { id: r.data.id, fields: p.fields || {}, checks: p.checks || {}, acks: p.acks || {}, faa: p.faa || null, log: p.log || [], avwx: p.avwx || null };
-    W = null; WKEY = '';
+    REC = { id: r.data.id, fields: p.fields || {}, checks: p.checks || {}, acks: p.acks || {}, faa: p.faa || null, log: p.log || [], avwx: p.avwx || null, edits: p.edits || [],
+      meta: { created_by: r.data.created_by, created_at: r.data.created_at, updated_by: r.data.updated_by, updated_at: r.data.updated_at } };
+    EDIT = false; W = null; WKEY = '';
     history.replaceState(null, '', '?id=' + REC.id);
-    render(); refreshWx(false);
+    render();
+    if (locked()) { var g = lastGo(); W = g && g.snapshot && g.snapshot.wx || null; paintAll(); }
+    else refreshWx(false);
   });
 }
 function rowFromRec(){
@@ -208,39 +224,42 @@ function rowFromRec(){
     aircraft_id: f.aircraftId || null, aircraft_label: a ? a.name : (f.acAsset || null),
     planned_alt_ft: num(f.plannedAlt) != null ? Math.round(num(f.plannedAlt)) : null,
     decision: last ? last.decision : null, decided_at: last ? last.at : null, decided_by: last ? last.by : null,
-    payload: { fields: f, checks: REC.checks, acks: REC.acks, faa: REC.faa, log: REC.log, avwx: REC.avwx, v: 2 }
+    payload: { fields: f, checks: REC.checks, acks: REC.acks, faa: REC.faa, log: REC.log, avwx: REC.avwx, edits: REC.edits || [], v: 3 }
   };
 }
 function save(now){
+  if (locked() && !REC._pending) return;
+  if (EDIT && REC.id && !REC._editLogged) { (REC.edits = REC.edits || []).push({ by: SESSION.user.email, at: new Date().toISOString() }); REC._editLogged = true; }
   dirty = true; paintSave();
   clearTimeout(saveTO);
   saveTO = setTimeout(flush, now ? 0 : 900);
 }
 function flush(){
-  if (!REC || saving || !dirty) return Promise.resolve();
+  if (!REC || saving || !dirty || (locked() && !REC._pending)) return Promise.resolve();
   if (!REC.id && !REC.fields.siteName && !REC.fields.lat) return Promise.resolve();   // nothing worth keeping yet
   saving = true; dirty = false; paintSave();
   var row = rowFromRec();
   var q = REC.id ? sb.from('go_nogo_checks').update(row).eq('id', REC.id).select('id').single() : sb.from('go_nogo_checks').insert(row).select('id').single();
   return q.then(function (r) {
     saving = false;
-    if (r.error) { dirty = true; paintSave('Save failed: ' + r.error.message); return; }
-    if (!REC.id) { REC.id = r.data.id; history.replaceState(null, '', '?id=' + REC.id); loadRecent().then(paintRecbar); }
+    if (r.error || !r.data) { dirty = true; paintSave('Save failed: ' + (r.error ? r.error.message : 'not saved')); if (REC._pending) { toast('Not saved. ' + (r.error ? r.error.message : 'Try again.')); REC._pending = null; } return; }
+    if (!REC.id) { REC.id = r.data.id; history.replaceState(null, '', '?id=' + REC.id); paintRecbar(); }
+    if (REC._pending) { toast(REC._pending + ' recorded and saved to the flight records'); REC._pending = null; render(); if (locked()) paintAll(); }
     paintSave();
     if (dirty) save();
   });
 }
 function paintSave(msg){
   var el = document.getElementById('saveState'); if (!el) return;
-  el.textContent = msg || (saving ? 'Saving' : dirty ? 'Unsaved changes' : REC && REC.id ? 'Saved' : 'Not saved yet. Set a site name or pin.');
+  el.textContent = msg || (locked() ? 'Locked flight record' : saving ? 'Saving' : dirty ? 'Unsaved changes' : REC && REC.id ? 'Saved' + (EDIT ? ' (admin edit)' : '') : 'Not saved yet. Set a site name or pin.');
 }
 
 /* ---------------- Render ---------------- */
 function render(){
   var f = REC.fields;
   app().innerHTML =
-    '<div class="card no-print" id="recbar"></div>' +
-    '<div class="card gold" id="jGo"><h2><span class="num">GO</span>Flight conditions now<small id="wxStamp"></small></h2><div id="gngBody"></div></div>' +
+    '<div class="card no-print" id="recbar"></div>' + lockBanner() +
+    '<div class="card gold" id="jGo"><h2><span class="num">GO</span>' + (locked() ? 'Flight conditions at the decision' : 'Flight conditions now') + '<small id="wxStamp"></small></h2><div id="gngBody"></div></div>' +
     '<div class="card" id="jSite"><h2><span class="num">1</span>Site</h2><div id="siteBody"></div></div>' +
     '<div class="card" id="jAc"><h2><span class="num">2</span>Aircraft &amp; equipment</h2><div id="acBody"></div></div>' +
     '<div class="card" id="jAir"><h2><span class="num">3</span>Airspace &amp; regulatory</h2><div id="airBody"></div></div>' +
@@ -248,18 +267,36 @@ function render(){
     '<div class="card" id="jAvwx"><h2><span class="num">WX</span>Aviation weather: METAR and TAF</h2><div id="avwxBody"></div></div>' +
     '<button class="totop no-print" id="toTop" onclick="jumpTo(\'jGo\')">&#8593; Flight conditions</button>';
   paintRecbar(); paintSite(); paintAc(); paintAir(); paintAll();
+  if (locked()) lockInputs();
 }
+/* Locked record: every input is read-only and the map cannot move the pin. */
+function lockInputs(){
+  ['siteBody', 'acBody', 'airBody'].forEach(function (id) {
+    var el = document.getElementById(id); if (!el) return;
+    el.querySelectorAll('input, select, textarea, button').forEach(function (x) { if (!x.closest('#map')) x.disabled = true; });
+  });
+  if (map) { map.off('click', mapClick); if (pin && pin.dragging) pin.dragging.disable(); }
+}
+function lockBanner(){
+  var g = lastGo(); if (!g) return '';
+  var who = REC.meta ? 'Started by ' + esc(REC.meta.created_by || 'unknown') + ', ' + esc(stamp(REC.meta.created_at)) + '. ' : '';
+  var ed = (REC.edits || []).length ? ' Edited by an admin ' + REC.edits.length + ' time' + (REC.edits.length > 1 ? 's' : '') + ', last ' + esc(REC.edits[REC.edits.length - 1].by) + ', ' + esc(stamp(REC.edits[REC.edits.length - 1].at)) + '.' : '';
+  if (EDIT) return '<div class="lockbar edit"><b>Admin edit.</b> Changes save to this flight record and are logged under your account.' + ed +
+    ' <button class="btn sm" onclick="endEdit()">Done editing</button></div>';
+  return '<div class="lockbar"><b>Flight record: GO recorded by ' + esc(g.by) + ', ' + esc(stamp(g.at)) + '.</b> ' + who + 'Locked: this shows what was recorded at the time of the decision.' + ed +
+    (isAdmin() ? '<div class="row" style="margin-top:8px;"><button class="btn sm" onclick="startEdit()">Edit record</button>' +
+      '<button class="btn sm nogo" id="delBtn" onclick="deleteRecord(REC.id, this)">Delete record</button></div>' : '<div class="hint" style="margin-top:4px;">Only an admin can change or delete it.</div>') + '</div>';
+}
+function startEdit(){ if (!isAdmin()) return; EDIT = true; REC._editLogged = false; render(); refreshWx(false); }
+function endEdit(){ flush().then(function () { EDIT = false; W = null; render(); var g = lastGo(); W = g && g.snapshot && g.snapshot.wx || null; paintAll(); }); }
 function paintRecbar(){
   var el = document.getElementById('recbar'); if (!el) return;
   var opts = '<option value="">Start from a site assessment (optional)</option>' + ASSESS.map(function (a) {
     return '<option value="' + a.id + '"' + (REC.fields.assessmentId === a.id ? ' selected' : '') + '>' + esc((a.site_name || 'Unnamed site') + (a.client_name ? ', ' + a.client_name : '') + ' (' + statusLabel(a.status) + ')') + '</option>';
   }).join('');
-  var recent = '<option value="">Open a recent check</option>' + RECENT.map(function (x) {
-    return '<option value="' + x.id + '"' + (REC.id === x.id ? ' selected' : '') + '>' + esc((x.site_name || 'Unnamed') + ', ' + stamp(x.updated_at || x.created_at) + (x.decision ? ', ' + x.decision : '')) + '</option>';
-  }).join('');
   el.innerHTML = '<div class="recbar">' +
-    '<label class="f">Site assessment<select id="asSel" onchange="pickAssessment(this.value)">' + opts + '</select></label>' +
-    '<label class="f">Saved checks<select onchange="if(this.value) openRecord(this.value)">' + recent + '</select></label>' +
+    (locked() ? '' : '<label class="f">Site assessment<select id="asSel" onchange="pickAssessment(this.value)">' + opts + '</select></label>') +
+    '<button class="btn" onclick="showRecords()">Flight records</button>' +
     '<button class="btn gold" onclick="startNew()">New check</button></div>' +
     '<div class="row" style="margin-top:8px;justify-content:space-between;"><span class="savestate" id="saveState"></span>' +
     (REC.id ? '<span class="hint">Record ' + esc(REC.id.slice(0, 8)) + '</span>' : '') + '</div>';
@@ -268,7 +305,7 @@ function paintRecbar(){
 function statusLabel(s){ return { draft: 'draft', approved_with_conditions: 'approved with conditions', needs_program_review: 'needs program review', not_approved: 'not approved' }[s] || s || 'unknown'; }
 function startNew(){
   if (REC && REC.id && dirty) flush();
-  REC = newRec(); W = null; WKEY = '';
+  REC = newRec(); EDIT = false; W = null; WKEY = '';
   history.replaceState(null, '', location.pathname);
   render();
 }
@@ -328,9 +365,10 @@ function initMap(){
   map = L.map('map', { center: has ? [Number(f.lat), Number(f.lng)] : [35.85, -86.39], zoom: has ? 14 : 9 });
   var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
   if (window.EPFAAMap) EPFAAMap.attach(map, { base: osm, collapsed: true });
-  map.on('click', function (e) { setPin(e.latlng.lat, e.latlng.lng, false); });
+  map.on('click', mapClick);
   if (has) placeMarker(Number(f.lat), Number(f.lng));
 }
+function mapClick(e){ setPin(e.latlng.lat, e.latlng.lng, false); }
 function pinIcon(){ return L.divIcon({ className: '', html: '<div style="width:22px;height:22px;background:#FCC00E;border:3px solid #164998;border-radius:50%;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>', iconSize: [22, 22], iconAnchor: [11, 11] }); }
 function placeMarker(lat, lng){
   if (!map) return;
@@ -565,6 +603,7 @@ window.addEventListener('scroll', function () {
 function overall(items){ return items.some(function (x) { return x.level === 'no'; }) ? 'no' : items.some(function (x) { return x.level === 'warn'; }) ? 'warn' : 'ok'; }
 function paintGng(){
   var el = document.getElementById('gngBody'); if (!el) return;
+  if (locked()) { el.innerHTML = lockedGngHTML(); var ws0 = document.getElementById('wxStamp'); if (ws0) ws0.textContent = 'As recorded ' + stamp(lastGo().at); return; }
   var items = gngItems(), o = overall(items), last = REC.log[REC.log.length - 1];
   var keep = document.activeElement && document.activeElement.id === 'reason' ? document.activeElement.value : null;
   el.innerHTML = '<div class="verdict ' + o + '"><span class="dot"></span>' + (o === 'no' ? 'NO-GO indicated' : o === 'warn' ? 'Caution: review the flagged items' : 'No limiting conditions found') + '</div>' +
@@ -574,31 +613,61 @@ function paintGng(){
     '<div class="decide no-print"><button class="btn go" onclick="record(\'GO\')"' + (o === 'no' || !W ? ' disabled title="Clear every red item first"' : '') + '>Record GO</button>' +
     '<button class="btn nogo" onclick="record(\'NO-GO\')">Record NO-GO</button>' +
     '<input type="text" id="reason" placeholder="Reason or conditions (required for NO-GO)"></div>' +
-    (last && last.decision === 'GO' ? '<div class="row no-print" style="margin-top:10px;"><a class="btn primary" href="launch-checklist.html?site=' + encodeURIComponent(REC.fields.siteName || '') + (REC.fields.aircraftId ? '&aircraft=' + encodeURIComponent(REC.fields.aircraftId) : '') + '">Open the launch checklist</a></div>' : '') +
-    (REC.log.length ? '<div class="log">' + REC.log.slice().reverse().map(function (x) {
-      return '<div class="' + (x.decision === 'GO' ? 'go' : 'nogo') + '"><b>' + esc(x.decision) + '</b> by ' + esc(x.by) + ', ' + esc(stamp(x.at)) + (x.reason ? ': ' + esc(x.reason) : '') +
-        ' <span class="hint">(' + x.items.filter(function (i) { return i.level !== 'ok'; }).length + ' flagged at the time' + (x.metar ? ', METAR kept' : '') + ')</span></div>';
-    }).join('') + '</div>' : '') +
-    '<p class="hint" style="margin-top:10px;">Indicators only. The RPIC makes the decision. Each GO or NO-GO keeps a snapshot of these indicators and the nearest METAR and TAF.</p>';
+    logHTML() +
+    '<p class="hint" style="margin-top:10px;">Indicators only. The RPIC makes the decision. Recording GO saves the full check, the weather, METAR and TAF to the flight records and locks it.</p>';
   if (keep !== null) { var r = document.getElementById('reason'); r.value = keep; r.focus(); }
   var ws = document.getElementById('wxStamp'); if (ws) ws.textContent = WBUSY ? 'Loading weather' : W ? 'Weather ' + stamp(W.at) : '';
+}
+function logHTML(){
+  return (REC.log.length ? '<div class="log">' + REC.log.slice().reverse().map(function (x) {
+      return '<div class="' + (x.decision === 'GO' ? 'go' : 'nogo') + '"><b>' + esc(x.decision) + '</b> by ' + esc(x.by) + ', ' + esc(stamp(x.at)) + (x.reason ? ': ' + esc(x.reason) : '') +
+        ' <span class="hint">(' + x.items.filter(function (i) { return i.level !== 'ok'; }).length + ' flagged at the time' + (x.metar ? ', METAR kept' : '') + ')</span></div>';
+    }).join('') + '</div>' : '');
+}
+function lockedGngHTML(){
+  var g = lastGo(), sn = g.snapshot || {};
+  var items = sn.items || g.items || [];
+  var o = overall(items);
+  return '<div class="verdict ok"><span class="dot"></span>GO recorded ' + esc(stamp(g.at)) + ' by ' + esc(g.by) + (g.reason ? ': ' + esc(g.reason) : '') + '</div>' +
+    (o !== 'ok' ? '<div class="hint" style="margin:-4px 0 8px;">Indicators at the time: ' + (o === 'warn' ? 'cautions were flagged and accepted by the RPIC.' : 'red items were present.') + '</div>' : '') +
+    (sn.limits && window.EPWX ? '<div class="sub" style="margin-top:4px;">Aircraft limits against the weather at the time</div>' + EPWX.limitsHTML(sn.limits, jumpFor) : '') +
+    (window.EPWX ? EPWX.itemsHTML(items.filter(function (x) { return !sn.limits || ['wind', 'gust', 'temp'].indexOf(x.key) < 0; }), jumpFor) : '') +
+    logHTML();
 }
 function record(decision){
   var reason = (document.getElementById('reason') || {}).value || '';
   if (decision === 'NO-GO' && !reason.trim()) { toast('Enter the reason for NO-GO'); return; }
   var items = gngItems();
   if (decision === 'GO' && overall(items) === 'no') { toast('Clear every red item before recording GO'); return; }
+  if (!W) { toast('Weather has not loaded yet. Refresh it before recording.'); return; }
+  var copy = function (o) { return o == null ? null : JSON.parse(JSON.stringify(o)); };
   REC.log.push({ decision: decision, reason: reason.trim(), at: new Date().toISOString(), by: SESSION.user.email, alt: num(REC.fields.plannedAlt), windLimit: windLimit(), gustLimit: gustLimit(), tempRange: [tempMin(), tempMax()],
     aircraft: (aircraft() || {}).name || REC.fields.acAsset || '',
     metar: W && W.metars && W.metars[0] ? W.metars[0].rawOb || '' : '', taf: W && W.tafs && W.tafs[0] ? W.tafs[0].rawTAF || '' : '',
-    acks: JSON.parse(JSON.stringify(REC.acks || {})),
-    items: items.map(function (x) { return { label: x.label, level: x.level, value: x.value }; }) });
-  save(true); paintGng(); toast(decision + ' recorded');
+    acks: copy(REC.acks || {}),
+    items: items.map(function (x) { return { key: x.key, label: x.label, level: x.level, value: x.value, detail: x.detail || '' }; }),
+    snapshot: { items: items.map(function (x) { return { key: x.key, label: x.label, level: x.level, value: x.value, detail: x.detail || '' }; }),
+      limits: EPWX.limitsCheck(W, wxCtx()), wx: wxSnapshot(W), fields: copy(REC.fields), checks: copy(REC.checks), aircraftRecord: copy(aircraft()),
+      assessment: copy(linked()), faaAt: REC.faa ? REC.faa.at : null } });
+  if (decision === 'GO') REC.avwx = EPWX.avwxSnapshot(W, 1);
+  REC._pending = decision;
+  save(true); paintGng(); toast('Saving ' + decision);
 }
 
 /* ---------------- Weather ---------------- */
+/* The weather exactly as shown at the decision: this hour and the next 12, alerts, nearest METAR and TAF. */
+function wxSnapshot(w){
+  var fc = w.fc, out = { lat: w.lat, lng: w.lng, at: w.at, alerts: w.alerts, metars: (w.metars || []).slice(0, 1), tafs: (w.tafs || []).slice(0, 1), errors: w.errors || {}, fc: null };
+  if (fc && fc.hourly) {
+    var i = EPWX.nowIndex(fc), H = {}, k;
+    for (k in fc.hourly) if (Array.isArray(fc.hourly[k])) H[k] = fc.hourly[k].slice(i, i + 13);
+    out.fc = { utc_offset_seconds: fc.utc_offset_seconds, timezone: fc.timezone, source: fc.source, current: fc.current, hourly: H, _at0: true };
+  }
+  return JSON.parse(JSON.stringify(out));
+}
 function refreshWx(force){
-  var f = REC.fields; if (!window.EPWX || !f.lat) { paintAll(); return; }
+  var f = REC.fields; if (locked()) { paintAll(); return; }
+  if (!window.EPWX || !f.lat) { paintAll(); return; }
   var key = Number(f.lat).toFixed(4) + ',' + Number(f.lng).toFixed(4);
   var fresh = W && WKEY === key && Date.now() - Date.parse(W.at) < 10 * 60 * 1000;
   if ((fresh && !force) || WBUSY) { paintAll(); return; }
@@ -606,10 +675,10 @@ function refreshWx(force){
   EPWX.fetchAll(Number(f.lat), Number(f.lng)).then(function (w) { W = w; WKEY = key; keepAvwx(w); }, function (e) { WERR = e.message || 'failed'; })
     .then(function () { WBUSY = false; paintAll(); });
   clearInterval(WTIMER);
-  WTIMER = setInterval(function () { if (REC && REC.fields.lat) refreshWx(true); }, 10 * 60 * 1000);
+  WTIMER = setInterval(function () { if (REC && REC.fields.lat && !locked()) refreshWx(true); }, 10 * 60 * 1000);
 }
 function keepAvwx(w){
-  if (w.metars === null || w.tafs === null) return;
+  if (locked() || w.metars === null || w.tafs === null) return;
   var snap = EPWX.avwxSnapshot(w, 1), prev = REC.avwx;
   var sig = function (x) { return x ? (x.metars || []).map(function (m) { return m.raw; }).join('|') + '#' + (x.tafs || []).map(function (t) { return t.raw; }).join('|') : ''; };
   if (sig(snap) !== sig(prev)) { REC.avwx = snap; save(); }
@@ -618,6 +687,17 @@ function paintWx(){
   var el = document.getElementById('wxBody'), el2 = document.getElementById('avwxBody'); if (!el) return;
   var f = REC.fields, refresh = ' <button class="btn sm no-print" onclick="refreshWx(true)"' + (WBUSY || !f.lat ? ' disabled' : '') + '>Refresh</button>';
   if (!f.lat) { el.innerHTML = el2.innerHTML = '<p class="hint">Set the pin in part 1 to load the weather.</p>'; return; }
+  if (locked()) {
+    var lw = W, lim0 = windLimit(), alt0 = num(f.plannedAlt);
+    el.innerHTML = lw && lw.fc ? '<p class="hint">National Weather Service forecast for the pin as it stood at the decision, ' + esc(stamp(lw.at)) + '.</p>' +
+      '<div class="blk" id="jNow">' + EPWX.tilesHTML(lw, lim0, alt0) + '</div>' +
+      '<div class="blk" id="jHours"><div class="sub">The 12 hours from the decision</div>' + EPWX.hoursHTML(lw, lim0, 12) + '</div>' +
+      '<div class="blk" id="jAlerts"><div class="sub">Weather alerts at the time</div>' + EPWX.alertsHTML(lw) + '</div>'
+      : '<p class="hint">No weather snapshot was saved with this record.</p>';
+    el2.innerHTML = REC.avwx ? '<div class="blk" id="jMetar"><p class="hint">Reports saved with the decision, ' + esc(stamp(REC.avwx.at)) + '.</p>' + EPWX.avwxSnapshotHTML(REC.avwx) + '</div><div id="jTaf"></div>'
+      : '<p class="hint">No METAR or TAF was saved with this record.</p>';
+    return;
+  }
   if (!W) {
     el.innerHTML = '<p class="hint">' + (WBUSY ? 'Loading weather' : WERR ? 'Weather failed: ' + esc(WERR) : 'Not loaded') + refresh + '</p>';
     el2.innerHTML = REC.avwx ? '<p class="hint">Showing the report saved with this check on ' + esc(stamp(REC.avwx.at)) + '.' + refresh + '</p>' + EPWX.avwxSnapshotHTML(REC.avwx) : el.innerHTML;
@@ -636,13 +716,63 @@ function paintWx(){
 }
 function paintAll(){ paintGng(); paintWx(); }
 
+/* ---------------- Flight records ---------------- */
+function showRecords(){
+  if (dirty) flush();
+  history.replaceState(null, '', '?view=records');
+  app().innerHTML = '<div class="card"><div class="hint">Loading flight records</div></div>';
+  loadRecords().then(paintRecords);
+}
+function paintRecords(){
+  var q = RFILTER.q.toLowerCase(), d = RFILTER.d;
+  var rows = RECORDS.filter(function (x) {
+    if (d === 'decided' && !x.decision) return false;
+    if (d === 'GO' && x.decision !== 'GO') return false;
+    if (d === 'NO-GO' && x.decision !== 'NO-GO') return false;
+    if (d === 'open' && x.decision) return false;
+    return !q || [x.site_name, x.client_name, x.aircraft_label, x.rpic, x.decided_by, x.created_by].join(' ').toLowerCase().indexOf(q) >= 0;
+  }).sort(function (a, b) { return Date.parse(b.decided_at || b.updated_at) - Date.parse(a.decided_at || a.updated_at); });
+  var count = function (f) { return RECORDS.filter(f).length; };
+  var tab = function (k, label, n) { return '<button class="btn sm' + (d === k ? ' primary' : '') + '" onclick="RFILTER.d=\'' + k + '\';paintRecords()">' + label + ' (' + n + ')</button>'; };
+  app().innerHTML = '<div class="card"><h2>Flight records<small>' + (isAdmin() ? 'Admin: open, edit or delete any record' : 'Every recorded flight check. Only an admin can change a locked record.') + '</small></h2>' +
+    '<div class="row" style="margin-bottom:10px;"><input id="rq" class="rq" type="search" placeholder="Search site, client, aircraft, pilot" value="' + esc(RFILTER.q) + '">' +
+      '<button class="btn gold" onclick="startNew()">New check</button></div>' +
+    '<div class="row" style="margin-bottom:10px;">' + tab('decided', 'Decided', count(function (x) { return !!x.decision; })) + tab('GO', 'GO', count(function (x) { return x.decision === 'GO'; })) +
+      tab('NO-GO', 'NO-GO', count(function (x) { return x.decision === 'NO-GO'; })) + tab('open', 'In progress', count(function (x) { return !x.decision; })) + tab('all', 'All', RECORDS.length) + '</div>' +
+    (rows.length ? '<div class="rec-list">' + rows.map(function (x) {
+      var dec = x.decision ? '<span class="chip ' + (x.decision === 'GO' ? 'ok' : 'no') + '">' + esc(x.decision) + '</span>' : '<span class="chip warn">IN PROGRESS</span>';
+      return '<div class="rec-row"><div class="rec-main" onclick="openRecord(\'' + x.id + '\')" role="button" tabindex="0">' +
+        '<div class="rec-top">' + dec + ' <b>' + esc(x.site_name || 'Unnamed site') + '</b>' + (x.client_name ? ' <span class="hint">' + esc(x.client_name) + '</span>' : '') + '</div>' +
+        '<div class="hint">' + esc(stamp(x.decided_at || x.updated_at)) + (x.aircraft_label ? ' &middot; ' + esc(x.aircraft_label) : '') + (x.planned_alt_ft ? ' &middot; ' + x.planned_alt_ft + ' ft AGL' : '') +
+        ' &middot; ' + esc(x.decided_by || x.rpic || x.created_by || '') + '</div></div>' +
+        '<div class="rec-act"><button class="btn sm" onclick="openRecord(\'' + x.id + '\')">Open</button>' +
+        (isAdmin() ? '<button class="btn sm nogo" onclick="deleteRecord(\'' + x.id + '\', this)">' + (DELARM === x.id ? 'Confirm delete' : 'Delete') + '</button>' : '') + '</div></div>';
+    }).join('') + '</div>' : '<p class="hint">No records match.</p>') + '</div>';
+  var rq = document.getElementById('rq');
+  rq.addEventListener('input', function () { RFILTER.q = this.value; var pos = this.selectionStart; paintRecords(); var n = document.getElementById('rq'); n.focus(); n.setSelectionRange(pos, pos); });
+}
+/* Admin only, two taps: the first arms the button, the second deletes. The database also refuses deletes from non-admins. */
+function deleteRecord(id, btn){
+  if (!isAdmin()) return;
+  if (DELARM !== id) { DELARM = id; if (btn) { btn.textContent = 'Confirm delete'; } setTimeout(function () { if (DELARM === id) { DELARM = ''; if (btn && btn.isConnected) btn.textContent = btn.id === 'delBtn' ? 'Delete record' : 'Delete'; } }, 5000); return; }
+  DELARM = '';
+  sb.from('go_nogo_checks').delete().eq('id', id).select('id').then(function (r) {
+    if (r.error || !r.data || !r.data.length) { toast('Not deleted' + (r.error ? ': ' + r.error.message : '. This account may not have permission.')); return; }
+    toast('Record deleted');
+    RECORDS = RECORDS.filter(function (x) { return x.id !== id; });
+    if (REC && REC.id === id) { REC = null; dirty = false; }
+    showRecords();
+  });
+}
+
 /* ---------------- Boot ---------------- */
 function boot(){
   if (!allowed()) { deniedView(); return; }
-  app().innerHTML = '<div class="card"><div class="hint">Loading fleet, site assessments and saved checks</div></div>';
+  app().innerHTML = '<div class="card"><div class="hint">Loading fleet and site assessments</div></div>';
   loadLists().then(function () {
     var id = Q.get('id'), as = Q.get('assessment');
     if (id) return openRecord(id);
+    if (Q.get('view') === 'records') return showRecords();
     REC = newRec(); render();
     if (as) pickAssessment(as);
   });
