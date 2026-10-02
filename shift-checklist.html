@@ -105,7 +105,7 @@ var IMSAFE = [
 
 /* url(state) returns the link, or null for check-only items. */
 var ITEMS = [
-  { key: 'comms', text: 'Reviewed latest comms in Belfry / Slack', desc: 'Keep Belfry and Slack open on your phone or tablet for internal comms during the shift.' },
+  { key: 'comms', text: 'Reviewed latest comms in Belfry / Teams', desc: 'Keep Belfry and Teams open on your phone or tablet for internal comms during the shift.' },
   { key: 'brief', text: 'Briefed by previous RPIC / Shift Supervisor', desc: 'Pass-down received for open issues, aircraft status and anything pending.' },
   { key: 'tfr', text: 'Checked TFRs for assigned AOs', desc: 'Admin monitor. FAA TFR map.', url: function () { return 'https://tfr.faa.gov/tfr3/?page=map'; } },
   { key: 'notam', text: 'Checked NOTAMs for assigned AOs', desc: 'Admin monitor. FAA NOTAM Search.', url: function () { return 'https://notams.aim.faa.gov/notamSearch/'; } },
@@ -115,7 +115,7 @@ var ITEMS = [
   { key: 'skyvector', text: 'SkyVector open on the admin monitor for the airspace map', desc: 'Open in Chrome.', url: function () { return 'https://skyvector.com/'; } },
   { key: 'aloft', text: 'Aloft open', desc: 'Web version, fully functional for LAANC.', url: function () { return 'https://airaware.aloft.ai/?lat=35.85411910028462&long=-86.40406174378263'; } },
   { key: 'gmaps', text: 'Google Maps open', desc: '', url: function () { return 'https://maps.google.com/'; } },
-  { key: 'tools', text: 'EP Drone Tools open', desc: 'Tools hub for Go / No-Go, site assessments and AARs.', url: function () { return location.origin + '/index.html'; } }
+  { key: 'tools', text: 'EP Drone Tools open', desc: 'Tools hub for Go / No-Go, site assessments and AARs. Not part of Launch All Tabs since it is already open.', noLaunch: true, url: function () { return location.origin + '/index.html'; } }
 ];
 
 function freshState(){ return { imsafe: {}, items: {}, icao: (lsGet('ep-shift-icao') || 'KMBT'), notes: '', started: new Date().toISOString(), unfitNote: '', unfit: false }; }
@@ -165,7 +165,7 @@ function deniedView(){
 function launchAll(){
   var opened = 0, blocked = 0;
   ITEMS.forEach(function (it) {
-    if (!it.url) return;
+    if (!it.url || it.noLaunch) return;
     var w = window.open(it.url(S), '_blank');
     if (w) { try { w.opener = null; } catch (e) {} opened++; } else blocked++;
   });
@@ -214,7 +214,7 @@ function render(){
     h += '<div class="warnbox popup"><b>Chrome blocked some tabs.</b> Click the blocked pop-up icon at the right end of the address bar, choose <b>Always allow pop-ups and redirects</b> from this site, click Done, then press Launch All Tabs again. You only do this once per computer.</div>';
   }
   h += '<div class="launch" style="margin-bottom:6px;"><button class="btn gold" onclick="launchAll()">Launch all tabs</button>' +
-    '<span class="hint">Opens the ' + ITEMS.filter(function (x) { return x.url; }).length + ' linked sites. Each one also has its own Open button.</span></div>';
+    '<span class="hint">Opens the ' + ITEMS.filter(function (x) { return x.url && !x.noLaunch; }).length + ' linked sites. Each one also has its own Open button.</span></div>';
   ITEMS.forEach(function (it, i) {
     var on = !!S.items[it.key];
     h += '<div class="item' + (on ? ' done' : '') + '" onclick="if(event.target===this||event.target.classList.contains(\'t\')||event.target.classList.contains(\'d\'))toggleItem(\'' + it.key + '\')">' +
