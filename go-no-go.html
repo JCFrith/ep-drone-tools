@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="ep-login.js"></script>
 <script src="ep-faa-airspace.js"></script>
 <script src="ep-faa-map.js"></script>
 <script src="ep-flight-wx.js"></script>
@@ -172,19 +173,12 @@ function renderWho(){
   document.getElementById('soBtn').style.display = SESSION ? '' : 'none';
 }
 function signInView(){
-  app().innerHTML = '<div class="card" style="max-width:420px;margin:30px auto;"><h2>Sign in</h2><p class="hint" style="margin-bottom:12px;">Use the same account as the other EP drone tools. Go / No-Go is limited to admin and pilot accounts.</p>' +
-    '<label class="f">Email<input id="em" type="email" autocomplete="username"></label><div style="height:10px"></div>' +
-    '<label class="f">Password<input id="pw" type="password" autocomplete="current-password"></label><div style="height:14px"></div>' +
-    '<button class="btn primary" id="siBtn" onclick="doSignIn()">Sign in</button></div>';
-  document.getElementById('pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSignIn(); });
-}
-function doSignIn(){
-  var b = document.getElementById('siBtn'); b.disabled = true;
-  sb.auth.signInWithPassword({ email: document.getElementById('em').value.trim(), password: document.getElementById('pw').value }).then(function (r) {
-    b.disabled = false;
-    if (r.error) { toast(r.error.message); return; }
-    SESSION = r.data.session; renderWho(); boot();
-  });
+  EPLogin.mount(app(), { tool: 'Go / No-Go', note: 'Admin and pilot accounts only.', onSignIn: function (e, p) {
+    return sb.auth.signInWithPassword({ email: e, password: p }).then(function (r) {
+      if (r.error) return r.error.message;
+      SESSION = r.data.session; renderWho(); boot(); return null;
+    });
+  } });
 }
 function signOut(){ if (!sb) return; sb.auth.signOut().then(function () { SESSION = null; REC = null; renderWho(); signInView(); }); }
 function deniedView(){

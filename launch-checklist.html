@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="ep-login.js"></script>
 <style>
   :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-white:#FFFFFF;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-warn:#F5A524;--ep-block:#E5484D;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -150,16 +151,12 @@ function when(t){ try{ return new Date(t).toLocaleTimeString('en-US',{hour:'nume
 /* ---- Auth ---- */
 function renderWho(){ document.getElementById('who').textContent = SESSION ? SESSION.user.email+' ('+role()+')' : ''; }
 function signInView(){
-  app().innerHTML='<div class="card"><h2>Sign in</h2><p class="hint" style="margin-bottom:12px;">Use the same account as the site assessment tool.</p>'+
-    '<label class="f">Email<input id="em" type="email" autocomplete="username"></label><label class="f">Password<input id="pw" type="password" autocomplete="current-password"></label>'+
-    '<button class="btn primary" id="siBtn" onclick="doSignIn()">Sign in</button></div>';
-  document.getElementById('pw').addEventListener('keydown',function(e){ if(e.key==='Enter') doSignIn(); });
-}
-function doSignIn(){
-  var b=document.getElementById('siBtn'); b.disabled=true;
-  sb.auth.signInWithPassword({email:document.getElementById('em').value.trim(),password:document.getElementById('pw').value}).then(function(r){
-    b.disabled=false; if(r.error){ toast(r.error.message); return; } SESSION=r.data.session; renderWho(); route();
-  });
+  EPLogin.mount(app(), { tool: 'Live Launch Checklist', note: 'Same account as the other EP drone tools.', onSignIn: function (e, p) {
+    return sb.auth.signInWithPassword({ email: e, password: p }).then(function (r) {
+      if (r.error) return r.error.message;
+      SESSION = r.data.session; renderWho(); route(); return null;
+    });
+  } });
 }
 
 /* ---- Start / join ---- */

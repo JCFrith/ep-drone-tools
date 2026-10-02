@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="ep-login.js"></script>
 <script src="ep-faa-airspace.js"></script>
 <script src="ep-faa-map.js"></script>
 <script src="ep-roster.js"></script>
@@ -584,6 +585,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="admin-head">
       <div><h2>Admin Panel</h2><div class="sub">Enhanced Patrol LLC &nbsp;/&nbsp; All records</div></div>
       <div class="admin-actions">
+        <a class="mini-btn" href="admin.html" style="text-decoration:none;">Admin Portal</a>
         <button class="mini-btn" onclick="loadAdmin()">Refresh</button>
         <button class="mini-btn" onclick="adminExport()">Export CSV</button>
         <button class="mini-btn" onclick="closeAdmin()">Close</button>
@@ -595,17 +597,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div id="adminBody"></div>
   </div>
 </div>
-<div class="modal no-print" id="signInModal">
-  <div class="modal-box">
-    <h3>Sign in</h3>
-    <p>Enhanced Patrol account. Assessments stay on this device until you sign in and sync.</p>
-    <div class="field-group"><label for="siEmail">Email</label><input id="siEmail" type="email" autocomplete="username"></div>
-    <div class="field-group"><label for="siPass">Password</label><input id="siPass" type="password" autocomplete="current-password"></div>
-    <div class="modal-actions">
-      <button class="action-btn ghost" onclick="closeSignIn()">Cancel</button>
-      <button class="action-btn export" id="siBtn" onclick="doSignIn()">Sign in</button>
-    </div>
-  </div>
+<div class="modal no-print" id="signInModal" style="background:rgba(11,25,35,0.97);">
+<script>document.currentScript.insertAdjacentHTML("afterend", EPLogin.html({ tool: "Site Assessment", note: "Assessments stay on this device until you sign in and sync.", overlay: true, ids: { email: "siEmail", pw: "siPass", btn: "siBtn", err: "siErr" }, onclick: "doSignIn()", cancel: "closeSignIn()" }));</script>
 </div>
 <div class="toast" id="toast"></div>
 <input type="file" id="importFile" accept="application/json" style="display:none">
@@ -2959,14 +2952,15 @@ function doSignIn() {
   var c = sbClient(); if (!c) { showToast('Sync library did not load', true); return; }
   var email = document.getElementById('siEmail').value.trim();
   var pw = document.getElementById('siPass').value;
-  if (!email || !pw) { showToast('Enter email and password', true); return; }
-  var btn = document.getElementById('siBtn'); btn.disabled = true; btn.textContent = 'Signing in';
+  var err = document.getElementById('siErr'); if (err) err.textContent = '';
+  if (!email || !pw) { if (err) err.textContent = 'Enter your email and password.'; return; }
+  var btn = document.getElementById('siBtn'); btn.disabled = true; btn.textContent = 'Signing in...';
   c.auth.signInWithPassword({ email: email, password: pw }).catch(function (e) {
     return { error: { message: 'Could not reach the server (' + (e && e.message ? e.message : 'network error') + '). Check your connection and try again.' } };
   }).then(function (r) {
     btn.disabled = false; btn.textContent = 'Sign in';
-    if (r.error) { showToast(r.error.message, true); return; }
-    SESSION = r.data.session; closeSignIn(); renderAuthBar();
+    if (r.error) { if (err) err.textContent = r.error.message; else showToast(r.error.message, true); return; }
+    SESSION = r.data.session; closeSignIn(); renderAuthBar(); adminDeepLink();
     showToast('Signed in as ' + myRole());
     if (!canWrite()) showToast('Role is viewer. You can read but not upload.', true);
     render();
@@ -3227,6 +3221,7 @@ function initSync() {
     SESSION = (r && r.data && r.data.session) || null;
     renderAuthBar();
     if (SESSION) { render(); fleetLoad(); EPRoster.load(c); }
+    adminDeepLink();
     if (SESSION && navigator.onLine) syncNow();
   });
   c.auth.onAuthStateChange(function (_e, s) { var was = myRole(); SESSION = s; renderAuthBar(); if (myRole() !== was) render(); });
@@ -3241,6 +3236,14 @@ function initSync() {
    ============================================================ */
 var ADMIN = { tab: 'assessments', assessments: [], reports: [], q: '', loading: false, err: '' };
 
+/* Deep link from the Admin Portal: site-assessment.html?admin=assessments|reports|fleet|shifts opens the admin panel on that tab. */
+function adminDeepLink() {
+  var t = new URLSearchParams(location.search).get('admin'); if (!t) return;
+  if (!SESSION) { openSignIn(); return; }
+  if (myRole() !== 'admin') { showToast('Admin role required. You are ' + myRole() + '.', true); return; }
+  if (['assessments', 'reports', 'fleet', 'shifts'].indexOf(t) >= 0) ADMIN.tab = t;
+  openAdmin();
+}
 function adminAvailable() { return !!SESSION && myRole() === 'admin'; }
 
 function openAdmin() {

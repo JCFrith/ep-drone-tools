@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="ep-login.js"></script>
 <style>
   :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-warn:#F5A524;--ep-block:#E5484D;}
   *{box-sizing:border-box;margin:0;padding:0;}
@@ -140,19 +141,12 @@ function renderWho(){
   document.getElementById('soBtn').style.display = SESSION ? '' : 'none';
 }
 function signInView(){
-  app().innerHTML = '<div class="card" style="max-width:420px;margin:30px auto;"><h2>Sign in</h2><p class="hint" style="margin-bottom:12px;">Use the same account as the other EP drone tools. The pre-shift checklist is for pilot and admin accounts.</p>' +
-    '<label class="f">Email<input id="em" type="email" autocomplete="username"></label><div style="height:10px"></div>' +
-    '<label class="f">Password<input id="pw" type="password" autocomplete="current-password"></label><div style="height:14px"></div>' +
-    '<button class="btn primary" id="siBtn" onclick="doSignIn()">Sign in</button></div>';
-  document.getElementById('pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doSignIn(); });
-}
-function doSignIn(){
-  var b = document.getElementById('siBtn'); b.disabled = true;
-  sb.auth.signInWithPassword({ email: document.getElementById('em').value.trim(), password: document.getElementById('pw').value }).then(function (r) {
-    b.disabled = false;
-    if (r.error) { toast(r.error.message); return; }
-    SESSION = r.data.session; renderWho(); boot();
-  });
+  EPLogin.mount(app(), { tool: 'Pre-Shift Checklist', note: 'Pilot and admin accounts only.', onSignIn: function (e, p) {
+    return sb.auth.signInWithPassword({ email: e, password: p }).then(function (r) {
+      if (r.error) return r.error.message;
+      SESSION = r.data.session; renderWho(); boot(); return null;
+    });
+  } });
 }
 function signOut(){ sb.auth.signOut().then(function () { SESSION = null; renderWho(); signInView(); }); }
 function deniedView(){

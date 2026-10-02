@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Portal | Enhanced Patrol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.58.0/dist/umd/supabase.min.js"></script>
+<script src="ep-login.js"></script>
+<style>
+  :root{--ep-navy:#0B1923;--ep-navy-deep:#091520;--ep-navy-card:#0f2233;--ep-gold:#FCC00E;--ep-blue:#00A2E9;--ep-dark-blue:#164998;--ep-gray:#9A9A9A;--ep-ok:#30A46C;--ep-block:#E5484D;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--ep-navy);color:#fff;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .topbar{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--ep-navy-deep);border-bottom:2px solid var(--ep-gold);flex-wrap:wrap;position:sticky;top:0;z-index:50;}
+  .topbar img{height:34px;}
+  .topbar h1{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.6rem;letter-spacing:2px;line-height:1;}
+  .topbar h1 em{color:var(--ep-gold);font-style:normal;}
+  .topbar .right{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:.72rem;color:var(--ep-gray);}
+  .ep-hub-btn{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;text-decoration:none;border:1px solid #FCC00E;background:transparent;padding:7px 12px;border-radius:4px;white-space:nowrap;line-height:1.2;transition:background .2s,color .2s;}
+  .ep-hub-btn:hover{background:#FCC00E;color:#0B1923;}
+  .ep-hub-btn .chev{font-size:1rem;line-height:1;margin-top:-1px;}
+  .btn{font:inherit;font-size:.72rem;font-weight:700;padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;cursor:pointer;}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 16px 80px;}
+  .lead{margin-bottom:22px;}
+  .lead .lbl{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--ep-gold);font-weight:700;}
+  .lead h2{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:2.2rem;letter-spacing:1.5px;line-height:1.1;margin-top:4px;}
+  .lead p{font-size:.84rem;color:var(--ep-gray);margin-top:6px;line-height:1.5;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+  .tile{display:flex;flex-direction:column;background:var(--ep-navy-card);border:1px solid rgba(255,255,255,.07);border-top:3px solid var(--ep-gold);border-radius:8px;padding:20px;color:#fff;text-decoration:none;transition:border-color .2s,transform .2s;}
+  .tile:hover{border-color:rgba(252,192,14,.6);transform:translateY(-2px);}
+  .tile .tag{font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--ep-gray);font-weight:700;}
+  .tile h3{font-family:'Bebas Neue',sans-serif;font-weight:400;font-size:1.6rem;letter-spacing:1px;margin:4px 0 8px;}
+  .tile p{font-size:.8rem;color:#c9d2da;line-height:1.55;flex:1;}
+  .tile .foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07);}
+  .tile .count{font-size:.74rem;color:var(--ep-gray);}
+  .tile .count b{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:#fff;font-weight:400;letter-spacing:1px;margin-right:4px;}
+  .tile .go{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ep-gold);white-space:nowrap;}
+  .tile.ext .go::after{content:' \2197';}
+  .note{margin-top:22px;font-size:.74rem;color:var(--ep-gray);line-height:1.6;}
+  .denied{max-width:480px;margin:40px auto;background:var(--ep-navy-card);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:22px;}
+  .denied h2{font-size:1.1rem;margin-bottom:8px;} .denied p{font-size:.84rem;color:var(--ep-gray);line-height:1.5;}
+  .denied .row{display:flex;gap:8px;margin-top:16px;}
+  @media (max-width:640px){ .topbar h1{font-size:1.35rem;} .ep-hub-btn{padding:6px 9px;font-size:.64rem;} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <img src="https://enhancedpatrol.com/wp-content/uploads/2024/08/enhanced-patrol-logo.png" alt="Enhanced Patrol">
+  <a class="ep-hub-btn" href="index.html" title="Back to all EP drone tools"><span class="chev">&#8249;</span>All tools</a>
+  <h1>Admin <em>Portal</em></h1>
+  <div class="right"><span id="who"></span><button class="btn" id="soBtn" style="display:none" onclick="signOut()">Sign out</button></div>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+'use strict';
+/* Admin Portal: admin accounts only. One place to reach every admin view in the EP drone tools.
+   The views themselves also enforce admin (or pilot) access through Supabase row level security. */
+var SB_URL = 'https://oaztzgvxxloiesorfjlf.supabase.co', SB_KEY = 'sb_publishable_iYK9cCY1xdqn2hZtPyzczA_oBa56LBN';
+var sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'ep-sa-auth' } }) : null;
+var SESSION = null;
+
+var TILES = [
+  { key: 'gng', tag: 'Flight day', title: 'Go / No-Go Records', href: 'go-no-go.html?view=records', table: 'go_nogo_checks', unit: 'records',
+    desc: 'Every flight-day decision with the snapshot of indicators, weather and airspace at the moment GO or NO-GO was recorded. Search, open, unlock to edit, or delete.' },
+  { key: 'sa', tag: 'Pre-deployment', title: 'Site Assessments', href: 'site-assessment.html?admin=assessments', table: 'site_assessments', unit: 'assessments',
+    desc: 'All synced site assessments with status, governing provision, blocking items and reviewer. Open any record, export CSV, or delete with its photos.' },
+  { key: 'aar', tag: 'Post-mission', title: 'AAR Admin', href: 'https://enhanced-patrol-aar.vercel.app/admin', ext: true, table: 'reports', unit: 'reports',
+    desc: 'AAR platform administration: user accounts, roles and the audit log. Opens the AAR app in a new tab, which has its own sign-in.' },
+  { key: 'shift', tag: 'Shift start', title: 'Pre-Shift Checklists', href: 'site-assessment.html?admin=shifts', table: 'shift_checklists', unit: 'checklists',
+    desc: 'Every submitted pre-shift checklist. Filter by pilot, date and status, view each IMSAFE and workflow item, export CSV.' },
+  { key: 'fleet', tag: 'Registry', title: 'Fleet Registry', href: 'site-assessment.html?admin=fleet', table: 'fleet_aircraft', unit: 'aircraft',
+    desc: 'Aircraft used by the site assessment and Go / No-Go: registration, MTOW, PRS, NDAA status and weather limits. Add, edit or retire.' }
+];
+
+function esc(v){ return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function role(){ return (SESSION && SESSION.user && SESSION.user.app_metadata && SESSION.user.app_metadata.role) || 'viewer'; }
+function app(){ return document.getElementById('app'); }
+function renderWho(){
+  document.getElementById('who').textContent = SESSION ? SESSION.user.email + ' (' + role() + ')' : '';
+  document.getElementById('soBtn').style.display = SESSION ? '' : 'none';
+}
+function signInView(){
+  EPLogin.mount(app(), { tool: 'Admin Portal', note: 'Admin accounts only.', onSignIn: function (e, p) {
+    return sb.auth.signInWithPassword({ email: e, password: p }).then(function (r) {
+      if (r.error) return r.error.message;
+      SESSION = r.data.session; renderWho(); boot(); return null;
+    });
+  } });
+}
+function signOut(){ sb.auth.signOut().then(function () { SESSION = null; renderWho(); signInView(); }); }
+function deniedView(){
+  app().innerHTML = '<div class="denied"><h2>Admin access required</h2><p>The Admin Portal is for admin accounts. This account (' + esc(SESSION.user.email) + ') is ' + esc(role()) + '. Ask an administrator if this is unexpected.</p>' +
+    '<div class="row"><a class="ep-hub-btn" href="index.html"><span class="chev">&#8249;</span>All tools</a><button class="btn" onclick="signOut()">Sign out</button></div></div>';
+}
+function portalView(){
+  app().innerHTML = '<div class="lead"><div class="lbl">Administration</div><h2>Admin views</h2><p>Every record the EP drone tools keep, in one place. Pick a view.</p></div>' +
+    '<div class="grid">' + TILES.map(function (t) {
+      return '<a class="tile' + (t.ext ? ' ext' : '') + '" href="' + esc(t.href) + '"' + (t.ext ? ' target="_blank" rel="noopener"' : '') + '>' +
+        '<span class="tag">' + esc(t.tag) + '</span><h3>' + esc(t.title) + '</h3><p>' + esc(t.desc) + '</p>' +
+        '<span class="foot"><span class="count" id="c_' + t.key + '">&nbsp;</span><span class="go">Open</span></span></a>';
+    }).join('') + '</div>' +
+    '<p class="note">Records can be edited or deleted only by admin accounts; that is enforced by the database, not just this page. The AAR app keeps its own sign-in session, so you may be asked to sign in there once.</p>';
+  TILES.forEach(function (t) {
+    sb.from(t.table).select('id', { count: 'exact', head: true }).then(function (r) {
+      var el = document.getElementById('c_' + t.key); if (!el) return;
+      el.innerHTML = r.error || r.count == null ? '' : '<b>' + r.count + '</b>' + esc(t.unit);
+    });
+  });
+}
+function boot(){ if (role() !== 'admin') deniedView(); else portalView(); }
+(function init(){
+  if (!sb) { app().innerHTML = '<div class="denied"><p>Could not load sign-in. Check the connection and reload.</p></div>'; return; }
+  sb.auth.getSession().then(function (r) {
+    SESSION = r.data && r.data.session; renderWho();
+    if (SESSION) boot(); else signInView();
+  });
+  sb.auth.onAuthStateChange(function (ev, s) { if (ev === 'SIGNED_OUT') { SESSION = null; renderWho(); signInView(); } else if (s) { SESSION = s; renderWho(); } });
+})();
+</script>
+</body>
+</html>
